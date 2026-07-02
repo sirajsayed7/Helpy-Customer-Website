@@ -7,6 +7,7 @@ export type Screen =
   | 'addresses' | 'contact-us' | 'terms' | 'privacy' | 'notifications'
   | 'order-detail' | 'category-services' | 'deals' | 'offers-events'
   | 'providers' | 'all-services'
+  | 'reviews'
 
 interface NavState { screen: Screen; params?: any; history: { screen: Screen; params?: any }[] }
 

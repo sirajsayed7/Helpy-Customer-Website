@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { ArrowLeft, Star, Heart, MapPin, Shield, Users, Clock, ChevronUp, ChevronDown, Check, Home, Sparkles, Sofa, Refrigerator, Shirt, CalendarDays, Info, ArrowRight, Car, Plane, Hotel, Luggage, Droplets, Scissors, Flower2, Wind, Wrench, Headphones, Laptop, Code2, MonitorSmartphone, BookOpen, Calculator, Languages } from 'lucide-react'
+import { ArrowLeft, Star, Heart, MapPin, Shield, Users, Clock, ChevronUp, ChevronDown, Check, Home, Sparkles, Sofa, Refrigerator, Shirt, CalendarDays, Info, ArrowRight, Car, Plane, Hotel, Luggage, Droplets, Scissors, Flower2, Wind, Wrench, Headphones, Laptop, Code2, MonitorSmartphone, BookOpen, Calculator, Languages, X } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
 
@@ -433,6 +433,8 @@ export default function ServiceDetailPage() {
   const [showTotal, setShowTotal] = useState(false)
   const [showScheduleModal, setShowScheduleModal] = useState(false)
   const [checkoutReady, setCheckoutReady] = useState(false)
+  const [previewService, setPreviewService] = useState<ServiceOption | null>(null)
+  const [previewChecked, setPreviewChecked] = useState(false)
 
   const active = cfg.services.find(s => s.label === selSvc) || cfg.services[0]
   const extrasTotal = extras.reduce((s,e)=>s+(cfg.extras.find(x=>x.label===e)?.price||0),0)
@@ -446,10 +448,28 @@ export default function ServiceDetailPage() {
   const equipmentLabel = equipment === 'customer' ? 'Customer equipment' : 'Scrubs equipment'
 
   const toggleExtra = (e: string) => setExtras(prev => prev.includes(e) ? prev.filter(x=>x!==e) : [...prev,e])
-  const toggleGlowService = (label: string) => {
+  const openServicePreview = (service: ServiceOption) => {
+    setPreviewService(service)
+    setPreviewChecked(selectedGlowServices.includes(service.label))
+  }
+
+  const confirmPreviewService = () => {
+    if (!previewService || !previewChecked) return
     setCheckoutReady(false)
     setShowTotal(false)
-    setSelectedGlowServices(prev => prev.includes(label) ? prev.filter(x => x !== label) : [...prev, label])
+    setSelSvc(previewService.label)
+    setSelectedGlowServices(previous => previous.includes(previewService.label) ? previous : [...previous, previewService.label])
+    setPreviewService(null)
+  }
+
+  const updatePreviewChecked = (checked: boolean) => {
+    setPreviewChecked(checked)
+    if (!checked && previewService) {
+      setSelectedGlowServices(previous => previous.filter(label => label !== previewService.label))
+      if (selSvc === previewService.label) setSelSvc('')
+      setCheckoutReady(false)
+      setShowTotal(false)
+    }
   }
 
   const book = () => {
@@ -522,13 +542,24 @@ export default function ServiceDetailPage() {
           </div>
 
           <section>
-            <p className="text-[16px] font-black text-gray-950 mb-3">1. Select Service</p>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <p className="text-[16px] font-black text-gray-950">1. Select Service</p>
+              <button
+                type="button"
+                onClick={() => navigate('reviews', { provider })}
+                className="flex shrink-0 items-center gap-1.5 rounded-full border border-[#dbe9ff] bg-white px-4 py-2 text-[12px] font-black text-brand-500 shadow-sm transition active:scale-[0.98]"
+                aria-label={`View ${cfg.reviews} reviews for ${cfg.label}`}
+              >
+                <Star size={14} className="fill-amber-400 text-amber-400" />
+                Reviews ({cfg.reviews})
+              </button>
+            </div>
             <div className={`${useCheckoutFlow ? 'grid grid-cols-2 gap-3' : 'grid grid-cols-3 max-[360px]:grid-cols-2 gap-3'}`}>
               {cfg.services.map(s=>{
                 const Icon = s.icon
                 const selected = useCheckoutFlow ? selectedGlowServices.includes(s.label) : selSvc === s.label
                 return (
-                  <button key={s.label} onClick={()=>useCheckoutFlow ? toggleGlowService(s.label) : setSelSvc(s.label)}
+                  <button key={s.label} onClick={()=>useCheckoutFlow ? openServicePreview(s) : setSelSvc(s.label)}
                     className={`relative ${s.image ? 'min-h-[186px]' : 'min-h-[146px] max-[360px]:min-h-[132px]'} rounded-[18px] ${s.image ? 'p-2' : 'p-3 max-[360px]:p-2.5'} border text-center shadow-sm transition overflow-hidden ${selected?'border-brand-500 bg-blue-50':'border-gray-100 bg-white'}`}>
                     <span className={`absolute top-3 right-3 w-6 h-6 rounded-full border-2 flex items-center justify-center ${selected?'border-brand-500 bg-brand-500':'border-gray-300 bg-white'}`}>
                       {selected&&<Check size={14} className="text-white"/>}
@@ -745,6 +776,66 @@ export default function ServiceDetailPage() {
             })} className="mt-4 h-[52px] w-full rounded-[18px] bg-brand-500 text-white text-[16px] font-black shadow-lg shadow-blue-200">
               Checkout
             </button>
+          </div>
+        </div>
+      )}
+
+      {previewService && (
+        <div
+          className="absolute inset-0 z-[100] flex items-center justify-center bg-slate-950/35 px-5 backdrop-blur-md"
+          onClick={() => setPreviewService(null)}
+          role="presentation"
+        >
+          <div
+            className="relative w-full max-w-[360px] overflow-hidden rounded-[28px] border border-white/80 bg-white p-5 shadow-[0_28px_80px_rgba(15,23,42,0.32)]"
+            onClick={event => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="service-preview-title"
+          >
+            <button
+              type="button"
+              onClick={() => setPreviewService(null)}
+              className="absolute right-3 top-3 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-gray-700 shadow-md"
+              aria-label="Close service details"
+            >
+              <X size={19}/>
+            </button>
+
+            {previewService.image ? (
+              <div className="h-[190px] overflow-hidden rounded-[21px] bg-blue-50">
+                <img src={previewService.image} alt="" className="h-full w-full object-cover" />
+              </div>
+            ) : (
+              <div className="flex h-[150px] items-center justify-center rounded-[21px] bg-blue-50">
+                <previewService.icon size={54} className="text-brand-500" />
+              </div>
+            )}
+
+            <div className="pt-5">
+              <div className="flex items-start justify-between gap-4">
+                <h2 id="service-preview-title" className="text-[22px] font-black leading-7 text-gray-950">{previewService.label}</h2>
+                <span className="shrink-0 text-[17px] font-black text-brand-500">{previewService.price.toFixed(2)} QR</span>
+              </div>
+              <p className="mt-2 text-[13px] leading-5 text-gray-600">{previewService.desc}</p>
+
+              <label className={`mt-5 flex cursor-pointer items-center gap-3 rounded-[18px] border p-3.5 transition ${previewChecked ? 'border-brand-500 bg-blue-50' : 'border-gray-200 bg-white'}`}>
+                <input type="checkbox" checked={previewChecked} onChange={event => updatePreviewChecked(event.target.checked)} className="sr-only" />
+                <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border-2 ${previewChecked ? 'border-brand-500 bg-brand-500 text-white' : 'border-gray-300 bg-white'}`}>
+                  {previewChecked && <Check size={14}/>}
+                </span>
+                <span className="text-[13px] font-black text-gray-900">Select this service</span>
+              </label>
+
+              <button
+                type="button"
+                onClick={confirmPreviewService}
+                disabled={!previewChecked}
+                className="mt-4 h-[52px] w-full rounded-[18px] bg-brand-500 text-[15px] font-black text-white shadow-lg shadow-blue-200 transition disabled:cursor-not-allowed disabled:bg-gray-200 disabled:text-gray-400 disabled:shadow-none"
+              >
+                Select
+              </button>
+            </div>
           </div>
         </div>
       )}

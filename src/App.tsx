@@ -21,9 +21,10 @@ import ProvidersPage      from './subpages/ProvidersPage'
 import AllServicesPage    from './subpages/AllServicesPage'
 import LocationPickerPage from './subpages/LocationPickerPage'
 import HelperPages        from './subpages/HelperPages'
+import ReviewsPage        from './subpages/ReviewsPage'
 
 const AUTH = ['splash','login','verify']
-const FULLSCREEN = ['chat-thread','service-detail','booking-success','glow-checkout','booking-checkout','location']
+const FULLSCREEN = ['chat-thread','service-detail','booking-success','glow-checkout','booking-checkout','location','reviews']
 
 function AppShell() {
   const { screen } = useNav()
@@ -51,6 +52,7 @@ function AppShell() {
       case 'providers':          return <ProvidersPage/>
       case 'all-services':       return <AllServicesPage/>
       case 'location':           return <LocationPickerPage/>
+      case 'reviews':            return <ReviewsPage/>
       default:                   return <HelperPages screen={screen}/>
     }
   }
