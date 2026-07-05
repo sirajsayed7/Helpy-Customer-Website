@@ -79,7 +79,7 @@ const HOME_AD_SESSION_KEY = 'helpy_home_overlay_ad_seen'
 const SEARCH_PROMPTS = ['Cleaning Services', 'Car Wash', 'Salon & Spa', 'Laundry', 'Digital Help', 'Tutoring']
 
 export default function HomePage() {
-  const { navigate } = useNav()
+  const { navigate, pendingReview, clearPendingReview } = useNav()
   const [activeDiscoveryFilters, setActiveDiscoveryFilters] = useState<string[]>([])
   const [ratingSort, setRatingSort] = useState<'none' | 'desc' | 'asc'>('none')
   const [priceSort, setPriceSort] = useState<'none' | 'desc' | 'asc'>('none')
@@ -87,6 +87,9 @@ export default function HomePage() {
   const [showOverlayAd, setShowOverlayAd] = useState(false)
   const [activeAd, setActiveAd] = useState(ADS.length * 2)
   const [searchPrompt, setSearchPrompt] = useState('')
+  const [reviewRating, setReviewRating] = useState(0)
+  const [reviewComment, setReviewComment] = useState('')
+  const [reviewSubmitted, setReviewSubmitted] = useState(false)
   const sortMenuRef = useRef<HTMLDivElement | null>(null)
   const adScrollerRef = useRef<HTMLDivElement | null>(null)
   const adAnimationRef = useRef<number | null>(null)
@@ -166,6 +169,14 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
+    if (!pendingReview) return
+    setShowOverlayAd(false)
+    setReviewRating(0)
+    setReviewComment('')
+    setReviewSubmitted(false)
+  }, [pendingReview])
+
+  useEffect(() => {
     scrollToAd(ADS.length * 2, 'auto')
   }, [])
 
@@ -239,6 +250,11 @@ export default function HomePage() {
   })
 
   const activeSortCount = Number(ratingSort !== 'none') + Number(priceSort !== 'none')
+  const submitServiceReview = () => {
+    if (!reviewRating || !pendingReview) return
+    setReviewSubmitted(true)
+    window.setTimeout(() => clearPendingReview(), 900)
+  }
 
   return (
     <div className="relative flex flex-col flex-1 overflow-hidden bg-[#d8edff]">
@@ -485,6 +501,67 @@ export default function HomePage() {
           )}
         </div>
       </div>
+      {pendingReview && (
+        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-950/40 px-5 backdrop-blur-[3px]">
+          <div className="relative w-full max-w-[360px] rounded-[30px] bg-white p-5 text-center shadow-[0_28px_70px_rgba(15,23,42,0.32)]">
+            <button
+              onClick={clearPendingReview}
+              className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full bg-[#f4f8ff] text-[#10152f]"
+              aria-label="Close review prompt"
+            >
+              <X size={18}/>
+            </button>
+
+            <div className={`mx-auto flex h-16 w-16 items-center justify-center overflow-hidden rounded-[22px] ${pendingReview.providerBg || 'bg-[#0967ff]'} text-white shadow-lg shadow-blue-100`}>
+              {pendingReview.providerImage ? (
+                <img src={pendingReview.providerImage} alt="" className="h-full w-full object-cover"/>
+              ) : (
+                <span className="text-2xl font-black">{pendingReview.providerEmoji || 'H'}</span>
+              )}
+            </div>
+
+            <p className="mt-4 text-[12px] font-black uppercase tracking-[0.18em] text-[#0967ff]">Service completed</p>
+            <h3 className="mt-1 text-[25px] leading-7 font-black text-[#07133d]">Review your service</h3>
+            <p className="mt-2 text-[13px] leading-5 font-semibold text-[#65708a]">
+              How was your {pendingReview.service} with <span className="text-[#10152f]">{pendingReview.provider}</span>?
+            </p>
+
+            <div className="mt-5 flex justify-center gap-2">
+              {[1,2,3,4,5].map(star=>(
+                <button
+                  key={star}
+                  onClick={()=>setReviewRating(star)}
+                  className={`flex h-11 w-11 items-center justify-center rounded-2xl transition active:scale-95 ${reviewRating >= star ? 'bg-yellow-50 text-yellow-400' : 'bg-[#f4f8ff] text-[#c6d2e5]'}`}
+                  aria-label={`${star} star${star > 1 ? 's' : ''}`}
+                >
+                  <Star size={26} className={reviewRating >= star ? 'fill-yellow-400' : ''}/>
+                </button>
+              ))}
+            </div>
+
+            <textarea
+              value={reviewComment}
+              onChange={(e)=>setReviewComment(e.target.value)}
+              placeholder="Leave a comment optional"
+              className="mt-5 h-24 w-full resize-none rounded-[20px] bg-[#f4f8ff] px-4 py-3 text-left text-[13px] font-semibold text-[#10152f] outline-none placeholder:text-[#8a95aa]"
+            />
+
+            <button
+              onClick={submitServiceReview}
+              disabled={!reviewRating || reviewSubmitted}
+              className={`mt-4 h-12 w-full rounded-[18px] text-[14px] font-black shadow-sm transition active:scale-[0.98] ${reviewRating && !reviewSubmitted ? 'bg-[#0967ff] text-white shadow-blue-200' : 'bg-[#dbe6f7] text-[#8a95aa]'}`}
+            >
+              {reviewSubmitted ? 'Thanks for your review' : 'Submit review'}
+            </button>
+            <button
+              onClick={clearPendingReview}
+              className="mt-3 text-[13px] font-black text-[#65708a]"
+            >
+              Maybe later
+            </button>
+          </div>
+        </div>
+      )}
       {showOverlayAd && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-5 backdrop-blur-[2px]">
           <div

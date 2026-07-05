@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { ArrowLeft, Smartphone, GraduationCap, HeartPulse } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { ArrowLeft, Check, ChevronDown, Search } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
 
@@ -27,9 +27,34 @@ const CATS = [
 
 export default function CategoriesPage() {
   const { goBack, navigate } = useNav()
-  const [tab,setTab] = useState('All')
-  const tabs = ['All','Digital','Education','Health Care']
-  const filtered = CATS.filter(c => tab==='All' || (tab==='Digital' && ['digital','hardware','visuals','design'].includes(c.id)) || (tab==='Education' && ['education','tutoring','language'].includes(c.id)) || (tab==='Health Care' && ['health','treatment'].includes(c.id)))
+  const [categoryType,setCategoryType] = useState('All categories')
+  const [showCategoryFilter,setShowCategoryFilter] = useState(false)
+  const [search,setSearch] = useState('')
+  const categoryFilterRef = useRef<HTMLDivElement | null>(null)
+  const categoryTypes = ['All categories','Digital','Education','Health Care','Home Services','Car Services','Lifestyle']
+  const normalizedSearch = search.trim().toLowerCase()
+  const filtered = CATS.filter(c => {
+    const matchesType =
+      categoryType === 'All categories' ||
+      (categoryType === 'Digital' && ['digital','hardware','visuals','design'].includes(c.id)) ||
+      (categoryType === 'Education' && ['tutoring','language'].includes(c.id)) ||
+      (categoryType === 'Health Care' && ['health','treatment'].includes(c.id)) ||
+      (categoryType === 'Home Services' && ['cleaning','craft','maintenance','home','laundry'].includes(c.id)) ||
+      (categoryType === 'Car Services' && c.id === 'car') ||
+      (categoryType === 'Lifestyle' && ['gift','salon','marketplace','delivery'].includes(c.id))
+    const matchesSearch = !normalizedSearch || c.label.toLowerCase().includes(normalizedSearch)
+    return matchesType && matchesSearch
+  })
+
+  useEffect(() => {
+    const closeOnOutsideClick = (event: MouseEvent) => {
+      if (!categoryFilterRef.current?.contains(event.target as Node)) {
+        setShowCategoryFilter(false)
+      }
+    }
+    document.addEventListener('mousedown', closeOnOutsideClick)
+    return () => document.removeEventListener('mousedown', closeOnOutsideClick)
+  }, [])
 
   const openCategory = (c: typeof CATS[number]) => {
     const isCleaning = c.id === 'cleaning' || c.id === 'home'
@@ -60,15 +85,47 @@ export default function CategoriesPage() {
 
         <h1 className="mt-5 text-[34px] font-black tracking-tight text-black">Categories</h1>
 
-        <div className="mt-5 flex gap-2 overflow-x-auto pb-2">
-          {tabs.map(t=>(
-            <button key={t} onClick={()=>setTab(t)} className={`shrink-0 h-11 px-4 rounded-[19px] border text-[14px] font-bold flex items-center gap-2 ${tab===t?'bg-[#0b4edb] text-white border-[#0b4edb] shadow-md':'bg-white text-black border-[#e5e7eb] shadow-sm'}`}>
-              {t==='Digital'&&<Smartphone size={18}/>}
-              {t==='Education'&&<GraduationCap size={19}/>}
-              {t==='Health Care'&&<HeartPulse size={19}/>}
-              {t}
-            </button>
-          ))}
+        <div className="mt-5 h-12 rounded-[24px] bg-white px-4 shadow-sm ring-1 ring-[#dbeafe] flex items-center gap-3">
+          <Search size={20} className="shrink-0 text-[#0967ff]" />
+          <input
+            value={search}
+            onChange={(e)=>setSearch(e.target.value)}
+            placeholder="Search categories"
+            className="min-w-0 flex-1 bg-transparent text-[15px] font-semibold text-[#10152f] outline-none placeholder:text-[#8490a8]"
+          />
+        </div>
+
+        <div ref={categoryFilterRef} className="relative mt-3">
+          <button
+            onClick={()=>setShowCategoryFilter(v=>!v)}
+            className="flex h-12 w-full items-center justify-between rounded-[24px] bg-white px-4 text-left shadow-sm ring-1 ring-[#dbeafe] active:scale-[0.99] transition"
+          >
+            <span className="min-w-0">
+              <span className="block text-[11px] font-black uppercase tracking-[0.16em] text-[#7b88a2]">Category type</span>
+              <span className="block truncate text-[15px] font-black text-[#10152f]">{categoryType}</span>
+            </span>
+            <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#eef6ff] text-[#0967ff]">
+              <ChevronDown size={20} className={`transition ${showCategoryFilter ? 'rotate-180' : ''}`} />
+            </span>
+          </button>
+
+          {showCategoryFilter && (
+            <div className="absolute left-0 right-0 top-[58px] z-30 overflow-hidden rounded-[24px] bg-white p-2 shadow-xl ring-1 ring-black/5">
+              {categoryTypes.map(type=>(
+                <button
+                  key={type}
+                  onClick={()=>{
+                    setCategoryType(type)
+                    setShowCategoryFilter(false)
+                  }}
+                  className={`flex h-11 w-full items-center justify-between rounded-[18px] px-3 text-left text-[14px] font-black transition ${categoryType === type ? 'bg-[#0967ff] text-white' : 'text-[#10152f] hover:bg-[#f4f8ff]'}`}
+                >
+                  {type}
+                  {categoryType === type && <Check size={17} strokeWidth={3}/>}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="grid grid-cols-3 gap-3 mt-5">
@@ -95,6 +152,17 @@ export default function CategoriesPage() {
               </p>
             </button>
           ))}
+          {filtered.length === 0 && (
+            <button
+              onClick={()=>{
+                setSearch('')
+                setCategoryType('All categories')
+              }}
+              className="col-span-3 rounded-[22px] bg-white py-8 text-center text-[14px] font-black text-[#0967ff] shadow-sm"
+            >
+              No categories found. Clear filters
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -22,6 +22,8 @@ interface NavCtx {
   login: () => void
   bookedServices: BookedService[]
   addBooking: (b: BookedService) => void
+  pendingReview: BookedService | null
+  clearPendingReview: () => void
 }
 
 export interface BookedService {
@@ -39,6 +41,7 @@ export function NavProvider({ children }: { children: ReactNode }) {
   const [activeTab, setActiveTabState] = useState('home')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [bookedServices, setBookedServices] = useState<BookedService[]>([])
+  const [pendingReview, setPendingReview] = useState<BookedService | null>(null)
 
   const navigate = (screen: Screen, params?: any) =>
     setState(s => ({ screen, params, history: [...s.history, { screen: s.screen, params: s.params }] }))
@@ -61,10 +64,15 @@ export function NavProvider({ children }: { children: ReactNode }) {
     setActiveTabState('home')
   }
 
-  const addBooking = (b: BookedService) => setBookedServices(prev => [b, ...prev])
+  const addBooking = (b: BookedService) => {
+    setBookedServices(prev => [b, ...prev])
+    setPendingReview(b)
+  }
+
+  const clearPendingReview = () => setPendingReview(null)
 
   return (
-    <Ctx.Provider value={{ screen: state.screen, params: state.params, navigate, goBack, canGoBack: state.history.length > 0, activeTab, setActiveTab, isLoggedIn, login, bookedServices, addBooking }}>
+    <Ctx.Provider value={{ screen: state.screen, params: state.params, navigate, goBack, canGoBack: state.history.length > 0, activeTab, setActiveTab, isLoggedIn, login, bookedServices, addBooking, pendingReview, clearPendingReview }}>
       {children}
     </Ctx.Provider>
   )

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Search, PenSquare, SlidersHorizontal, ChevronRight } from 'lucide-react'
+import { Search, ChevronRight } from 'lucide-react'
 import { StatusBar } from '../components/shared'
 import { useNav } from '../context/NavContext'
 
@@ -59,18 +59,15 @@ export default function ChatPage() {
           <h1 className="text-[24px] font-black text-gray-950">Messages</h1>
           <p className="text-[12px] text-gray-500 mt-0.5">Provider updates, support, and booking replies.</p>
         </div>
-        <button onClick={()=>navigate('contact-us')} className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
-          <PenSquare size={18} className="text-brand-500"/>
+        <button onClick={()=>navigate('contact-us')} className="w-11 h-11 overflow-hidden rounded-full border-2 border-white bg-white shadow-md" aria-label="Contact Helpy support">
+          <img src="/assets/helpy-tech-support-clipart.png" alt="Helpy support agent" className="h-full w-full object-cover" />
         </button>
       </div>
-      <div className="relative z-10 flex items-center gap-2 px-4 mt-3">
-        <div className="flex-1 flex items-center gap-2 bg-white rounded-2xl px-3 py-3 shadow-sm">
+      <div className="relative z-10 px-4 mt-3">
+        <div className="flex w-full items-center gap-2 bg-white rounded-2xl px-3 py-3 shadow-sm">
           <Search size={16} className="text-gray-400"/>
           <input value={q} onChange={e=>setQ(e.target.value)} placeholder="Search messages..." className="flex-1 bg-transparent text-[13px] outline-none placeholder:text-gray-400"/>
         </div>
-        <button onClick={()=>setFt('all')} className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center">
-          <SlidersHorizontal size={17} className="text-gray-500"/>
-        </button>
       </div>
       <div className="relative z-10 flex gap-2 px-4 mt-3 overflow-x-auto pb-1">
         {FTABS.map(f=>(
