@@ -4,22 +4,21 @@ import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
 
 const CATS = [
-  {id:'cleaning', label:'Cleaning Services', img:'/assets/cat-uniform-cleaning.png', cardImg:'/assets/ref-card-cleaning.png'},
-  {id:'craft', label:'Handyman Services', img:'/assets/cat-uniform-handyman.png', cardImg:'/assets/ref-card-craft.png'},
+  {id:'cleaning', label:'Cleaning', img:'/assets/cat-uniform-cleaning.png', cardImg:'/assets/ref-card-cleaning.png'},
+  {id:'maintenance', label:'Maintenance', img:'/assets/cat-uniform-handyman.png', cardImg:'/assets/ref-card-craft.png'},
   {id:'design', label:'Design & Branding', img:'/assets/cat-uniform-design.png', cardImg:'/assets/ref-card-design.png'},
   {id:'gift', label:'Gifts', img:'/assets/cat-uniform-gifts.png', cardImg:'/assets/ref-card-gift.png'},
-  {id:'gov', label:'Government Services', img:'/assets/cat-uniform-government.png', cardImg:'/assets/ref-card-gov.png'},
+  {id:'gov', label:'Government', img:'/assets/cat-uniform-government.png', cardImg:'/assets/ref-card-gov.png'},
   {id:'hardware', label:'Tech Support', img:'/assets/cat-tech-support-clean-cutout.png', cardImg:'/assets/ref-card-hardware.png'},
-  {id:'language', label:'Language Services', img:'/assets/cat-uniform-language.png', cardImg:'/assets/ref-card-language.png'},
-  {id:'maintenance', label:'Maintenance Services', img:'/assets/cat-uniform-maintenance.png', cardImg:'/assets/ref-card-maintenance.png'},
+  {id:'language', label:'Language', img:'/assets/cat-uniform-language.png', cardImg:'/assets/ref-card-language.png'},
   {id:'health', label:'Health & Wellness', img:'/assets/cat-uniform-health-wellness.png', cardImg:'/assets/ref-card-health.png'},
-  {id:'treatment', label:'Healthcare Services', img:'/assets/cat-uniform-healthcare.png', cardImg:'/assets/ref-card-treatment.png'},
-  {id:'tutoring', label:'Tutoring Services', img:'/assets/cat-tutoring-clean-cutout.png', cardImg:'/assets/ref-card-tutoring.png'},
-  {id:'visuals', label:'Media Services', img:'/assets/cat-uniform-media.png', cardImg:'/assets/ref-card-visuals.png'},
+  {id:'tutoring', label:'Tutoring', img:'/assets/cat-tutoring-clean-cutout.png', cardImg:'/assets/ref-card-tutoring.png'},
+  {id:'visuals', label:'Media', img:'/assets/cat-uniform-media.png', cardImg:'/assets/ref-card-visuals.png'},
   {id:'digital', label:'Digital', img:'/assets/cat-uniform-digital.png'},
-  {id:'car', label:'Car Services', img:'/assets/cat-car-services-user-exact.png'},
-  {id:'home', label:'Home Services', img:'/assets/cat-uniform-home-services.png'},
+  {id:'car', label:'Car', img:'/assets/cat-car-services-user-exact.png'},
+  {id:'home', label:'Home', img:'/assets/cat-uniform-home-services.png'},
   {id:'laundry', label:'Laundry', img:'/assets/cat-uniform-laundry.png'},
+  {id:'pets', label:'Pets', img:'/assets/cat-uniform-pets.png'},
   {id:'delivery', label:'Deliveries', img:'/assets/cat-uniform-delivery.png'},
   {id:'salon', label:'Salon & Spa', img:'/assets/cat-uniform-salon.png'},
   {id:'marketplace', label:'Marketplace', img:'/assets/cat-uniform-marketplace.png'},
@@ -38,10 +37,10 @@ export default function CategoriesPage() {
       categoryType === 'All categories' ||
       (categoryType === 'Digital' && ['digital','hardware','visuals','design'].includes(c.id)) ||
       (categoryType === 'Education' && ['tutoring','language'].includes(c.id)) ||
-      (categoryType === 'Health Care' && ['health','treatment'].includes(c.id)) ||
-      (categoryType === 'Home Services' && ['cleaning','craft','maintenance','home','laundry'].includes(c.id)) ||
+      (categoryType === 'Health Care' && c.id === 'health') ||
+      (categoryType === 'Home Services' && ['cleaning','maintenance','home','laundry'].includes(c.id)) ||
       (categoryType === 'Car Services' && c.id === 'car') ||
-      (categoryType === 'Lifestyle' && ['gift','salon','marketplace','delivery'].includes(c.id))
+      (categoryType === 'Lifestyle' && ['gift','salon','marketplace','delivery','pets'].includes(c.id))
     const matchesSearch = !normalizedSearch || c.label.toLowerCase().includes(normalizedSearch)
     return matchesType && matchesSearch
   })

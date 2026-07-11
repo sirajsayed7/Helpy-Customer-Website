@@ -39,6 +39,11 @@ const SERVICES_BY_CAT: Record<string, any[]> = {
     {name:'BrightPath Tutors',tag:'Math Tutoring',from:'95.00',rating:'4.8',reviews:'112',dist:'Online',image:'/assets/ai-provider-brightpath-tutors.png',service:{name:'Math Tutoring',provider:'BrightPath Tutors',price:'95.00',providerBg:'bg-amber-500',providerEmoji:'BT',providerImage:'/assets/ai-provider-brightpath-tutors.png',heroImg:'/assets/ai-provider-brightpath-tutors.png'}},
     {name:'Summit Learning Hub',tag:'Exam Prep Session',from:'110.00',rating:'4.9',reviews:'76',dist:'Online',image:'/assets/ai-provider-summit-learning.png',service:{name:'Exam Prep Session',provider:'Summit Learning Hub',price:'110.00',providerBg:'bg-emerald-500',providerEmoji:'SL',providerImage:'/assets/ai-provider-summit-learning.png',heroImg:'/assets/ai-provider-summit-learning.png'}},
   ],
+  pets: [
+    {name:'PawCare Doha',tag:'Pet Grooming',from:'85.00',rating:'4.8',reviews:'142',dist:'3.1',image:'/assets/cat-uniform-pets.png',service:{name:'Pet Grooming',provider:'PawCare Doha',price:'85.00',providerBg:'bg-blue-500',providerEmoji:'PC',providerImage:'/assets/cat-uniform-pets.png',heroImg:'/assets/cat-uniform-pets.png'}},
+    {name:'Happy Tails',tag:'Dog Walking',from:'45.00',rating:'4.7',reviews:'96',dist:'2.4',image:'/assets/cat-uniform-pets.png',service:{name:'Dog Walking',provider:'Happy Tails',price:'45.00',providerBg:'bg-sky-500',providerEmoji:'HT',providerImage:'/assets/cat-uniform-pets.png',heroImg:'/assets/cat-uniform-pets.png'}},
+    {name:'VetVisit Home',tag:'Home Vet Checkup',from:'150.00',rating:'4.9',reviews:'74',dist:'5.0',image:'/assets/cat-uniform-pets.png',service:{name:'Home Vet Checkup',provider:'VetVisit Home',price:'150.00',providerBg:'bg-indigo-500',providerEmoji:'VV',providerImage:'/assets/cat-uniform-pets.png',heroImg:'/assets/cat-uniform-pets.png'}},
+  ],
   marketplace: [
     {name:'The Heritage',tag:'Flights & Hotels',from:'320.00',rating:'4.8',reviews:'164',dist:'Online',image:'/assets/ai-banner-heritage.jpg',service:{name:'Flights & Hotels Package',provider:'The Heritage',price:'320.00',providerBg:'bg-indigo-500',providerEmoji:'TH',providerImage:'/assets/ai-banner-heritage.jpg',heroImg:'/assets/ai-banner-heritage.jpg'}},
   ],
