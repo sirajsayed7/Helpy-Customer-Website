@@ -22,14 +22,13 @@ const HOME_OVERLAY_AD = {
 }
 
 const HOME_CATS = [
-  {id:'digital', label:'Digital', img:'/assets/ai-homecat-digital.png'},
-  {id:'education', label:'Education', img:'/assets/ai-homecat-education.png'},
-  {id:'car', label:'Car', img:'/assets/cat-car-services-user-exact.png'},
+  {id:'cleaning', label:'Cleaning', img:'/assets/cat-uniform-cleaning.png'},
+  {id:'car', label:'Car Services', img:'/assets/cat-car-services-user-exact.png'},
   {id:'home', label:'Home', img:'/assets/ai-homecat-home_services.png'},
   {id:'delivery', label:'Deliveries', img:'/assets/ai-homecat-delivery.png'},
   {id:'pets', label:'Pets', img:'/assets/ai-homecat-pets.png'},
   {id:'salon', label:'Salon & Spa', img:'/assets/ai-homecat-salon.png'},
-  {id:'marketplace', label:'Marketplace', img:'/assets/ai-homecat-market.png'},
+  {id:'design', label:'Design & Branding', img:'/assets/cat-uniform-design.png'},
   {id:'more', label:'More', img:'/assets/ai-homecat-more-v2.svg'},
 ]
 
