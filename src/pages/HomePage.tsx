@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { Search, Bell, ChevronRight, MapPin, Star, Bookmark, Wallet, ChevronDown, User, X, Check, ArrowDownUp } from 'lucide-react'
 import { StatusBar } from '../components/shared'
 import { useNav } from '../context/NavContext'
+import ProviderPromotion from '../components/ProviderPromotion'
 
 const ADS = [
   {id:'city', img:'/assets/doha-katara-crescent-hero.png', brand:'Helpy', title:'Your City,', sub:'Our Services', desc:'Book trusted professionals for every need.', service:{provider:'Scrubs Cleaning',name:'General Cleaning',price:'160.00',providerBg:'bg-red-500',providerEmoji:'SC',providerImage:'/assets/scrubs-leaf-logo-clean.png',heroImg:'/assets/scrubs-booking-hero-clean.png'}},
@@ -26,9 +27,9 @@ const HOME_CATS = [
   {id:'car', label:'Car Services', img:'/assets/cat-car-services-user-exact.png'},
   {id:'home', label:'Home', img:'/assets/ai-homecat-home_services.png'},
   {id:'delivery', label:'Deliveries', img:'/assets/ai-homecat-delivery.png'},
-  {id:'pets', label:'Pets', img:'/assets/ai-homecat-pets.png'},
+  {id:'laundry', label:'Laundry', img:'/assets/cat-uniform-laundry.png'},
   {id:'salon', label:'Salon & Spa', img:'/assets/ai-homecat-salon.png'},
-  {id:'design', label:'Design & Branding', img:'/assets/cat-uniform-design.png'},
+  {id:'pets', label:'Pets', img:'/assets/cat-pets-dog-cat-food.png'},
   {id:'more', label:'More', img:'/assets/ai-homecat-more-v2.svg'},
 ]
 
@@ -352,11 +353,15 @@ export default function HomePage() {
           {HOME_CATS.map(c=>(
             <button key={c.id} onClick={()=>c.id==='more'?navigate('categories'):navigate('category-services',{id:c.id,label:c.label})} className="h-[94px] max-[360px]:h-[86px] bg-white rounded-[18px] shadow-sm flex flex-col items-center justify-center gap-1.5 max-[360px]:gap-1 px-1 active:scale-95 transition overflow-hidden">
               <div className="w-[92px] h-[68px] max-[360px]:w-[72px] max-[360px]:h-[56px] flex items-center justify-center overflow-hidden">
-                <img src={c.img} className="w-full h-full object-contain"/>
+                <img src={c.img} className={`h-full w-full object-contain ${c.id === 'car' ? 'scale-[1.13]' : ''}`}/>
               </div>
               <p className="text-[12px] max-[360px]:text-[11px] leading-[14px] max-[360px]:leading-[12px] font-bold text-center text-[#111827] line-clamp-2">{c.label}</p>
             </button>
           ))}
+        </div>
+
+        <div className="mt-4">
+          <ProviderPromotion onClick={()=>navigate('contact-us',{topic:'provider'})} />
         </div>
 
         <SectionTitle title="Deals for you" onClick={()=>navigate('deals')} />

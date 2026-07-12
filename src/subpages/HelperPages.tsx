@@ -16,7 +16,7 @@ function Shell({ title, sub, children, rightEl }: { title:string;sub?:string;chi
         </div>
         {rightEl}
       </div>
-      <div className="flex-1 overflow-y-auto px-4 pb-6 space-y-4">{children}</div>
+      <div className="flex-1 overflow-y-auto px-4 pb-28 space-y-4">{children}</div>
     </div>
   )
 }
@@ -249,16 +249,24 @@ function AddressesPage() {
 
 /* ── Contact Us ── */
 function ContactPage() {
-  const [msg, setMsg] = useState('')
+  const { params } = useNav()
+  const isProviderInquiry = params?.topic === 'provider'
+  const [msg, setMsg] = useState(isProviderInquiry ? 'Hi Helpy, I would like to learn more about becoming a service provider.' : '')
   const [sent, setSent] = useState(false)
   return (
-    <Shell title="Contact Us" sub="We're here to help">
+    <Shell title={isProviderInquiry ? 'Partner with Helpy' : 'Contact Us'} sub={isProviderInquiry ? 'Start your provider journey' : "We're here to help"}>
+      {isProviderInquiry && (
+        <div className="rounded-2xl border border-blue-100 bg-blue-50 p-4">
+          <p className="text-[14px] font-black text-[#10152f]">Bring your services to more customers</p>
+          <p className="mt-1 text-[12px] leading-5 font-semibold text-[#65708a]">Send us a message and our partnerships team will guide you through the next steps.</p>
+        </div>
+      )}
       <div className="grid grid-cols-2 gap-3">
-        {[{icon:Phone,label:'Call Us',sub:'+974 4000 0000',color:'bg-green-50 text-green-500'},{icon:Mail,label:'Email Us',sub:'support@helpy.qa',color:'bg-blue-50 text-blue-500'}].map(({icon:I,label,sub,color})=>(
+        {[{icon:Phone,label:'Call Us',sub:'+974 5205 5553',color:'bg-green-50 text-green-500'},{icon:Mail,label:'Email Us',sub:'helpyapp.tech@gmail.com',color:'bg-blue-50 text-blue-500'}].map(({icon:I,label,sub,color})=>(
           <button key={label} className={`flex flex-col items-center gap-2 bg-white rounded-2xl p-4 shadow-sm`}>
             <div className={`w-10 h-10 rounded-xl ${color.split(' ')[0]} flex items-center justify-center`}><I size={18} className={color.split(' ')[1]}/></div>
             <p className="text-[13px] font-bold text-gray-900">{label}</p>
-            <p className="text-[11px] text-gray-500">{sub}</p>
+            <p className="break-all text-center text-[11px] leading-4 text-gray-500 max-[360px]:text-[10px]">{sub}</p>
           </button>
         ))}
       </div>
@@ -278,8 +286,8 @@ function ContactPage() {
       )}
       <div className="bg-blue-50 rounded-2xl p-4">
         <p className="text-[13px] font-bold text-gray-800 mb-1">📞 Support Hours</p>
-        <p className="text-[12px] text-gray-600">Saturday – Thursday: 8:00 AM – 10:00 PM</p>
-        <p className="text-[12px] text-gray-600">Friday: 2:00 PM – 10:00 PM</p>
+        <p className="text-[12px] text-gray-600">Sunday – Thursday: 10:00 AM – 4:00 PM</p>
+        <p className="text-[12px] text-gray-600">Friday &amp; Saturday: Closed</p>
       </div>
     </Shell>
   )
