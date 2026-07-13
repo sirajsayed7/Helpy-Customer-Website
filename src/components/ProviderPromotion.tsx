@@ -40,7 +40,7 @@ export default function ProviderPromotion({ onClick, compact = false, dismissibl
           onClick()
         }
       }}
-      className={`group relative min-h-[94px] w-full overflow-hidden rounded-[20px] bg-[linear-gradient(120deg,#0758d4_0%,#0967ff_58%,#1678f2_100%)] text-left shadow-[0_10px_24px_rgba(9,103,255,0.18)] transition active:scale-[0.985] ${compact ? 'p-3' : 'p-3.5'}`}
+      className={`group relative min-h-[92px] w-full overflow-hidden rounded-[20px] bg-[linear-gradient(120deg,#0758d4_0%,#0967ff_58%,#1678f2_100%)] text-left shadow-[0_10px_24px_rgba(9,103,255,0.18)] transition active:scale-[0.985] ${compact ? 'p-2.5' : 'p-3'}`}
     >
       <span className="absolute -right-12 -top-16 h-44 w-44 rounded-full border-[26px] border-white/10" aria-hidden="true" />
       <span className="absolute right-7 top-1 h-16 w-16 rounded-full border border-white/10" aria-hidden="true" />
@@ -48,27 +48,27 @@ export default function ProviderPromotion({ onClick, compact = false, dismissibl
       {dismissible && (
         <button
           onClick={dismiss}
-          className="absolute right-3 top-2 z-10 flex h-[22px] w-[22px] items-center justify-center rounded-full border border-white/20 bg-[#0758d4]/35 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/20 active:scale-90"
+          className="absolute right-3.5 top-2.5 z-10 flex h-[22px] w-[22px] items-center justify-center rounded-full border border-white/20 bg-[#0758d4]/35 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/20 active:scale-90"
           aria-label="Dismiss service provider promotion"
           title="Dismiss"
         >
           <X size={14} strokeWidth={2.5} />
         </button>
       )}
-      <div className="relative flex items-start gap-2.5 pr-[80px]">
-        <div className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-white text-[#0967ff] shadow-[0_7px_15px_rgba(1,39,112,0.18)]">
-          <BriefcaseBusiness size={20} strokeWidth={2.2} />
+      <div className="relative flex items-start gap-3 pr-[82px]">
+        <div className="mt-0.5 flex h-[42px] w-[42px] shrink-0 items-center justify-center rounded-[14px] bg-white text-[#0967ff] shadow-[0_7px_15px_rgba(1,39,112,0.18)]">
+          <BriefcaseBusiness size={21} strokeWidth={2.2} />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-1">
-            <p className="text-[9px] font-black uppercase tracking-[0.12em] text-white/70">Helpy Partner Network</p>
+          <div className="flex items-center gap-1.5">
+            <p className="text-[10px] font-black uppercase tracking-[0.12em] text-white/70">Helpy Partner Network</p>
             <CheckCircle2 size={12} className="shrink-0 text-[#dfff2d]" fill="#dfff2d" stroke="#0967ff" strokeWidth={3} />
           </div>
-          <p className="mt-0.5 text-[15px] leading-[18px] font-black tracking-[-0.02em] text-white">Become a Service Provider</p>
-          <p className="mt-0.5 text-[10px] leading-[14px] font-semibold text-white/80">Reach more customers and grow with Helpy.</p>
+          <p className="mt-1 text-[17px] leading-5 font-black tracking-[-0.02em] text-white">Become a Service Provider</p>
+          <p className="mt-1 text-[11px] leading-4 font-semibold text-white/80">Reach more customers and grow with Helpy.</p>
         </div>
       </div>
-      <span className="absolute right-3 top-[50px] z-10 flex h-8 items-center gap-0.5 rounded-full bg-white px-3 text-[10px] font-black text-[#0967ff] shadow-[0_4px_12px_rgba(1,39,112,0.18)] transition group-hover:bg-[#edf5ff]">
+      <span className="absolute right-3.5 top-[50px] z-10 flex h-8 items-center gap-0.5 rounded-full bg-white px-3 text-[10px] font-black text-[#0967ff] shadow-[0_4px_12px_rgba(1,39,112,0.18)] transition group-hover:bg-[#edf5ff]">
         Join <ArrowRight size={13} strokeWidth={2.5} />
       </span>
     </div>
