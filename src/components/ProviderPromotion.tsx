@@ -4,19 +4,21 @@ import { ArrowRight, BriefcaseBusiness, CheckCircle2, X } from 'lucide-react'
 type ProviderPromotionProps = {
   onClick: () => void
   compact?: boolean
+  dismissible?: boolean
 }
 
 const DISMISS_KEY = 'helpy_provider_promotion_dismissed'
 const DISMISS_EVENT = 'helpy-provider-promotion-dismissed'
 
-export default function ProviderPromotion({ onClick, compact = false }: ProviderPromotionProps) {
-  const [dismissed, setDismissed] = useState(() => window.sessionStorage.getItem(DISMISS_KEY) === 'true')
+export default function ProviderPromotion({ onClick, compact = false, dismissible = true }: ProviderPromotionProps) {
+  const [dismissed, setDismissed] = useState(() => dismissible && window.sessionStorage.getItem(DISMISS_KEY) === 'true')
 
   useEffect(() => {
+    if (!dismissible) return
     const syncDismissal = () => setDismissed(true)
     window.addEventListener(DISMISS_EVENT, syncDismissal)
     return () => window.removeEventListener(DISMISS_EVENT, syncDismissal)
-  }, [])
+  }, [dismissible])
 
   if (dismissed) return null
 
@@ -43,14 +45,16 @@ export default function ProviderPromotion({ onClick, compact = false }: Provider
       <span className="absolute -right-12 -top-16 h-44 w-44 rounded-full border-[26px] border-white/10" aria-hidden="true" />
       <span className="absolute right-7 top-1 h-16 w-16 rounded-full border border-white/10" aria-hidden="true" />
       <span className="absolute inset-y-0 right-0 w-[42%] bg-[linear-gradient(135deg,transparent_20%,rgba(255,255,255,0.08)_20%,rgba(255,255,255,0.08)_22%,transparent_22%)]" aria-hidden="true" />
-      <button
-        onClick={dismiss}
-        className="absolute right-3.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-[#0758d4]/35 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/20 active:scale-90"
-        aria-label="Dismiss service provider promotion"
-        title="Dismiss"
-      >
-        <X size={14} strokeWidth={2.5} />
-      </button>
+      {dismissible && (
+        <button
+          onClick={dismiss}
+          className="absolute right-3.5 top-2.5 z-10 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-[#0758d4]/35 text-white shadow-sm backdrop-blur-sm transition hover:bg-white/20 active:scale-90"
+          aria-label="Dismiss service provider promotion"
+          title="Dismiss"
+        >
+          <X size={14} strokeWidth={2.5} />
+        </button>
+      )}
       <div className="relative flex items-start gap-3 pr-[88px]">
         <div className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-[15px] bg-white text-[#0967ff] shadow-[0_8px_18px_rgba(1,39,112,0.18)]">
           <BriefcaseBusiness size={22} strokeWidth={2.2} />

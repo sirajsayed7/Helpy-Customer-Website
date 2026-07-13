@@ -55,7 +55,7 @@ export default function ProfilePage() {
           </div>
           <button><ChevronRight size={18} className="text-gray-300"/></button>
         </div>
-        <ProviderPromotion compact onClick={()=>navigate('contact-us',{topic:'provider'})} />
+          <ProviderPromotion compact dismissible={false} onClick={()=>navigate('contact-us',{topic:'provider'})} />
         {/* Account section */}
         <div>
           <div className="flex items-center gap-2 mb-2 px-0.5"><div className="w-1 h-4 rounded-full bg-brand-500"/><p className="text-[14px] font-bold text-gray-800">Account</p></div>
