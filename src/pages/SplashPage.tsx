@@ -25,15 +25,11 @@ export default function SplashPage() {
 
         <div className="mascot-stage relative mt-7 h-[210px] w-full max-w-[430px] overflow-hidden">
           <div className="mascot-ground absolute bottom-5 left-1/2 h-[4px] w-[330px] -translate-x-1/2 rounded-full bg-gradient-to-r from-transparent via-[#0967ff]/18 to-transparent" />
-          <div className="mascot-traveler absolute bottom-7 left-1/2 h-[190px] w-[156px]">
+          <div className="mascot-traveler absolute bottom-5 left-1/2 h-[194px] w-[122px]">
             <div className="mascot-turner relative h-full w-full">
-              <span className="mascot-leg mascot-left-leg" />
-              <span className="mascot-leg mascot-right-leg" />
-              <span className="mascot-foot mascot-left-foot" />
-              <span className="mascot-foot mascot-right-foot" />
-              <div className="mascot-shadow absolute bottom-[1px] left-1/2 h-4 w-[92px] -translate-x-1/2 rounded-full bg-[#0967ff]/14 blur-md" />
-              <div className="mascot-body absolute bottom-[19px] left-1/2 z-10 h-[169px] w-[150px] -translate-x-1/2 overflow-hidden rounded-[30px]">
-                <img src="/assets/helpy-mascot-walk.png" alt="Helpy mascot" className="h-[218px] w-full object-cover object-top" />
+              <div className="mascot-shadow absolute bottom-[2px] left-1/2 h-4 w-[94px] -translate-x-1/2 rounded-full bg-[#0967ff]/16 blur-md" />
+              <div className="mascot-body absolute inset-0 z-10 flex items-end justify-center">
+                <div className="mascot-sprite h-full w-full" role="img" aria-label="Helpy mascot walking" />
               </div>
             </div>
           </div>
@@ -62,52 +58,18 @@ export default function SplashPage() {
           transform-origin: 50% 100%;
         }
         .mascot-body {
-          animation: walkingBody .4s ease-in-out .12s 5, finalStand .65s ease-out 2.12s both;
-          transform-origin: 50% 100%;
+          animation: walkingBody .55s cubic-bezier(.45,.05,.55,.95) .12s 4, finalStand .62s cubic-bezier(.2,.8,.2,1) 2.3s both;
+          transform-origin: 50% 88%;
         }
-        .mascot-leg {
-          position: absolute;
-          bottom: 16px;
-          z-index: 7;
-          display: block;
-          height: 28px;
-          width: 25px;
-          border-radius: 16px 16px 11px 11px;
-          background: linear-gradient(180deg, #1775e9 0%, #0d55b9 100%);
-          box-shadow: inset -5px -5px 10px rgba(3,44,120,.18);
-        }
-        .mascot-left-leg {
-          left: 45px;
-          animation: leftLegWalk .4s ease-in-out .12s 5, legSettleLeft .65s ease-out 2.12s both;
-          transform-origin: 50% 0%;
-        }
-        .mascot-right-leg {
-          right: 42px;
-          animation: rightLegWalk .4s ease-in-out .12s 5, legSettleRight .65s ease-out 2.12s both;
-          transform-origin: 50% 0%;
-        }
-        .mascot-foot {
-          position: absolute;
-          bottom: 2px;
-          z-index: 8;
-          display: block;
-          height: 25px;
-          width: 49px;
-          border-radius: 56% 44% 36% 32% / 68% 66% 34% 32%;
-          background:
-            radial-gradient(circle at 31% 28%, rgba(255,232,129,.95) 0 10%, transparent 32%),
-            linear-gradient(145deg, #ffc340 0%, #f4a21a 48%, #d97800 100%);
-          box-shadow: inset -8px -7px 12px rgba(141,72,0,.16), 0 8px 14px rgba(187,111,0,.22);
-        }
-        .mascot-left-foot {
-          left: 32px;
-          animation: leftFootWalk .4s ease-in-out .12s 5, footSettleLeft .65s ease-out 2.12s both;
-          transform-origin: 80% 50%;
-        }
-        .mascot-right-foot {
-          right: 29px;
-          animation: rightFootWalk .4s ease-in-out .12s 5, footSettleRight .65s ease-out 2.12s both;
-          transform-origin: 20% 50%;
+        .mascot-sprite {
+          background-image: url('/assets/helpy-mascot-walk-cycle.png');
+          background-position: 0 0;
+          background-repeat: no-repeat;
+          background-size: 700% 100%;
+          filter: drop-shadow(0 9px 10px rgba(24,79,151,.16));
+          mix-blend-mode: multiply;
+          animation: spriteWalk .55s steps(6, end) .12s 4 alternate both;
+          will-change: background-position;
         }
         .splash-loader span {
           animation: dotPulse 1s ease-in-out infinite;
@@ -126,49 +88,26 @@ export default function SplashPage() {
         @keyframes travelAcross {
           0% { opacity: 0; transform: translateX(-235px); }
           8% { opacity: 1; }
-          68% { opacity: 1; transform: translateX(18px); }
+          72% { opacity: 1; transform: translateX(18px); }
           100% { opacity: 1; transform: translateX(18px); }
         }
         @keyframes turnForward {
-          0%, 66% { transform: perspective(480px) rotateY(-21deg) rotateZ(2deg); }
-          82% { transform: perspective(480px) rotateY(4deg) rotateZ(0deg); }
+          0%, 68% { transform: perspective(520px) rotateY(-13deg) rotateZ(1deg); }
+          84% { transform: perspective(520px) rotateY(2deg) rotateZ(0deg); }
           100% { transform: perspective(480px) rotateY(0deg) rotateZ(0deg); }
         }
         @keyframes walkingBody {
-          0%, 100% { transform: translateX(-50%) translateY(0) rotate(-1.8deg); }
-          50% { transform: translateX(-50%) translateY(-7px) rotate(1.8deg); }
+          0%, 100% { transform: translateY(0); }
+          50% { transform: translateY(-2px); }
+        }
+        @keyframes spriteWalk {
+          from { background-position: 0 0; }
+          to { background-position: 100% 0; }
         }
         @keyframes finalStand {
-          from { transform: translateX(-50%) translateY(-4px) rotate(1deg); }
-          to { transform: translateX(-50%) translateY(0) rotate(0deg); }
-        }
-        @keyframes leftLegWalk {
-          0%, 100% { transform: translateX(-4px) rotate(-8deg); }
-          50% { transform: translateX(8px) rotate(12deg); }
-        }
-        @keyframes rightLegWalk {
-          0%, 100% { transform: translateX(8px) rotate(12deg); }
-          50% { transform: translateX(-4px) rotate(-8deg); }
-        }
-        @keyframes legSettleLeft {
-          to { transform: translateX(-2px) rotate(-3deg); }
-        }
-        @keyframes legSettleRight {
-          to { transform: translateX(2px) rotate(3deg); }
-        }
-        @keyframes leftFootWalk {
-          0%, 100% { transform: translateX(-7px) translateY(0) rotate(-7deg) scaleX(.98); }
-          50% { transform: translateX(10px) translateY(-8px) rotate(12deg) scaleX(1.04); }
-        }
-        @keyframes rightFootWalk {
-          0%, 100% { transform: translateX(9px) translateY(-8px) rotate(10deg) scaleX(1.04); }
-          50% { transform: translateX(-7px) translateY(0) rotate(-7deg) scaleX(.98); }
-        }
-        @keyframes footSettleLeft {
-          to { transform: translateX(-3px) translateY(0) rotate(-3deg) scaleX(1); }
-        }
-        @keyframes footSettleRight {
-          to { transform: translateX(3px) translateY(0) rotate(3deg) scaleX(1); }
+          0% { transform: translateY(-4px) rotate(.8deg) scaleY(1.008); }
+          68% { transform: translateY(1px) rotate(-.25deg) scaleY(.996); }
+          100% { transform: translateY(0) rotate(0deg) scaleY(1); }
         }
         @keyframes dotPulse {
           0%, 100% { opacity: .35; transform: scale(.86); }
@@ -178,9 +117,7 @@ export default function SplashPage() {
           .splash-logo-lockup img { height: 130px; width: 188px; }
           .splash-logo-lockup p { font-size: 62px; }
           .mascot-stage { height: 194px; margin-top: 24px; }
-          .mascot-traveler { height: 178px; width: 144px; }
-          .mascot-body { height: 158px; width: 140px; }
-          .mascot-body img { height: 204px; }
+          .mascot-traveler { height: 178px; width: 112px; }
         }
       `}</style>
     </div>
