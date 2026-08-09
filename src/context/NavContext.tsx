@@ -37,9 +37,7 @@ export interface BookedService {
 const Ctx = createContext<NavCtx>(null as any)
 
 export function NavProvider({ children }: { children: ReactNode }) {
-  // Splash animation is temporarily bypassed while the new walk cycle is being refined.
-  // Keeping the route available lets us re-enable it by changing this initial screen back to 'splash'.
-  const [state, setState] = useState<NavState>({ screen: 'login', history: [] })
+  const [state, setState] = useState<NavState>({ screen: 'splash', history: [] })
   const [activeTab, setActiveTabState] = useState('home')
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [bookedServices, setBookedServices] = useState<BookedService[]>([])

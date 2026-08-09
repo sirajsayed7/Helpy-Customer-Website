@@ -8,6 +8,7 @@ const CATS = [
   {id:'maintenance', label:'Maintenance', img:'/assets/cat-uniform-handyman.png', cardImg:'/assets/ref-card-craft.png'},
   {id:'design', label:'Design & Branding', img:'/assets/cat-uniform-design.png', cardImg:'/assets/ref-card-design.png'},
   {id:'gift', label:'Gifts', img:'/assets/cat-uniform-gifts.png', cardImg:'/assets/ref-card-gift.png'},
+  {id:'events', label:'Events', img:'/assets/cat-uniform-events.png'},
   {id:'gov', label:'Government', img:'/assets/cat-uniform-government.png', cardImg:'/assets/ref-card-gov.png'},
   {id:'hardware', label:'Tech Support', img:'/assets/cat-tech-support-clean-cutout.png', cardImg:'/assets/ref-card-hardware.png'},
   {id:'language', label:'Language', img:'/assets/cat-uniform-language.png', cardImg:'/assets/ref-card-language.png'},
@@ -40,7 +41,7 @@ export default function CategoriesPage() {
       (categoryType === 'Health Care' && c.id === 'health') ||
       (categoryType === 'Home Services' && ['cleaning','maintenance','home','laundry'].includes(c.id)) ||
       (categoryType === 'Car Services' && c.id === 'car') ||
-      (categoryType === 'Lifestyle' && ['gift','salon','marketplace','delivery','pets'].includes(c.id))
+      (categoryType === 'Lifestyle' && ['gift','events','salon','marketplace','delivery','pets'].includes(c.id))
     const matchesSearch = !normalizedSearch || c.label.toLowerCase().includes(normalizedSearch)
     return matchesType && matchesSearch
   })

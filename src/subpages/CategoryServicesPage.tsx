@@ -44,6 +44,11 @@ const SERVICES_BY_CAT: Record<string, any[]> = {
     {name:'Happy Tails',tag:'Dog Walking',from:'45.00',rating:'4.7',reviews:'96',dist:'2.4',image:'/assets/cat-pets-dog-cat-food.png',service:{name:'Dog Walking',provider:'Happy Tails',price:'45.00',providerBg:'bg-sky-500',providerEmoji:'HT',providerImage:'/assets/cat-pets-dog-cat-food.png',heroImg:'/assets/cat-pets-dog-cat-food.png'}},
     {name:'VetVisit Home',tag:'Home Vet Checkup',from:'150.00',rating:'4.9',reviews:'74',dist:'5.0',image:'/assets/cat-pets-dog-cat-food.png',service:{name:'Home Vet Checkup',provider:'VetVisit Home',price:'150.00',providerBg:'bg-indigo-500',providerEmoji:'VV',providerImage:'/assets/cat-pets-dog-cat-food.png',heroImg:'/assets/cat-pets-dog-cat-food.png'}},
   ],
+  events: [
+    {name:'Pearl Events Qatar',tag:'Wedding Planning',from:'850.00',rating:'4.9',reviews:'128',dist:'3.4',image:'/assets/cat-uniform-events.png',service:{name:'Wedding Planning Consultation',provider:'Pearl Events Qatar',price:'850.00',providerBg:'bg-blue-600',providerEmoji:'PE',providerImage:'/assets/cat-uniform-events.png',heroImg:'/assets/cat-uniform-events.png'}},
+    {name:'Doha Moments',tag:'Event Planning',from:'500.00',rating:'4.8',reviews:'94',dist:'4.1',image:'/assets/cat-uniform-events.png',service:{name:'Event Planning Package',provider:'Doha Moments',price:'500.00',providerBg:'bg-indigo-500',providerEmoji:'DM',providerImage:'/assets/cat-uniform-events.png',heroImg:'/assets/cat-uniform-events.png'}},
+    {name:'StageCraft Events',tag:'Corporate Events',from:'1200.00',rating:'4.7',reviews:'76',dist:'5.6',image:'/assets/cat-uniform-events.png',service:{name:'Corporate Event Setup',provider:'StageCraft Events',price:'1200.00',providerBg:'bg-amber-500',providerEmoji:'SE',providerImage:'/assets/cat-uniform-events.png',heroImg:'/assets/cat-uniform-events.png'}},
+  ],
   marketplace: [
     {name:'The Heritage',tag:'Flights & Hotels',from:'320.00',rating:'4.8',reviews:'164',dist:'Online',image:'/assets/ai-banner-heritage.jpg',service:{name:'Flights & Hotels Package',provider:'The Heritage',price:'320.00',providerBg:'bg-indigo-500',providerEmoji:'TH',providerImage:'/assets/ai-banner-heritage.jpg',heroImg:'/assets/ai-banner-heritage.jpg'}},
   ],
