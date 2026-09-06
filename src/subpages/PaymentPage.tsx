@@ -31,6 +31,8 @@ export default function PaymentSheet({ booking, providerLabel, providerImage, se
   const [expiry, setExpiry] = useState('')
   const [cvv, setCvv] = useState('')
   const [processing, setProcessing] = useState(false)
+  const [progressing, setProgressing] = useState(false)
+  const [secondsLeft, setSecondsLeft] = useState(5)
 
   const amount = Number(booking.price || 0)
   const newCardReady = cardNumber.replace(/\D/g, '').length >= 12 && expiry.replace(/\D/g, '').length === 4 && cvv.length >= 3
@@ -44,19 +46,26 @@ export default function PaymentSheet({ booking, providerLabel, providerImage, se
   const pay = () => {
     if (!canPay || processing) return
     setProcessing(true)
-    window.setTimeout(() => onPaid(METHODS.find(item => item.id === method)?.label || 'Card'), 900)
+    setSecondsLeft(5)
+    const selectedMethod = METHODS.find(item => item.id === method)?.label || 'Card'
+    window.setTimeout(() => setProgressing(true), 30)
+    const countdown = window.setInterval(() => setSecondsLeft(value => Math.max(0, value - 1)), 1000)
+    window.setTimeout(() => {
+      window.clearInterval(countdown)
+      onPaid(selectedMethod)
+    }, 5000)
   }
 
   return (
     <div className="absolute inset-0 z-[80] flex items-end bg-[#0b1830]/55 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-label="Payment">
-      <button className="absolute inset-0" onClick={onClose} aria-label="Close payment" />
+      <button className="absolute inset-0" onClick={() => !processing && onClose()} aria-label="Close payment" />
       <section className="relative z-10 flex max-h-[88%] w-full flex-col overflow-hidden rounded-t-[28px] bg-[#f7faff] shadow-[0_-18px_50px_rgba(10,26,54,0.22)]">
         <div className="shrink-0 bg-white px-4 pb-3 pt-2">
           <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-[#d3dbe6]" />
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-[12px] border border-[#e1e9f3] bg-[#f4f8fd] text-[10px] font-black text-[#0967ff]">{providerImage ? <img src={providerImage} alt="" className="h-full w-full object-cover" /> : providerLabel.slice(0, 2).toUpperCase()}</div>
             <div className="min-w-0 flex-1"><p className="text-[8px] font-black uppercase tracking-[0.12em] text-[#8a96a8]">Payment for</p><p className="mt-0.5 truncate text-[13px] font-black text-[#182238]">{providerLabel}</p><p className="mt-0.5 text-[9px] font-semibold text-[#7d899d]">{serviceCount} {serviceCount === 1 ? 'service' : 'services'} · {booking.date}</p></div>
-            <button onClick={onClose} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1f5fa] text-[#59667a] active:bg-[#e7edf5]" aria-label="Close payment"><X size={18} /></button>
+            <button onClick={onClose} disabled={processing} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1f5fa] text-[#59667a] active:bg-[#e7edf5] disabled:opacity-40" aria-label="Close payment"><X size={18} /></button>
           </div>
         </div>
 
@@ -70,7 +79,7 @@ export default function PaymentSheet({ booking, providerLabel, providerImage, se
           <div className="mt-2.5 grid grid-cols-4 gap-2">
             {METHODS.map(item => {
               const active = item.id === method
-              return <button key={item.id} onClick={() => setMethod(item.id)} className={`relative flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-[14px] border px-1 transition ${active ? 'border-[#0967ff] bg-[#edf5ff] text-[#0967ff] shadow-[0_5px_15px_rgba(9,103,255,0.10)]' : 'border-[#e0e7f0] bg-white text-[#647188]'}`}><MethodMark method={item.id} /><span className="truncate text-[8px] font-black">{item.label}</span>{active && <span className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#0967ff] text-white"><Check size={8} strokeWidth={3} /></span>}</button>
+              return <button key={item.id} onClick={() => setMethod(item.id)} disabled={processing} className={`relative flex min-h-[64px] min-w-0 flex-col items-center justify-center gap-1.5 rounded-[14px] border px-1 transition disabled:cursor-not-allowed ${active ? 'border-[#0967ff] bg-[#edf5ff] text-[#0967ff] shadow-[0_5px_15px_rgba(9,103,255,0.10)]' : 'border-[#e0e7f0] bg-white text-[#647188]'}`}><MethodMark method={item.id} /><span className="truncate text-[8px] font-black">{item.label}</span>{active && <span className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[#0967ff] text-white"><Check size={8} strokeWidth={3} /></span>}</button>
             })}
           </div>
 
@@ -90,7 +99,10 @@ export default function PaymentSheet({ booking, providerLabel, providerImage, se
         </div>
 
         <footer className="shrink-0 border-t border-[#e0e8f2] bg-white px-4 pb-[max(14px,env(safe-area-inset-bottom))] pt-3">
-          <button onClick={pay} disabled={!canPay || processing} className="flex h-[52px] w-full items-center justify-center gap-2 rounded-[16px] bg-[#0967ff] text-[13px] font-black text-white shadow-[0_9px_22px_rgba(9,103,255,0.22)] active:scale-[0.99] disabled:bg-[#aecbf2] disabled:shadow-none">{processing ? <><LoaderCircle size={17} className="animate-spin" /> Processing</> : <>Pay {amount.toFixed(2)} QAR <LockKeyhole size={14} /></>}</button>
+          <button onClick={pay} disabled={!canPay || processing} className="relative flex h-[52px] w-full items-center justify-center gap-2 overflow-hidden rounded-[16px] bg-[#0967ff] text-[13px] font-black text-white shadow-[0_9px_22px_rgba(9,103,255,0.22)] active:scale-[0.99] disabled:cursor-not-allowed disabled:bg-[#aecbf2] disabled:shadow-none">
+            {processing && <span className={`absolute inset-y-0 left-0 bg-[#064bb9] transition-[width] ease-linear ${progressing ? 'w-full' : 'w-0'}`} style={{ transitionDuration: '5000ms' }} />}
+            <span className="relative z-10 flex items-center justify-center gap-2">{processing ? <><LoaderCircle size={17} className="animate-spin" /> Processing payment · {secondsLeft}s</> : <>Pay {amount.toFixed(2)} QAR <LockKeyhole size={14} /></>}</span>
+          </button>
           <p className="mt-2 text-center text-[8px] font-semibold text-[#909bad]">Your full card number is never stored by Helpy</p>
         </footer>
       </section>
