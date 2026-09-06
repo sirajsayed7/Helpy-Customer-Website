@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react'
-import { ArrowLeft, BriefcaseBusiness, Building2, Check, CheckCircle2, ChevronDown, Home, LocateFixed, MapPin, Navigation, Pencil, Plus, School, Search, X } from 'lucide-react'
+import { ArrowLeft, Bell, BriefcaseBusiness, Building2, Check, CheckCircle2, ChevronDown, DoorOpen, Home, LocateFixed, MapPin, MessageCircle, Navigation, Pencil, Phone, Plus, School, Search, X } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
 
@@ -77,15 +77,15 @@ export default function LocationPickerPage() {
     setEditorOpen(true)
   }
 
-  const saveAddress = () => {
-    if (!form.label.trim() || !form.address.trim()) return
+  const saveAddress = (nextForm = form) => {
+    if (!nextForm.label.trim() || !nextForm.address.trim()) return
     if (editingId !== null) {
       const previous = addresses.find(item => item.id === editingId)
-      setAddresses(items => items.map(item => item.id === editingId ? { ...item, ...form } : item))
-      if (previous?.address === selected) setSelected(form.address)
+      setAddresses(items => items.map(item => item.id === editingId ? { ...item, ...nextForm } : item))
+      if (previous?.address === selected) setSelected(nextForm.address)
     } else {
-      setAddresses(items => [...items, { id: Date.now(), ...form }])
-      setSelected(form.address)
+      setAddresses(items => [...items, { id: Date.now(), ...nextForm }])
+      setSelected(nextForm.address)
     }
     setEditorOpen(false)
   }
@@ -103,6 +103,18 @@ export default function LocationPickerPage() {
       onChange={setDraftLocation}
       onBack={() => setAddingLocation(false)}
       onConfirm={confirmNewLocation}
+    />
+  )
+
+  if (editorOpen) return (
+    <AddressDetailsPage
+      initial={form}
+      isEditing={editingId !== null}
+      onBack={() => {
+        setEditorOpen(false)
+        if (editingId === null) setAddingLocation(true)
+      }}
+      onSave={saveAddress}
     />
   )
 
@@ -169,20 +181,149 @@ export default function LocationPickerPage() {
         <div className="shrink-0 border-t border-[#e7eef6] bg-white/95 px-4 pb-[max(14px,env(safe-area-inset-bottom))] pt-3 backdrop-blur"><button onClick={() => setConfirmed(true)} className="flex w-full items-center justify-center gap-2 rounded-[18px] bg-[#0967ff] py-3.5 text-[14px] font-black text-white shadow-[0_10px_22px_rgba(9,103,255,0.24)] active:scale-[0.99]">Use this location <Check size={17} strokeWidth={3} /></button></div>
       </section>
 
-      {editorOpen && (
-        <div className="absolute inset-0 z-50 flex items-end bg-[#091225]/40 p-3 backdrop-blur-[3px]" onClick={() => setEditorOpen(false)}>
-          <div className="w-full rounded-[28px] bg-white p-5 shadow-2xl" onClick={event => event.stopPropagation()}>
-            <div className="flex items-start justify-between"><div><p className="text-[20px] font-black text-[#11182d]">{editingId === null ? 'Add new address' : 'Edit address'}</p><p className="mt-0.5 text-[12px] font-semibold text-[#7a8599]">Add details so your provider can find you easily.</p></div><button onClick={() => setEditorOpen(false)} className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#f1f5fa] text-[#65728a]"><X size={17} /></button></div>
-            <div className="mt-4 grid grid-cols-4 gap-2">{(['home', 'work', 'school', 'building'] as AddressKind[]).map(kind => { const Icon = kindIcons[kind]; const active = form.kind === kind; return <button key={kind} onClick={() => setForm(current => ({ ...current, kind }))} className={`flex flex-col items-center gap-1 rounded-[14px] border py-2 text-[9px] font-black capitalize ${active ? 'border-[#0967ff] bg-[#eaf3ff] text-[#0967ff]' : 'border-[#e4ebf3] text-[#7a8599]'}`}><Icon size={16} /> {kind}</button> })}</div>
-            <div className="mt-3 space-y-2.5">
-              <Field label="Location name" value={form.label} placeholder="e.g. Home" onChange={value => setForm(current => ({ ...current, label: value }))} />
-              <Field label="Address" value={form.address} placeholder="Area, street or building" onChange={value => setForm(current => ({ ...current, address: value }))} />
-              <Field label="Additional details" value={form.details} placeholder="Floor, apartment, landmark (optional)" onChange={value => setForm(current => ({ ...current, details: value }))} />
-            </div>
-            <button onClick={saveAddress} disabled={!form.label.trim() || !form.address.trim()} className="mt-4 w-full rounded-[17px] bg-[#0967ff] py-3.5 text-[14px] font-black text-white shadow-[0_10px_22px_rgba(9,103,255,0.22)] disabled:cursor-not-allowed disabled:opacity-40">{editingId === null ? 'Save address' : 'Save changes'}</button>
+    </div>
+  )
+}
+
+function AddressDetailsPage({ initial, isEditing, onBack, onSave }: { initial: typeof blankForm; isEditing: boolean; onBack: () => void; onSave: (value: typeof blankForm) => void }) {
+  const [data, setData] = useState(initial)
+  const [buildingNumber, setBuildingNumber] = useState('')
+  const [doorNumber, setDoorNumber] = useState('')
+  const [phoneNumber, setPhoneNumber] = useState('+974 6699 3623')
+  const [contactMethod, setContactMethod] = useState<'phone' | 'whatsapp'>('phone')
+  const [notes, setNotes] = useState(initial.details)
+  const [callOnArrival, setCallOnArrival] = useState(false)
+  const [ringDoorbell, setRingDoorbell] = useState(true)
+
+  const typeOptions: { kind: AddressKind; label: string; icon: typeof Home }[] = [
+    { kind: 'home', label: 'House', icon: Home },
+    { kind: 'building', label: 'Apartment', icon: Building2 },
+    { kind: 'work', label: 'Office', icon: BriefcaseBusiness },
+    { kind: 'school', label: 'School', icon: School },
+  ]
+
+  const handleSave = () => {
+    const detailParts = [
+      buildingNumber.trim() && `Building ${buildingNumber.trim()}`,
+      doorNumber.trim() && `Door ${doorNumber.trim()}`,
+      notes.trim(),
+    ].filter(Boolean)
+    onSave({ ...data, details: detailParts.join(' • ') || 'Address details provided' })
+  }
+
+  return (
+    <div className="relative flex flex-1 flex-col overflow-hidden bg-[#f3f8ff]">
+      <StatusBar />
+      <div className="shrink-0 border-b border-[#e2ebf5] bg-white px-4 pb-4">
+        <header className="flex items-center gap-3 pb-3 pt-1">
+          <button onClick={onBack} className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] border border-[#e0e9f3] bg-[#f6f9fd] text-[#26334a] active:bg-[#edf3fa]" aria-label="Back to map"><ArrowLeft size={19} /></button>
+          <div className="min-w-0 flex-1">
+            <p className="text-[18px] font-black tracking-[-0.25px] text-[#11182d]">{isEditing ? 'Update this place' : 'Set up this place'}</p>
+            <p className="mt-0.5 text-[10px] font-semibold text-[#8490a3]">Save it once and book services faster</p>
           </div>
+          <span className="shrink-0 rounded-full bg-[#edf5ff] px-2.5 py-1.5 text-[9px] font-black text-[#0967ff]">Step 2 of 2</span>
+        </header>
+
+        <div className="mb-3 flex items-center gap-2 px-1" aria-label="Location setup progress">
+          <span className="flex h-5 w-5 items-center justify-center rounded-full bg-[#dff8ed] text-[#058558]"><Check size={11} strokeWidth={3} /></span>
+          <span className="text-[9px] font-bold text-[#6d7a8f]">Location selected</span>
+          <span className="h-px flex-1 bg-[#dbe5f0]" />
+          <span className="h-2 w-2 rounded-full bg-[#0967ff]" />
+          <span className="text-[9px] font-black text-[#0967ff]">Add details</span>
         </div>
-      )}
+
+        <div className="flex items-center gap-3 rounded-[16px] border border-[#d9e7f7] bg-[#f5f9ff] p-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[11px] bg-[#0967ff] text-white"><MapPin size={17} fill="white" /></div>
+          <div className="min-w-0 flex-1"><p className="text-[8px] font-black uppercase tracking-[0.1em] text-[#7d8ba0]">Selected address</p><p className="mt-0.5 truncate text-[11px] font-black text-[#26334a]">{data.address}</p></div>
+          <button onClick={onBack} className="rounded-full border border-[#cfe0f5] bg-white px-3 py-1.5 text-[9px] font-black text-[#0967ff]">Change</button>
+        </div>
+      </div>
+
+      <main className="relative z-10 min-h-0 flex-1 overflow-y-auto px-4 pb-5 pt-4">
+        <section>
+          <SectionTitle title="Name this place" subtitle="Create a shortcut for future bookings" />
+          <div className="mt-2.5 rounded-[22px] border border-[#dfe9f4] bg-white p-3.5 shadow-[0_8px_22px_rgba(35,71,113,0.06)]">
+            <label className="block">
+              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.08em] text-[#7a879b]">Place name</span>
+              <input value={data.label} onChange={event => setData(current => ({ ...current, label: event.target.value }))} placeholder="My home, Studio, Mum's house..." className="w-full rounded-[14px] border border-[#dfe8f2] bg-[#f6faff] px-3.5 py-3 text-[13px] font-bold text-[#182238] outline-none focus:border-[#8fbaff] focus:ring-2 focus:ring-[#dcecff] placeholder:text-[#a0aaba]" />
+            </label>
+            <div className="mt-3 grid grid-cols-4 gap-2">
+              {typeOptions.map(option => {
+                const Icon = option.icon
+                const active = data.kind === option.kind
+                return (
+                  <button key={option.kind} type="button" onClick={() => setData(current => ({ ...current, kind: option.kind }))} className={`relative flex min-w-0 flex-col items-center gap-1.5 rounded-[15px] py-2.5 transition ${active ? 'bg-[#0967ff] text-white shadow-[0_7px_16px_rgba(9,103,255,0.20)]' : 'bg-[#eef5fd] text-[#66758c]'}`}>
+                    {active && <span className="absolute right-1.5 top-1.5 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-white text-[#0967ff]"><Check size={9} strokeWidth={3} /></span>}
+                    <Icon size={17} /><span className="truncate text-[9px] font-black">{option.label}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-4">
+          <SectionTitle title="Help providers reach you" subtitle="Only the practical details they need on arrival" />
+          <div className="mt-2.5 rounded-[22px] border border-[#dfe9f4] bg-white p-3.5 shadow-[0_8px_22px_rgba(35,71,113,0.06)]">
+            <div className="grid grid-cols-2 gap-2.5">
+              <CompactInput label="Building / villa" value={buildingNumber} onChange={setBuildingNumber} placeholder="e.g. 18" />
+              <CompactInput label="Floor / unit" value={doorNumber} onChange={setDoorNumber} placeholder="e.g. 1204" />
+            </div>
+            <label className="mt-3 block">
+              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.08em] text-[#7a879b]">Access note</span>
+              <textarea value={notes} onChange={event => setNotes(event.target.value)} rows={2} placeholder="Gate, landmark, parking or reception instructions" className="w-full resize-none rounded-[14px] border border-[#dfe8f2] bg-[#f6faff] px-3.5 py-3 text-[12px] font-semibold leading-5 text-[#182238] outline-none focus:border-[#8fbaff] focus:ring-2 focus:ring-[#dcecff] placeholder:text-[#a0aaba]" />
+            </label>
+          </div>
+        </section>
+
+        <section className="mt-4">
+          <SectionTitle title="Stay reachable" subtitle="Choose how providers should contact you" />
+          <div className="mt-2.5 rounded-[22px] border border-[#dfe9f4] bg-white p-3.5 shadow-[0_8px_22px_rgba(35,71,113,0.06)]">
+            <label className="block">
+              <span className="mb-1.5 block text-[9px] font-black uppercase tracking-[0.08em] text-[#7a879b]">Contact number</span>
+              <input value={phoneNumber} onChange={event => setPhoneNumber(event.target.value)} inputMode="tel" className="w-full rounded-[14px] border border-[#dfe8f2] bg-[#f6faff] px-3.5 py-3 text-[13px] font-bold text-[#182238] outline-none focus:border-[#8fbaff] focus:ring-2 focus:ring-[#dcecff]" />
+            </label>
+            <div className="mt-3 grid grid-cols-2 gap-2.5">
+              <ContactButton active={contactMethod === 'phone'} onClick={() => setContactMethod('phone')} icon={Phone} label="Phone call" />
+              <ContactButton active={contactMethod === 'whatsapp'} onClick={() => setContactMethod('whatsapp')} icon={MessageCircle} label="WhatsApp" />
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-4">
+          <SectionTitle title="Arrival preferences" subtitle="Helpy will remember these for this place" />
+          <div className="mt-2.5 rounded-[22px] border border-[#dfe9f4] bg-white px-3.5 shadow-[0_8px_22px_rgba(35,71,113,0.06)]">
+            <PreferenceRow icon={DoorOpen} label="Call me when the provider arrives" checked={callOnArrival} onChange={setCallOnArrival} divided />
+            <PreferenceRow icon={Bell} label="Ring the doorbell on arrival" checked={ringDoorbell} onChange={setRingDoorbell} />
+          </div>
+        </section>
+      </main>
+
+      <footer className="relative z-20 shrink-0 border-t border-[#dfe9f4] bg-white/95 px-4 pb-[max(14px,env(safe-area-inset-bottom))] pt-3 backdrop-blur">
+        <button onClick={handleSave} disabled={!data.label.trim() || !data.address.trim()} className="flex w-full items-center justify-center gap-2 rounded-[18px] bg-[#0967ff] py-3.5 text-[14px] font-black text-white shadow-[0_10px_22px_rgba(9,103,255,0.24)] active:scale-[0.99] disabled:opacity-40">{isEditing ? 'Save changes' : 'Save address'} <Check size={17} strokeWidth={3} /></button>
+      </footer>
+    </div>
+  )
+}
+
+function SectionTitle({ title, subtitle }: { title: string; subtitle: string }) {
+  return <div><p className="text-[15px] font-black text-[#11182d]">{title}</p><p className="mt-0.5 text-[10px] font-semibold text-[#8390a5]">{subtitle}</p></div>
+}
+
+function CompactInput({ label, value, onChange, placeholder }: { label: string; value: string; onChange: (value: string) => void; placeholder: string }) {
+  return <label className="block rounded-[14px] border border-[#dfe8f2] bg-[#f6faff] px-3 py-2.5"><span className="block text-[9px] font-black text-[#748198]">{label}</span><input value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} className="mt-1 w-full bg-transparent text-[12px] font-bold text-[#182238] outline-none placeholder:text-[#a5afbe]" /></label>
+}
+
+function ContactButton({ active, onClick, icon: Icon, label }: { active: boolean; onClick: () => void; icon: typeof Phone; label: string }) {
+  return <button type="button" onClick={onClick} className={`flex items-center justify-center gap-2 rounded-[15px] border py-3 text-[11px] font-black transition ${active ? 'border-[#0967ff] bg-[#0967ff] text-white shadow-[0_7px_16px_rgba(9,103,255,0.18)]' : 'border-[#dfe8f2] bg-[#f6faff] text-[#526078]'}`}><Icon size={16} />{label}{active && <Check size={13} strokeWidth={3} />}</button>
+}
+
+function PreferenceRow({ icon: Icon, label, checked, onChange, divided = false }: { icon: typeof Bell; label: string; checked: boolean; onChange: (value: boolean) => void; divided?: boolean }) {
+  return (
+    <div className={`flex items-center gap-3 py-3 ${divided ? 'border-b border-[#edf2f7]' : ''}`}>
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] bg-[#edf5ff] text-[#0967ff]"><Icon size={17} /></div>
+      <span className="min-w-0 flex-1 text-[11px] font-bold leading-4 text-[#354158]">{label}</span>
+      <button type="button" onClick={() => onChange(!checked)} role="switch" aria-checked={checked} className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${checked ? 'bg-[#0967ff]' : 'bg-[#d5deea]'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${checked ? 'translate-x-6' : 'translate-x-1'}`} /></button>
     </div>
   )
 }
@@ -271,8 +412,4 @@ function AddressRow({ item, selected, divided, onSelect, onEdit }: { item: Saved
       <button onClick={onEdit} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#8b96a8] active:bg-[#edf3fa]" aria-label={`Edit ${item.label}`}><Pencil size={15} /></button>
     </div>
   )
-}
-
-function Field({ label, value, placeholder, onChange }: { label: string; value: string; placeholder: string; onChange: (value: string) => void }) {
-  return <label className="block"><span className="mb-1.5 block text-[11px] font-black text-[#4f5d74]">{label}</span><input value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} className="w-full rounded-[14px] border border-[#dfe8f2] bg-[#f8fbff] px-3.5 py-3 text-[13px] font-semibold text-[#11182d] outline-none transition focus:border-[#8fbaff] focus:ring-2 focus:ring-[#dcecff] placeholder:text-[#a4adbb]" /></label>
 }

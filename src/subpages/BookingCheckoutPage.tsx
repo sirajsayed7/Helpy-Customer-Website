@@ -1,8 +1,9 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { ArrowLeft, Check, Clock } from 'lucide-react'
 import { StatusBar } from '../components/shared'
-import { useNav } from '../context/NavContext'
+import { useNav, type BookedService } from '../context/NavContext'
 import { DATES, PROVIDERS } from '../pages/ServiceDetailPage'
+import PaymentSheet from './PaymentPage'
 
 export default function BookingCheckoutPage() {
   const { goBack, navigate, params, addBooking } = useNav()
@@ -11,8 +12,7 @@ export default function BookingCheckoutPage() {
   const selectedServices: string[] = params?.selectedServices?.length ? params.selectedServices : [cfg.services[0].label]
   const selectedOptions = cfg.services.filter(s => selectedServices.includes(s.label))
   const [extras, setExtras] = useState<string[]>([])
-  const [pendingConfirm, setPendingConfirm] = useState(false)
-  const [countdown, setCountdown] = useState(15)
+  const [paymentBooking, setPaymentBooking] = useState<BookedService | null>(null)
   const selDate = typeof params?.selDate === 'number' ? params.selDate : 1
   const selTime = params?.selTime || '12:00 PM'
   const providerImage = params?.providerImage || cfg.logoImg || cfg.providerImage
@@ -24,21 +24,11 @@ export default function BookingCheckoutPage() {
   const extrasTotal = extras.reduce((sum, e) => sum + (cfg.extras.find(x => x.label === e)?.price || 0), 0)
   const total = Math.max(0, servicesTotal + equipmentAdjustment + extrasTotal)
 
-  useEffect(() => {
-    if (!pendingConfirm) return
-    if (countdown <= 0) {
-      finalizeBooking()
-      return
-    }
-    const timer = window.setTimeout(() => setCountdown(value => value - 1), 1000)
-    return () => window.clearTimeout(timer)
-  }, [pendingConfirm, countdown])
-
   const toggleExtra = (label: string) => {
     setExtras(prev => prev.includes(label) ? prev.filter(x => x !== label) : [...prev, label])
   }
 
-  const finalizeBooking = () => {
+  const confirmBooking = () => {
     const booking = {
       id: Date.now().toString(),
       provider,
@@ -51,19 +41,13 @@ export default function BookingCheckoutPage() {
       providerEmoji: params?.providerEmoji || cfg.label.slice(0, 2).toUpperCase(),
       providerImage,
     }
-    addBooking(booking)
-    navigate('booking-success', booking)
+    setPaymentBooking(booking)
   }
 
-  const confirmBooking = () => {
-    if (pendingConfirm) return
-    setCountdown(15)
-    setPendingConfirm(true)
-  }
-
-  const cancelPendingBooking = () => {
-    setPendingConfirm(false)
-    setCountdown(15)
+  const completeBooking = (paymentMethod: string) => {
+    if (!paymentBooking) return
+    addBooking(paymentBooking)
+    navigate('booking-success', { ...paymentBooking, paymentMethod })
   }
 
   return (
@@ -127,8 +111,7 @@ export default function BookingCheckoutPage() {
                 {cfg.extras.map(({label, price, icon: Icon}) => {
                   const selected = extras.includes(label)
                   return (
-                    <button key={label} onClick={()=>!pendingConfirm && toggleExtra(label)}
-                      disabled={pendingConfirm}
+                    <button key={label} onClick={()=>toggleExtra(label)}
                       className={`relative min-h-[132px] rounded-[18px] p-3 text-left border shadow-sm transition ${selected?'border-brand-500 bg-blue-50':'border-gray-100 bg-white'}`}>
                       <span className={`absolute top-3 right-3 w-6 h-6 rounded-md border-2 flex items-center justify-center ${selected?'border-brand-500 bg-brand-500':'border-gray-300 bg-white'}`}>
                         {selected&&<Check size={13} className="text-white"/>}
@@ -148,26 +131,23 @@ export default function BookingCheckoutPage() {
               <p className="text-[12px] text-gray-500">Total Price</p>
               <p className="text-[28px] font-black text-brand-500">{total.toFixed(2)} QR</p>
             </div>
-            <button onClick={confirmBooking} disabled={pendingConfirm} className={`h-[58px] rounded-[18px] px-6 text-[15px] font-black text-white shadow-lg shadow-blue-200 ${pendingConfirm ? 'bg-brand-500/60' : 'bg-brand-500'}`}>
-              {pendingConfirm ? `Sending in ${countdown}s` : 'Confirm Booking'}
+            <button onClick={confirmBooking} className="h-[58px] rounded-[18px] bg-brand-500 px-6 text-[15px] font-black text-white shadow-lg shadow-blue-200">
+              Confirm Booking
             </button>
           </div>
-
-          {pendingConfirm && (
-            <div className="mt-3 rounded-[18px] border border-blue-100 bg-white px-4 py-3 shadow-sm">
-              <div className="flex items-center justify-between gap-3">
-                <div>
-                  <p className="text-[13px] font-black text-gray-950">Booking will be sent in {countdown} seconds</p>
-                  <p className="mt-0.5 text-[11px] text-gray-500">You can cancel before it is confirmed.</p>
-                </div>
-                <button onClick={cancelPendingBooking} className="shrink-0 rounded-full bg-red-50 px-4 py-2 text-[12px] font-black text-red-500">
-                  Cancel
-                </button>
-              </div>
-            </div>
-          )}
         </div>
       </div>
+
+      {paymentBooking && (
+        <PaymentSheet
+          booking={paymentBooking}
+          providerLabel={cfg.label}
+          providerImage={providerImage}
+          serviceCount={Math.max(1, selectedOptions.length + selectedExtraOptions.length)}
+          onClose={() => setPaymentBooking(null)}
+          onPaid={completeBooking}
+        />
+      )}
     </div>
   )
 }
