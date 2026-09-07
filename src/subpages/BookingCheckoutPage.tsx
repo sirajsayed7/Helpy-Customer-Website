@@ -1,9 +1,15 @@
 import { useState } from 'react'
-import { ArrowLeft, Check, Clock } from 'lucide-react'
+import { ArrowLeft, Check, CheckCircle2, Clock, MapPin, X } from 'lucide-react'
 import { StatusBar } from '../components/shared'
 import { useNav, type BookedService } from '../context/NavContext'
 import { DATES, PROVIDERS } from '../pages/ServiceDetailPage'
 import PaymentSheet from './PaymentPage'
+
+const SERVICE_ADDRESSES = [
+  { label: 'Home', address: 'Viva Bahriya 10, The Pearl-Qatar', details: 'Tower 10, Floor 13, Apartment 18' },
+  { label: 'Work', address: 'West Bay Tower, Doha', details: 'Floor 12, Reception' },
+  { label: 'Apartment', address: 'Lusail Marina, Lusail City', details: 'Marina Promenade, Building 7' },
+]
 
 export default function BookingCheckoutPage() {
   const { goBack, navigate, params, addBooking } = useNav()
@@ -12,6 +18,8 @@ export default function BookingCheckoutPage() {
   const selectedServices: string[] = params?.selectedServices?.length ? params.selectedServices : [cfg.services[0].label]
   const selectedOptions = cfg.services.filter(s => selectedServices.includes(s.label))
   const [extras, setExtras] = useState<string[]>([])
+  const [selectedAddress, setSelectedAddress] = useState(SERVICE_ADDRESSES[0])
+  const [addressPickerOpen, setAddressPickerOpen] = useState(false)
   const [paymentBooking, setPaymentBooking] = useState<BookedService | null>(null)
   const selDate = typeof params?.selDate === 'number' ? params.selDate : 1
   const selTime = params?.selTime || '12:00 PM'
@@ -40,6 +48,9 @@ export default function BookingCheckoutPage() {
       providerBg: params?.providerBg || 'bg-blue-500',
       providerEmoji: params?.providerEmoji || cfg.label.slice(0, 2).toUpperCase(),
       providerImage,
+      addressLabel: selectedAddress.label,
+      address: selectedAddress.address,
+      addressDetails: selectedAddress.details,
     }
     setPaymentBooking(booking)
   }
@@ -75,6 +86,15 @@ export default function BookingCheckoutPage() {
             </div>
             <button onClick={goBack} className="rounded-full bg-blue-50 px-4 py-2.5 text-[12px] font-black text-brand-500">
               Edit time
+            </button>
+          </div>
+
+          <div className="mt-4">
+            <div className="mb-2 flex items-center justify-between"><p className="text-[13px] font-black text-gray-950">Service address</p><button onClick={() => setAddressPickerOpen(true)} className="text-[10px] font-black text-brand-500">Change</button></div>
+            <button onClick={() => setAddressPickerOpen(true)} className="flex w-full items-center gap-3 rounded-[18px] border border-[#dce8f6] bg-[#f5f9ff] p-3 text-left transition active:bg-[#edf5ff]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-[13px] bg-[#0967ff] text-white"><MapPin size={18} fill="white" /></span>
+              <span className="min-w-0 flex-1"><span className="block text-[12px] font-black text-[#182238]">{selectedAddress.label}</span><span className="mt-0.5 block truncate text-[11px] font-semibold text-[#59677e]">{selectedAddress.address}</span><span className="mt-0.5 block truncate text-[9px] font-medium text-[#909bad]">{selectedAddress.details}</span></span>
+              <CheckCircle2 size={18} className="shrink-0 text-[#0967ff]" />
             </button>
           </div>
 
@@ -137,6 +157,22 @@ export default function BookingCheckoutPage() {
           </div>
         </div>
       </div>
+
+      {addressPickerOpen && (
+        <div className="absolute inset-0 z-[70] flex items-end bg-[#0b1830]/45 backdrop-blur-[2px]" role="dialog" aria-modal="true" aria-label="Choose service address">
+          <button className="absolute inset-0" onClick={() => setAddressPickerOpen(false)} aria-label="Close address picker" />
+          <section className="relative z-10 w-full rounded-t-[28px] bg-[#f7faff] px-4 pb-[max(16px,env(safe-area-inset-bottom))] pt-2 shadow-[0_-18px_50px_rgba(10,26,54,0.20)]">
+            <div className="mx-auto h-1 w-10 rounded-full bg-[#d2dbe7]" />
+            <div className="mt-3 flex items-center justify-between"><div><p className="text-[17px] font-black text-[#11182d]">Choose service address</p><p className="mt-0.5 text-[10px] font-semibold text-[#7d899d]">Where should the provider arrive?</p></div><button onClick={() => setAddressPickerOpen(false)} className="flex h-9 w-9 items-center justify-center rounded-full bg-white text-[#59667a] shadow-sm" aria-label="Close"><X size={17} /></button></div>
+            <div className="mt-4 overflow-hidden rounded-[20px] border border-[#e0e8f2] bg-white">
+              {SERVICE_ADDRESSES.map((item, index) => {
+                const active = item.address === selectedAddress.address
+                return <button key={item.address} onClick={() => { setSelectedAddress(item); setAddressPickerOpen(false) }} className={`flex w-full items-center gap-3 px-3 py-3 text-left ${index ? 'border-t border-[#edf2f7]' : ''} ${active ? 'bg-[#f2f7ff]' : 'bg-white'}`}><span className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-[12px] ${active ? 'bg-[#0967ff] text-white' : 'bg-[#edf4fc] text-[#0967ff]'}`}><MapPin size={16} fill={active ? 'white' : '#0967ff'} /></span><span className="min-w-0 flex-1"><span className="block text-[12px] font-black text-[#1d293d]">{item.label}</span><span className="mt-0.5 block truncate text-[10px] font-semibold text-[#68758a]">{item.address}</span><span className="mt-0.5 block truncate text-[9px] text-[#98a2b1]">{item.details}</span></span>{active && <CheckCircle2 size={18} className="shrink-0 text-[#0967ff]" />}</button>
+              })}
+            </div>
+          </section>
+        </div>
+      )}
 
       {paymentBooking && (
         <PaymentSheet

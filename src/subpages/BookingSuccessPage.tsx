@@ -16,7 +16,7 @@ export default function BookingSuccessPage() {
       <div className="w-full bg-white rounded-2xl shadow-sm p-5 space-y-3">
         <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center"><span className="text-xl">{b.providerEmoji||'🧹'}</span></div><div><p className="text-[13px] font-bold text-gray-900">{b.provider}</p><p className="text-[12px] text-brand-500 font-semibold">{b.service}</p></div></div>
         <div className="flex items-center gap-2"><CalendarDays size={14} className="text-gray-400"/><span className="text-[13px] text-gray-700">{b.date} • {b.time}</span></div>
-        <div className="flex items-center gap-2"><MapPin size={14} className="text-gray-400"/><span className="text-[13px] text-gray-700">Doha, Qatar</span></div>
+        <div className="flex items-start gap-2"><MapPin size={14} className="mt-0.5 shrink-0 text-gray-400"/><div className="min-w-0"><span className="block text-[13px] font-semibold text-gray-700">{b.addressLabel || 'Service address'}</span><span className="block truncate text-[11px] text-gray-500">{b.address || 'Doha, Qatar'}</span>{b.addressDetails && <span className="block truncate text-[10px] text-gray-400">{b.addressDetails}</span>}</div></div>
         <div className="border-t border-gray-100 pt-3 flex justify-between"><span className="text-[14px] font-bold text-gray-900">Total Paid</span><span className="text-[14px] font-bold text-brand-500">{b.price} QR</span></div>
       </div>
       <div className="flex gap-3 w-full">

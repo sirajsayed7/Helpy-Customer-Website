@@ -32,6 +32,7 @@ export interface BookedService {
   status: 'Confirmed'|'In Progress'|'Completed'
   providerBg: string; providerEmoji: string
   providerImage?: string
+  addressLabel?: string; address?: string; addressDetails?: string
 }
 
 const Ctx = createContext<NavCtx>(null as any)
