@@ -5,3 +5,8 @@
 body{margin:0;background:#E8F0FE;font-family:'DM Sans',sans-serif;-webkit-font-smoothing:antialiased}
 ::-webkit-scrollbar{display:none}
 *{scrollbar-width:none}
+.website-wrap{width:min(1180px,calc(100% - 40px));margin-inline:auto}
+.website-kicker{font-size:.72rem;font-weight:900;letter-spacing:.13em;text-transform:uppercase;color:#0967ff}
+.website-title{margin-top:.35rem;font-size:clamp(1.8rem,3vw,2.5rem);line-height:1.1;font-weight:900;letter-spacing:-.035em;color:#0a1537}
+@media (max-width:640px){.website-wrap{width:min(100% - 32px,1180px)}}
+.website-shell button:focus-visible,.website-shell input:focus-visible{outline:3px solid rgba(9,103,255,.38);outline-offset:3px}

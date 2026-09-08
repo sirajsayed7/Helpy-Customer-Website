@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { NavProvider, useNav } from './context/NavContext'
 import { BottomNav } from './components/shared'
 
@@ -22,12 +23,20 @@ import AllServicesPage    from './subpages/AllServicesPage'
 import LocationPickerPage from './subpages/LocationPickerPage'
 import HelperPages        from './subpages/HelperPages'
 import ReviewsPage        from './subpages/ReviewsPage'
+import DesktopWebsite     from './desktop/DesktopWebsite'
 
 const AUTH = ['splash','login','verify']
 const FULLSCREEN = ['chat-thread','service-detail','booking-success','glow-checkout','booking-checkout','location','reviews']
 
 function AppShell() {
   const { screen } = useNav()
+  const [isWebsite, setIsWebsite] = useState(() => window.matchMedia('(min-width: 768px)').matches)
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 768px)')
+    const update = () => setIsWebsite(query.matches)
+    query.addEventListener('change', update)
+    return () => query.removeEventListener('change', update)
+  }, [])
   const isAuth = AUTH.includes(screen)
   const hideBottomNav = isAuth || FULLSCREEN.includes(screen)
 
@@ -56,6 +65,8 @@ function AppShell() {
       default:                   return <HelperPages screen={screen}/>
     }
   }
+
+  if (isWebsite) return <DesktopWebsite/>
 
   return (
     <div className="min-h-screen flex items-start justify-center" style={{background:'#C7D8F5'}}>
