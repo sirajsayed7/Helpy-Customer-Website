@@ -20,3 +20,22 @@ body{margin:0;background:#E8F0FE;font-family:'DM Sans',sans-serif;-webkit-font-s
   .website-shell>header>div:first-child{max-width:1920px;padding-left:3rem;padding-right:3rem}
   .website-shell main>div>div>div.space-y-8{row-gap:2.5rem}
 }
+@media (min-width:1024px){
+  .website-shell main .space-y-8>section:nth-of-type(1){
+    padding:1.25rem;
+    border:1px solid #e4edf9;
+    border-radius:1.5rem;
+    background:rgba(255,255,255,.58);
+    box-shadow:0 14px 32px rgba(46,87,149,.05);
+  }
+  .website-shell main .space-y-8>section:nth-of-type(1)>div:last-child{gap:1rem}
+  .website-shell main .space-y-8>section:nth-of-type(1)>div:last-child>button{
+    min-height:178px;
+    padding:.85rem;
+    border-radius:1.05rem;
+  }
+  .website-shell main .space-y-8>section:nth-of-type(1)>div:last-child>button>div{
+    height:82px;
+  }
+  .website-shell main .space-y-8>section:nth-of-type(1)>div:last-child>button p:first-of-type{margin-top:.7rem}
+}
