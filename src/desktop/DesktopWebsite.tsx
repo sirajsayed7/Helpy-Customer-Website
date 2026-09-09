@@ -5,7 +5,7 @@ import {
   PackageCheck, Plus, Search, Send, Settings, ShieldCheck, Sparkles, Star,
   UserRound, Wallet, X, Zap, type LucideIcon,
 } from 'lucide-react'
-import { useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { type Screen, useNav } from '../context/NavContext'
 
 type Service = {
@@ -64,10 +64,15 @@ export default function DesktopWebsite() {
   const { screen, params, navigate, goBack, canGoBack, activeTab } = useNav()
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setSidebarOpen(false)
+  }, [screen])
+
   if (screen === 'splash') return <WelcomeScreen navigate={navigate} />
   if (screen === 'login' || screen === 'verify') return <AuthScreen screen={screen} navigate={navigate} goBack={goBack} />
 
-  return <div className="min-h-screen bg-[#f4f7fc] text-[#102044]">
+  return <div className="website-shell min-h-screen bg-[#f4f7fc] text-[#102044]">
     <TopBar navigate={navigate} onMenu={() => setSidebarOpen(true)} />
     <div className="mx-auto flex max-w-[1600px]">
       <SideRail screen={screen} activeTab={activeTab} navigate={navigate} sidebarOpen={sidebarOpen} close={() => setSidebarOpen(false)} />
