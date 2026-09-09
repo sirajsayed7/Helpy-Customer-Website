@@ -16,7 +16,3 @@ body{margin:0;background:#E8F0FE;font-family:'DM Sans',sans-serif;-webkit-font-s
 @media (max-width:640px){.website-wrap{width:min(100% - 32px,1180px)}}
 .website-shell button:focus-visible,.website-shell input:focus-visible{outline:3px solid rgba(9,103,255,.38);outline-offset:3px}
 .website-shell button{cursor:pointer}
-@media (min-width:1600px){
-  .website-shell>header>div:first-child{max-width:1920px;padding-left:3rem;padding-right:3rem}
-  .website-shell main>div>div>div.space-y-8{row-gap:2.5rem}
-}
