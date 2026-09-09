@@ -73,57 +73,29 @@ const ACCOUNT_ITEMS: Array<{ screen: Screen; label: string; icon: typeof UserRou
 ]
 
 export default function DesktopWebsite() {
-  const { screen, params, navigate, goBack, canGoBack } = useNav()
+  const { screen, params, navigate, goBack, canGoBack, activeTab } = useNav()
+  const [sidebarOpen, setSidebarOpen] = useState(false)
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
+    setSidebarOpen(false)
   }, [screen])
 
   if (screen === 'splash') return <WelcomeScreen navigate={navigate} />
   if (screen === 'login' || screen === 'verify') return <DesktopAuthScreen screen={screen} navigate={navigate} goBack={goBack} />
 
   return <div className="website-shell min-h-screen bg-[#f4f7fc] text-[#102044]">
-    <DesktopTopBar screen={screen} navigate={navigate} />
-    <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-10 lg:py-7">
-        <div className="mx-auto max-w-[1540px]">
+    <TopBar navigate={navigate} onMenu={() => setSidebarOpen(true)} />
+    <div className="mx-auto flex max-w-[1600px]">
+      <SideRail screen={screen} activeTab={activeTab} navigate={navigate} sidebarOpen={sidebarOpen} close={() => setSidebarOpen(false)} />
+      <main className="min-w-0 flex-1 px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
+        <div className="mx-auto max-w-[1240px]">
           {canGoBack && screen !== 'home' && <button onClick={goBack} className="mb-5 inline-flex items-center gap-2 text-sm font-black text-[#5d6c8b] transition hover:text-[#0967ff]"><ArrowLeft size={16} /> Back</button>}
           <DesktopRoute screen={screen} params={params} navigate={navigate} />
         </div>
-    </main>
-  </div>
-}
-
-function DesktopTopBar({ screen, navigate }: { screen: Screen; navigate: (screen: Screen, params?: any) => void }) {
-  const [query, setQuery] = useState('')
-  const [profileOpen, setProfileOpen] = useState(false)
-  const [navOpen, setNavOpen] = useState(false)
-  const submit = () => navigate('all-services', { query })
-  const selected = (target: Screen) => screen === target || (target === 'all-services' && ['categories', 'category-services', 'providers', 'offers-events', 'service-detail'].includes(screen))
-  const accountLinks: Array<{ screen: Screen; label: string; icon: typeof UserRound }> = [
-    { screen: 'profile', label: 'My profile', icon: UserRound },
-    { screen: 'wallet', label: 'Wallet & payments', icon: Wallet },
-    { screen: 'favorites', label: 'Saved services', icon: Heart },
-    { screen: 'addresses', label: 'Saved locations', icon: MapPin },
-    { screen: 'notifications', label: 'Notifications', icon: Bell },
-  ]
-  return <header className="sticky top-0 z-50 border-b border-[#e2eaf6] bg-white/95 backdrop-blur-xl">
-    <div className="mx-auto flex h-[84px] max-w-[1800px] items-center gap-3 px-4 sm:px-7 lg:px-10">
-      <button onClick={() => navigate('home')} className="shrink-0 text-2xl font-black tracking-tight text-[#0967ff]">helpy<span className="text-[#102044]">.</span></button>
-      <div className="relative hidden w-[280px] shrink-0 md:block 2xl:w-[400px]"><Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7e8da9]"/><input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && submit()} placeholder="Search services, providers and more" className="h-12 w-full rounded-2xl border border-[#dfe8f5] bg-[#f8faff] pl-11 pr-4 text-sm font-semibold outline-none transition focus:border-[#0967ff] focus:bg-white focus:ring-4 focus:ring-blue-50" /></div>
-      <nav className="ml-1 hidden min-w-0 items-center gap-1 xl:flex" aria-label="Explore">
-        {NAV_ITEMS.map(item => <button key={item.screen} onClick={() => navigate(item.screen)} className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-3 text-[12px] font-black transition 2xl:px-4 2xl:text-sm ${selected(item.screen) ? 'bg-[#0967ff] text-white shadow-lg shadow-blue-200' : 'text-[#596984] hover:bg-[#f3f7ff] hover:text-[#0967ff]'}`}><item.icon size={17}/><span>{item.label}</span></button>)}
-      </nav>
-      <button onClick={() => setNavOpen(value => !value)} className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#52617d] transition hover:bg-blue-50 xl:hidden" aria-label="Open navigation"><Menu size={21}/></button>
-      <div className="ml-auto flex shrink-0 items-center gap-1.5">
-        <button onClick={() => navigate('location')} className="hidden items-center gap-2 rounded-xl px-3 py-2 text-sm font-bold text-[#52617d] transition hover:bg-blue-50 lg:flex"><MapPin size={17} className="text-[#0967ff]"/>Doha</button>
-        <button onClick={() => navigate('notifications')} className="relative rounded-xl p-2.5 text-[#52617d] transition hover:bg-blue-50" aria-label="Notifications"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#ff5c7a] ring-2 ring-white"/></button>
-        <button onClick={() => navigate('profile')} className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#0967ff] to-[#5f8cff] text-sm font-black text-white shadow-md shadow-blue-200" aria-label="Open profile">SS</button>
-        <button onClick={() => setProfileOpen(value => !value)} className={`rounded-xl p-2 text-[#52617d] transition hover:bg-blue-50 ${profileOpen ? 'bg-blue-50 text-[#0967ff]' : ''}`} aria-label="Open account menu"><ChevronDown size={18} className={`transition ${profileOpen ? 'rotate-180' : ''}`}/></button>
-      </div>
+      </main>
     </div>
-    {navOpen && <div className="border-t border-[#edf1f7] bg-white px-4 py-3 shadow-lg xl:hidden"><div className="mx-auto flex max-w-[1540px] gap-2 overflow-x-auto">{NAV_ITEMS.map(item => <button key={item.screen} onClick={() => { navigate(item.screen); setNavOpen(false) }} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-xs font-black ${selected(item.screen) ? 'bg-[#0967ff] text-white' : 'bg-[#f4f7fc] text-[#596984]'}`}><item.icon size={17}/>{item.label}</button>)}</div></div>}
-    {profileOpen && <><button onClick={() => setProfileOpen(false)} className="fixed inset-0 top-[84px] z-40" aria-label="Close account menu"/><div className="absolute right-5 top-[74px] z-50 w-[290px] overflow-hidden rounded-[24px] border border-[#e2eaf5] bg-white p-2 shadow-2xl shadow-[#102044]/15 lg:right-10"><button onClick={() => { navigate('profile'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-2xl bg-[#f3f8ff] p-3 text-left"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0967ff] text-sm font-black text-white">SS</span><span><span className="block text-sm font-black">Siraj Sayed</span><span className="mt-0.5 block text-xs font-semibold text-[#7b89a1]">View profile & account</span></span></button><div className="my-2 border-t border-[#edf1f7]"/>{accountLinks.map(link => <button key={link.screen} onClick={() => { navigate(link.screen); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><link.icon size={18}/>{link.label}</button>)}<div className="my-2 border-t border-[#edf1f7]"/><button onClick={() => { navigate('contact-us'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><CircleHelp size={18}/>Help centre</button></div></>}
-  </header>
+  </div>
 }
 
 function TopBar({ navigate, onMenu }: { navigate: (screen: Screen, params?: any) => void; onMenu: () => void }) {
@@ -369,7 +341,7 @@ function AccountView({ screen, navigate }: { screen: Screen; navigate: (screen: 
   if (screen === 'favorites') return <div><PageHeading eyebrow="SAVED FOR LATER" title="Your favourites" copy="The services and providers you want to keep close."/><div className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{SERVICES.slice(0,3).map(service => <ServiceCard key={service.id} service={service} navigate={navigate}/>)}</div></div>
   if (screen === 'notifications') return <NotificationsView navigate={navigate}/>
   if (screen === 'addresses') return <LocationView navigate={navigate}/>
-  return <div><PageHeading eyebrow="ACCOUNT" title="My profile" copy="Manage your personal details, preferences and Helpy account."/><div className="mt-8 grid gap-7 xl:grid-cols-[.8fr_1.2fr]"><aside className="rounded-[26px] bg-[#071b52] p-7 text-white"><div className="flex h-20 w-20 items-center justify-center rounded-[25px] bg-gradient-to-br from-[#67bcff] to-[#2d6cff] text-2xl font-black shadow-xl">SS</div><h2 className="mt-5 text-2xl font-black">Siraj Sayed</h2><p className="mt-1 text-sm font-bold text-blue-100">siraj@helpy.qa</p><div className="mt-7 border-t border-white/15 pt-6"><p className="text-xs font-black uppercase tracking-[.14em] text-[#91d4ff]">Helpy member since</p><p className="mt-2 text-sm font-black">August 2026</p></div></aside><div className="overflow-hidden rounded-[26px] bg-white shadow-sm ring-1 ring-[#e2ebf7]"><AccountRow icon={<UserRound size={19}/>} title="Personal details" text="Name, phone number and email" onClick={() => {}}/><AccountRow icon={<MapPin size={19}/>} title="Addresses" text="Home, work and saved places" onClick={() => navigate('addresses')}/><AccountRow icon={<Wallet size={19}/>} title="Wallet & payments" text="Saved cards and transaction history" onClick={() => navigate('wallet')}/><AccountRow icon={<Heart size={19}/>} title="Saved services" text="Providers and services you want to revisit" onClick={() => navigate('favorites')}/><AccountRow icon={<Bell size={19}/>} title="Notifications" text="Booking updates and preferences" onClick={() => navigate('notifications')}/><AccountRow icon={<Settings size={19}/>} title="Account settings" text="Privacy, language and support" onClick={() => navigate('contact-us')}/></div></div></div>
+  return <div><PageHeading eyebrow="ACCOUNT" title="My profile" copy="Manage your personal details, preferences and Helpy account."/><div className="mt-8 grid gap-7 xl:grid-cols-[.8fr_1.2fr]"><aside className="rounded-[26px] bg-[#071b52] p-7 text-white"><div className="flex h-20 w-20 items-center justify-center rounded-[25px] bg-gradient-to-br from-[#67bcff] to-[#2d6cff] text-2xl font-black shadow-xl">SS</div><h2 className="mt-5 text-2xl font-black">Siraj Sayed</h2><p className="mt-1 text-sm font-bold text-blue-100">siraj@helpy.qa</p><div className="mt-7 border-t border-white/15 pt-6"><p className="text-xs font-black uppercase tracking-[.14em] text-[#91d4ff]">Helpy member since</p><p className="mt-2 text-sm font-black">August 2026</p></div></aside><div className="overflow-hidden rounded-[26px] bg-white shadow-sm ring-1 ring-[#e2ebf7]"><AccountRow icon={<UserRound size={19}/>} title="Personal details" text="Name, phone number and email" onClick={() => {}}/><AccountRow icon={<MapPin size={19}/>} title="Addresses" text="Home, work and saved places" onClick={() => navigate('addresses')}/><AccountRow icon={<Wallet size={19}/>} title="Wallet & payments" text="Saved cards and transaction history" onClick={() => navigate('wallet')}/><AccountRow icon={<Bell size={19}/>} title="Notifications" text="Booking updates and preferences" onClick={() => navigate('notifications')}/><AccountRow icon={<Settings size={19}/>} title="Account settings" text="Privacy, language and support" onClick={() => navigate('contact-us')}/></div></div></div>
 }
 
 function WalletView({ navigate }: { navigate: (screen: Screen, params?: any) => void }) {
