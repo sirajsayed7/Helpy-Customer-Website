@@ -3,9 +3,9 @@ import { ArrowLeft, Star, Heart, MapPin, Shield, Users, Clock, ChevronUp, Chevro
 import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
 
-type ServiceOption = { label: string; desc: string; price: number; icon: any; image?: string }
-type ExtraOption = { label: string; price: number; icon: any }
-type ProviderConfig = {
+export type ServiceOption = { label: string; desc: string; price: number; icon: any; image?: string }
+export type ExtraOption = { label: string; price: number; icon: any }
+export type ProviderConfig = {
   label: string
   category: string
   desc: string

@@ -7,6 +7,15 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { type Screen, useNav } from '../context/NavContext'
+import DesktopAccountViews from './DesktopAccountViews'
+import {
+  DesktopBookings,
+  DesktopDiscoverySections,
+  DesktopExploreView,
+  DesktopMessages,
+  DesktopProviderBooking,
+  DesktopReviews,
+} from './DesktopParityViews'
 
 type Service = {
   id: string
@@ -22,6 +31,8 @@ type Service = {
   providerEmoji: string
   providerImage?: string
   heroImg?: string
+  selectedServices?: Array<{ label: string; desc: string; price: number }>
+  extras?: Array<{ label: string; price: number }>
 }
 
 const SERVICES: Service[] = [
@@ -153,18 +164,19 @@ function RailButton({ selected, icon, label, onClick }: { selected: boolean; ico
 
 function DesktopRoute({ screen, params, navigate }: { screen: Screen; params: any; navigate: (screen: Screen, params?: any) => void }) {
   switch (screen) {
-    case 'home': return <DesktopHome navigate={navigate} />
-    case 'categories': case 'category-services': case 'all-services': case 'providers': case 'deals': case 'offers-events': return <BrowseView screen={screen} params={params} navigate={navigate} />
-    case 'service-detail': return <ServiceDetailView service={asService(params)} navigate={navigate} />
+    case 'home': return <><DesktopHome navigate={navigate} /><div className="mt-8"><DesktopDiscoverySections navigate={navigate} /></div></>
+    case 'categories': case 'category-services': case 'all-services': case 'providers': case 'deals': case 'offers-events': return <DesktopExploreView screen={screen} params={params} navigate={navigate} />
+    case 'service-detail': return <DesktopProviderBooking params={params} navigate={navigate} />
     case 'booking-checkout': case 'glow-checkout': case 'booking-confirm': return <DesktopCheckoutFlow service={asService(params?.booking || params)} initialAddress={params?.addressLabel} navigate={navigate} />
     case 'booking-success': return <BookingSuccessView params={params} navigate={navigate} />
-    case 'orders': case 'order-detail': return <OrdersView screen={screen} params={params} navigate={navigate} />
-    case 'chat': case 'chat-thread': return <ChatView screen={screen} params={params} navigate={navigate} />
+    case 'orders': case 'order-detail': return <DesktopBookings screen={screen} params={params} navigate={navigate} />
+    case 'chat': return <DesktopMessages navigate={navigate} />
+    case 'chat-thread': return <ChatView screen={screen} params={params} navigate={navigate} />
     case 'location': return <DesktopLocationFlow params={params} navigate={navigate} />
-    case 'reviews': return <ReviewsView service={asService(params)} navigate={navigate} />
-    case 'profile': case 'wallet': case 'favorites': case 'addresses': case 'notifications': return <AccountView screen={screen} navigate={navigate} />
-    case 'contact-us': case 'terms': case 'privacy': return <InfoView screen={screen} navigate={navigate} />
-    default: return <AccountView screen="profile" navigate={navigate} />
+    case 'reviews': return <DesktopReviews params={params} navigate={navigate} />
+    case 'profile': case 'wallet': case 'favorites': case 'addresses': case 'notifications':
+    case 'contact-us': case 'terms': case 'privacy': return <DesktopAccountViews screen={screen} navigate={navigate} />
+    default: return <DesktopAccountViews screen="profile" navigate={navigate} />
   }
 }
 
@@ -306,7 +318,7 @@ function DesktopCheckoutFlow({ service, initialAddress, navigate }: { service: S
         </CheckoutBlock>
         <CheckoutBlock number="03" title="Helpful notes"><textarea placeholder="Access instructions, preferences, or anything useful for your provider…" className="h-28 w-full resize-none rounded-2xl bg-[#f5f8fd] p-4 text-sm font-semibold outline-none placeholder:text-[#9aa7bc] focus:ring-2 focus:ring-blue-100" /></CheckoutBlock>
       </div>
-      <aside className="h-fit rounded-[26px] bg-[#071b52] p-6 text-white shadow-xl shadow-blue-200 xl:sticky xl:top-24"><p className="text-xs font-black uppercase tracking-[.14em] text-[#8fd0ff]">Booking summary</p><div className="mt-5 flex gap-3"><img src={service.heroImg || service.image} alt="" className="h-16 w-16 rounded-2xl object-cover"/><div><p className="text-base font-black">{service.name}</p><p className="mt-1 text-sm font-bold text-blue-100">{service.provider}</p><p className="mt-2 text-xs font-bold text-[#9ed7ff]"><CalendarDays size={13} className="mr-1 inline"/>{service.date || 'Tomorrow'} · {service.time || '10:00 AM'}</p></div></div><div className="my-6 border-t border-white/15"/><div className="space-y-3 text-sm font-bold text-blue-100"><div className="flex justify-between"><span>Service</span><span>QAR {service.price}</span></div><div className="flex justify-between"><span>Booking fee</span><span>QAR 0</span></div><div className="flex justify-between border-t border-white/15 pt-4 text-base font-black text-white"><span>Total</span><span>QAR {service.price}</span></div></div><button onClick={() => setShowPayment(true)} className="mt-6 w-full rounded-xl bg-white py-3.5 text-sm font-black text-[#0967ff] transition hover:bg-blue-50">Continue to payment <ArrowRight size={16} className="ml-1 inline"/></button><p className="mt-3 text-center text-[11px] font-bold text-blue-200">Free cancellation before your provider confirms.</p></aside>
+      <aside className="h-fit rounded-[26px] bg-[#071b52] p-6 text-white shadow-xl shadow-blue-200 xl:sticky xl:top-24"><p className="text-xs font-black uppercase tracking-[.14em] text-[#8fd0ff]">Booking summary</p><div className="mt-5 flex gap-3"><img src={service.heroImg || service.image} alt="" className="h-16 w-16 rounded-2xl object-cover"/><div><p className="text-base font-black">{service.name}</p><p className="mt-1 text-sm font-bold text-blue-100">{service.provider}</p><p className="mt-2 text-xs font-bold text-[#9ed7ff]"><CalendarDays size={13} className="mr-1 inline"/>{service.date || 'Tomorrow'} · {service.time || '10:00 AM'}</p></div></div><div className="my-6 border-t border-white/15"/><div className="space-y-3 text-sm font-bold text-blue-100">{service.selectedServices?.map(item => <div key={item.label} className="flex justify-between gap-4"><span>{item.label}</span><span className="shrink-0">QAR {item.price}</span></div>)}{service.extras?.map(item => <div key={item.label} className="flex justify-between gap-4 text-xs text-blue-200"><span>{item.label}</span><span className="shrink-0">+ QAR {item.price}</span></div>)}{!service.selectedServices?.length && <div className="flex justify-between"><span>Service</span><span>QAR {service.price}</span></div>}<div className="flex justify-between"><span>Booking fee</span><span>QAR 0</span></div><div className="flex justify-between border-t border-white/15 pt-4 text-base font-black text-white"><span>Total</span><span>QAR {service.price}</span></div></div><button onClick={() => setShowPayment(true)} className="mt-6 w-full rounded-xl bg-white py-3.5 text-sm font-black text-[#0967ff] transition hover:bg-blue-50">Continue to payment <ArrowRight size={16} className="ml-1 inline"/></button><p className="mt-3 text-center text-[11px] font-bold text-blue-200">Free cancellation before your provider confirms.</p></aside>
     </div>
     {showPayment && <div className="fixed inset-0 z-[70] flex items-end justify-center bg-[#071331]/55 p-0 backdrop-blur-sm sm:items-center sm:p-6" role="dialog" aria-modal="true" aria-label="Choose payment method"><button onClick={() => !processing && setShowPayment(false)} className="absolute inset-0" aria-label="Close payment"/><section className="relative w-full max-w-[560px] rounded-t-[30px] bg-white p-6 shadow-2xl sm:rounded-[30px]"><div className="mx-auto mb-5 h-1.5 w-12 rounded-full bg-[#d9e2ef] sm:hidden"/><div className="flex items-start justify-between"><div><p className="text-xs font-black uppercase tracking-[.14em] text-[#0967ff]">Secure payment</p><h2 className="mt-1 text-2xl font-black">Pay QAR {service.price}</h2><p className="mt-2 text-sm font-semibold text-[#70809a]">Choose how you’d like to pay for this booking.</p></div><button onClick={() => !processing && setShowPayment(false)} className="hidden rounded-xl bg-[#f4f7fc] p-2 text-[#65738d] sm:block"><X size={19}/></button></div><div className="mt-6 grid grid-cols-3 gap-3">{([{ id: 'card', label: 'Visa •••• 4821', icon: <CreditCard size={18}/> }, { id: 'apple', label: 'Apple Pay', icon: <span className="text-lg font-black"></span> }, { id: 'google', label: 'Google Pay', icon: <span className="font-black text-[#4285f4]">G</span> }] as const).map(method => <button key={method.id} onClick={() => setPaymentMethod(method.id)} className={`rounded-2xl border p-3 text-left transition ${paymentMethod === method.id ? 'border-[#0967ff] bg-[#f3f8ff] ring-2 ring-blue-100' : 'border-[#e2eaf5] hover:border-blue-200'}`}><span className="flex h-9 w-9 items-center justify-center rounded-xl bg-white text-[#0967ff] shadow-sm">{method.icon}</span><p className="mt-3 text-xs font-black">{method.label}</p></button>)}</div><button onClick={() => setPaymentMethod('new')} className={`mt-3 flex w-full items-center gap-3 rounded-2xl border p-4 text-left transition ${paymentMethod === 'new' ? 'border-[#0967ff] bg-[#f3f8ff] ring-2 ring-blue-100' : 'border-[#e2eaf5] hover:border-blue-200'}`}><Plus size={18} className="text-[#0967ff]"/><span className="text-sm font-black">Pay with a new card</span></button>{paymentMethod === 'new' && <div className="mt-4 grid gap-3 rounded-2xl bg-[#f5f8fd] p-4 sm:grid-cols-2"><input value={cardNumber} onChange={event => setCardNumber(event.target.value.replace(/\D/g, '').slice(0,16).replace(/(.{4})/g, '$1 ').trim())} inputMode="numeric" placeholder="Card number" className="h-12 rounded-xl bg-white px-4 text-sm font-bold outline-none ring-1 ring-[#e0e8f5] focus:ring-2 focus:ring-blue-200 sm:col-span-2"/><input value={expiry} onChange={event => setExpiry(event.target.value.replace(/\D/g, '').slice(0,4).replace(/(.{2})/, '$1/'))} inputMode="numeric" placeholder="MM/YY" className="h-12 rounded-xl bg-white px-4 text-sm font-bold outline-none ring-1 ring-[#e0e8f5] focus:ring-2 focus:ring-blue-200"/><input value={cvv} onChange={event => setCvv(event.target.value.replace(/\D/g, '').slice(0,4))} inputMode="numeric" placeholder="CVV" className="h-12 rounded-xl bg-white px-4 text-sm font-bold outline-none ring-1 ring-[#e0e8f5] focus:ring-2 focus:ring-blue-200"/></div>}<button disabled={!canPay || processing} onClick={completeBooking} className="mt-6 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df] disabled:cursor-not-allowed disabled:opacity-50">{processing ? 'Processing payment…' : `Pay QAR ${service.price} securely`} <ShieldCheck size={17} className="ml-1 inline"/></button></section></div>}
   </div>

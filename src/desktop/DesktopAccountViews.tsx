@@ -150,8 +150,8 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
   })()
 
   return (
-    <main className="min-h-[calc(100vh-76px)] bg-[#f7faff] py-8 lg:py-12">
-      <div className="website-wrap">
+    <div className="py-2 lg:py-4">
+      <div>
         <div className="mb-7 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
           <button onClick={() => navigate('home')} className="transition hover:text-[#0967ff]">Home</button>
           <ChevronRight size={15} className="text-slate-300" />
@@ -162,7 +162,7 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
           <div className="min-w-0">{content}</div>
         </div>
       </div>
-    </main>
+    </div>
   )
 }
 
