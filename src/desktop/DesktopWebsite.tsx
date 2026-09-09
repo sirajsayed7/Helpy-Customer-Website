@@ -163,30 +163,27 @@ function DesktopHomeExpanded({ navigate }: { navigate: (screen: Screen, params?:
   }, [])
 
   return <div className="space-y-8 2xl:space-y-10">
-    <section className="overflow-hidden rounded-[32px] bg-[#071b52] text-white shadow-2xl shadow-blue-200/70">
-      <div className="grid min-h-[360px] lg:grid-cols-[.88fr_1.12fr]">
-        <div className="relative flex flex-col justify-center px-7 py-9 sm:px-10 2xl:px-12">
+    <section className="overflow-hidden rounded-[30px] bg-[#071b52] text-white shadow-xl shadow-blue-200/60">
+      <div className="grid h-[258px] lg:grid-cols-[1.08fr_.92fr]">
+        <div className="relative flex flex-col justify-center px-7 py-7 sm:px-10">
           <div className="absolute inset-0 opacity-55" style={{ backgroundImage: 'radial-gradient(circle at 84% 12%,#1aa9c2 0,transparent 26%),radial-gradient(circle at 20% 92%,#1d72ff 0,transparent 36%)' }}/>
           <div className="relative max-w-2xl">
             <p className="text-xs font-black uppercase tracking-[.16em] text-[#8ed2ff]">Good morning, Siraj</p>
-            <h1 className="mt-3 text-4xl font-black leading-[1.02] tracking-[-.055em] sm:text-5xl 2xl:text-6xl">What can we make easier today?</h1>
-            <p className="mt-4 max-w-lg text-sm leading-6 font-semibold text-blue-100">Find trusted people for every task, with transparent prices and simple booking.</p>
-            <div className="mt-7 flex max-w-2xl items-center rounded-2xl bg-white p-2 text-[#102044] shadow-2xl"><Search size={20} className="ml-3 shrink-0 text-[#0967ff]"/><input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && navigate('all-services', { query })} placeholder="Try ‘home cleaning’ or ‘car wash’" className="h-12 min-w-0 flex-1 px-3 text-sm font-bold outline-none"/><button onClick={() => navigate('all-services', { query })} className="rounded-xl bg-[#0967ff] px-5 py-3.5 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Search</button></div>
+            <h1 className="mt-2 text-3xl font-black leading-[1.04] tracking-[-.05em] sm:text-5xl">What can we make easier today?</h1>
+            <div className="mt-5 flex max-w-xl items-center rounded-2xl bg-white p-2 text-[#102044] shadow-2xl"><Search size={20} className="ml-3 shrink-0 text-[#0967ff]"/><input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && navigate('all-services', { query })} placeholder="Try ‘home cleaning’ or ‘car wash’" className="h-10 min-w-0 flex-1 px-3 text-sm font-bold outline-none"/><button onClick={() => navigate('all-services', { query })} className="rounded-xl bg-[#0967ff] px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Search</button></div>
           </div>
         </div>
-        <button onClick={() => navigate('service-detail', campaign.service)} className="group relative min-h-[300px] overflow-hidden text-left lg:min-h-full">
+        <button onClick={() => navigate('service-detail', campaign.service)} className="group relative min-h-full overflow-hidden text-left">
           <img key={campaign.id} src={campaign.image} alt="" className="absolute inset-0 h-full w-full object-cover transition duration-700 group-hover:scale-105"/>
           <div className="absolute inset-0 bg-gradient-to-r from-[#071b52]/45 via-transparent to-black/15"/>
-          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#061331]/85 via-[#061331]/25 to-transparent px-7 pb-7 pt-24 sm:px-9">
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#061331]/90 via-[#061331]/20 to-transparent px-6 pb-5 pt-16 sm:px-7">
             <span className="inline-flex rounded-full bg-[#dfff2d] px-3 py-1 text-[10px] font-black tracking-[.12em] text-[#213100]">{campaign.eyebrow}</span>
-            <h2 className="mt-3 text-3xl font-black tracking-[-.04em] text-white 2xl:text-4xl">{campaign.title}</h2>
-            <p className="mt-2 max-w-md text-sm font-semibold leading-6 text-blue-50">{campaign.body}</p>
-            <span className="mt-4 inline-flex items-center gap-2 text-sm font-black text-white">Explore offer <ArrowRight size={16}/></span>
+            <h2 className="mt-2 text-2xl font-black tracking-[-.04em] text-white">{campaign.title}</h2>
+            <span className="mt-2 inline-flex items-center gap-2 text-xs font-black text-white">Explore offer <ArrowRight size={14}/></span>
           </div>
           <div className="absolute right-6 top-6 flex rounded-xl bg-white/15 p-1.5 backdrop-blur">{HOME_CAMPAIGNS.map((item, index) => <span key={item.id} className={`mx-1 h-1.5 rounded-full transition-all ${activeCampaign === index ? 'w-6 bg-white' : 'w-1.5 bg-white/55'}`}/>)}</div>
         </button>
       </div>
-      <div className="flex items-center justify-between border-t border-white/10 bg-[#061743]/70 px-7 py-3 text-xs font-bold text-blue-100 sm:px-10 2xl:px-12"><span>Popular: Cleaning · Car care · Beauty · Travel</span><button onClick={() => navigate('deals')} className="font-black text-white">See all offers <ArrowRight size={13} className="ml-1 inline"/></button></div>
     </section>
 
     <section><SectionTitle eyebrow="START WITH A CATEGORY" title="Your everyday, beautifully covered" action="View all" onAction={() => navigate('categories')} /><div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-8 2xl:gap-5">{CATEGORIES.map(category => <button key={category.id} onClick={() => navigate('category-services', { id: category.id, label: category.label })} className="group rounded-2xl bg-white p-3 text-left shadow-sm ring-1 ring-[#e5edf8] transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-100 2xl:p-4"><div className="flex h-20 items-center justify-center overflow-hidden rounded-xl bg-[#f4f8ff] 2xl:h-24"><img src={category.image} alt="" loading="lazy" className="h-full w-full object-contain transition duration-300 group-hover:scale-110"/></div><p className="mt-3 text-sm font-black">{category.label}</p><p className="mt-1 text-[11px] font-bold text-[#8190aa]">{category.count}</p></button>)}</div></section>
