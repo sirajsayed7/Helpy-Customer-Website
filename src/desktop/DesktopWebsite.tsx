@@ -84,8 +84,8 @@ export default function DesktopWebsite() {
 
   return <div className="website-shell min-h-screen bg-[#f4f7fc] text-[#102044]">
     <DesktopTopBar screen={screen} navigate={navigate} />
-    <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-10 lg:py-7">
-        <div className="mx-auto max-w-[1540px]">
+    <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-10 lg:py-8">
+        <div className="mx-auto max-w-[1240px]">
           {canGoBack && screen !== 'home' && <button onClick={goBack} className="mb-5 inline-flex items-center gap-2 text-sm font-black text-[#5d6c8b] transition hover:text-[#0967ff]"><ArrowLeft size={16} /> Back</button>}
           <DesktopRoute screen={screen} params={params} navigate={navigate} />
         </div>
