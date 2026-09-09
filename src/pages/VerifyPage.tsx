@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useRef, useState, type KeyboardEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 import { StatusBar, HelpyLogo } from '../components/shared'
@@ -7,9 +7,28 @@ const CODE = '123456'
 
 export default function VerifyPage() {
   const { goBack, login } = useNav()
-  const [digits, setDigits] = useState(CODE.split(''))
+  const [digits, setDigits] = useState(Array(6).fill(''))
   const [error, setError] = useState(false)
+  const inputs = useRef<Array<HTMLInputElement | null>>([])
   const verify = () => digits.join('') === CODE ? login() : setError(true)
+  const updateDigit = (value: string, index: number) => {
+    const entered = value.replace(/\D/g, '')
+    if (!entered) {
+      setDigits(current => current.map((digit, digitIndex) => digitIndex === index ? '' : digit))
+      setError(false)
+      return
+    }
+    setDigits(current => {
+      const next = [...current]
+      entered.slice(0, 6 - index).split('').forEach((digit, offset) => { next[index + offset] = digit })
+      return next
+    })
+    setError(false)
+    inputs.current[Math.min(index + entered.length, 5)]?.focus()
+  }
+  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key === 'Backspace' && !digits[index] && index > 0) inputs.current[index - 1]?.focus()
+  }
 
   return (
     <div className="relative flex flex-col flex-1 overflow-hidden bg-[#d8edff]">
@@ -27,9 +46,9 @@ export default function VerifyPage() {
           <h1 className="text-[36px] leading-none font-black tracking-tight text-[#0c1230]">Verify Code</h1>
           <p className="mt-4 text-[16px] leading-6 text-[#10152f] font-semibold">We've sent a verification code to<br/><span className="text-[#0059b8] font-black">user@helpy.app</span>.</p>
         </div>
-        <div className="mt-8 flex justify-between gap-2">
+        <div className="mt-8 flex justify-between gap-2" aria-label="Six-digit verification code">
           {digits.map((d,i)=>(
-            <input key={i} value={d} maxLength={1} inputMode="numeric" onChange={(e)=>{ const arr=[...digits]; arr[i]=e.target.value.replace(/\D/g,'').slice(-1); setDigits(arr); setError(false)}}
+            <input key={i} ref={element => { inputs.current[i] = element }} value={d} maxLength={6} inputMode="numeric" autoComplete={i === 0 ? 'one-time-code' : 'off'} aria-label={`Digit ${i + 1} of 6`} onFocus={event => event.currentTarget.select()} onKeyDown={event => handleKeyDown(event, i)} onChange={event => updateDigit(event.target.value, i)}
               className={`w-[46px] h-[56px] bg-white rounded-xl text-center text-[28px] font-black text-[#0059a9] outline-none shadow-[0_10px_20px_rgba(15,23,42,0.10)] ${error?'ring-2 ring-red-400':''}`}/>
           ))}
         </div>
@@ -37,7 +56,7 @@ export default function VerifyPage() {
         {error && <p className="mt-3 text-center text-red-500 font-bold">Enter verification code 123456</p>}
         <div className="mt-7 mx-auto max-w-[260px] rounded-2xl bg-white/88 px-5 py-3 text-center text-[16px] text-[#10152f] shadow-[0_12px_30px_rgba(15,23,42,0.14)] backdrop-blur">
           <p className="font-semibold">Didn't get a code?</p>
-          <p className="mt-1"><button onClick={()=>setDigits(CODE.split(''))} className="text-[#0059a9] font-black">Resend OTP</button> <span className="text-[#4b5563] font-bold">00:20</span></p>
+          <p className="mt-1"><button onClick={()=>{ setDigits(Array(6).fill('')); inputs.current[0]?.focus() }} className="text-[#0059a9] font-black">Resend OTP</button> <span className="text-[#4b5563] font-bold">00:20</span></p>
         </div>
       </div>
     </div>

@@ -5,7 +5,7 @@ import {
   PackageCheck, Plus, Search, Send, Settings, ShieldCheck, Sparkles, Star,
   UserRound, Wallet, X, Zap, type LucideIcon,
 } from 'lucide-react'
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
 import { type Screen, useNav } from '../context/NavContext'
 
 type Service = {
@@ -70,7 +70,7 @@ export default function DesktopWebsite() {
   }, [screen])
 
   if (screen === 'splash') return <WelcomeScreen navigate={navigate} />
-  if (screen === 'login' || screen === 'verify') return <AuthScreen screen={screen} navigate={navigate} goBack={goBack} />
+  if (screen === 'login' || screen === 'verify') return <DesktopAuthScreen screen={screen} navigate={navigate} goBack={goBack} />
 
   return <div className="website-shell min-h-screen bg-[#f4f7fc] text-[#102044]">
     <TopBar navigate={navigate} onMenu={() => setSidebarOpen(true)} />
@@ -138,6 +138,66 @@ function AuthScreen({ screen, navigate, goBack }: { screen: Screen; navigate: (s
   const verifying = screen === 'verify'
   const updateCode = (value: string, index: number) => setCode(current => current.map((item, itemIndex) => itemIndex === index ? value.slice(-1) : item))
   return <div className="grid min-h-screen bg-[#f4f7fc] lg:grid-cols-[1.05fr_.95fr]"><div className="relative hidden overflow-hidden bg-[#0967ff] p-12 text-white lg:block"><img src="/assets/doha-katara-crescent-hero.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30"/><div className="absolute inset-0 bg-gradient-to-br from-[#042b77]/90 via-[#0967ff]/80 to-[#16b9b3]/70"/><div className="relative flex h-full max-w-lg flex-col"><button onClick={() => navigate('splash')} className="w-fit text-3xl font-black">helpy<span className="text-[#bde7ff]">.</span></button><div className="my-auto"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"><ShieldCheck size={28} /></div><h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-.05em]">A more helpful way to get things done.</h1><p className="mt-5 text-lg leading-8 text-blue-100">Book the people and services your day needs—without the endless searching.</p></div><p className="text-sm font-bold text-blue-100">Verified providers. Simple booking. Total peace of mind.</p></div></div><div className="flex items-center justify-center px-5 py-12 sm:px-8"><div className="w-full max-w-[440px]"><button onClick={goBack} className="mb-10 inline-flex items-center gap-2 text-sm font-black text-[#64738f] hover:text-[#0967ff]"><ArrowLeft size={16}/> Back</button><p className="text-sm font-black uppercase tracking-[.14em] text-[#0967ff]">{verifying ? 'Almost there' : 'Welcome to Helpy'}</p><h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your number' : 'Let’s get you started'}</h2><p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 4-digit code to ${phone || 'your phone number'}.` : 'Enter your mobile number to sign in or create an account.'}</p>{verifying ? <><div className="mt-8 flex gap-3">{code.map((digit, index) => <input key={index} value={digit} onChange={event => updateCode(event.target.value, index)} inputMode="numeric" maxLength={1} className="h-16 w-14 rounded-2xl border border-[#dfe8f5] bg-white text-center text-2xl font-black outline-none transition focus:border-[#0967ff] focus:ring-4 focus:ring-blue-100" />)}</div><button onClick={() => navigate('home')} className="mt-7 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Verify & continue</button><button className="mt-5 w-full text-sm font-black text-[#0967ff]">Resend code</button></> : <><label className="mt-8 block text-sm font-black">Mobile number</label><div className="mt-2 flex h-14 rounded-2xl border border-[#dfe8f5] bg-white focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><span className="flex items-center border-r border-[#e5ecf7] px-4 text-sm font-black text-[#53627d]">+974</span><input value={phone} onChange={event => setPhone(event.target.value)} inputMode="tel" placeholder="55 000 000" className="min-w-0 flex-1 rounded-r-2xl px-4 text-base font-bold outline-none"/></div><button onClick={() => navigate('verify', { phone })} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Continue <ArrowRight size={17} className="ml-1 inline" /></button><div className="my-7 flex items-center gap-3 text-xs font-bold text-[#9aa6bb]"><div className="h-px flex-1 bg-[#e4ebf5]"/>or<div className="h-px flex-1 bg-[#e4ebf5]"/></div><button onClick={() => navigate('verify', { phone })} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe8f5] bg-white text-sm font-black transition hover:bg-[#f8faff]"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f4f7fc] text-xs font-black text-[#4285f4]">G</span>Continue with Google</button></>}</div></div></div>
+}
+
+function DesktopAuthScreen({ screen, navigate, goBack }: { screen: Screen; navigate: (screen: Screen, params?: any) => void; goBack: () => void }) {
+  const [phone, setPhone] = useState('')
+  const [code, setCode] = useState(Array(6).fill(''))
+  const codeInputs = useRef<Array<HTMLInputElement | null>>([])
+  const verifying = screen === 'verify'
+
+  const updateCode = (value: string, index: number) => {
+    const entered = value.replace(/\D/g, '')
+    if (!entered) {
+      setCode(current => current.map((digit, digitIndex) => digitIndex === index ? '' : digit))
+      return
+    }
+    setCode(current => {
+      const next = [...current]
+      entered.slice(0, 6 - index).split('').forEach((digit, offset) => { next[index + offset] = digit })
+      return next
+    })
+    codeInputs.current[Math.min(index + entered.length, 5)]?.focus()
+  }
+
+  const handleCodeKeyDown = (event: KeyboardEvent<HTMLInputElement>, index: number) => {
+    if (event.key === 'Backspace' && !code[index] && index > 0) codeInputs.current[index - 1]?.focus()
+    if (event.key === 'ArrowLeft' && index > 0) codeInputs.current[index - 1]?.focus()
+    if (event.key === 'ArrowRight' && index < 5) codeInputs.current[index + 1]?.focus()
+  }
+
+  return <div className="grid min-h-screen bg-[#f4f7fc] lg:grid-cols-[1.05fr_.95fr]">
+    <div className="relative hidden overflow-hidden bg-[#0967ff] p-12 text-white lg:block">
+      <img src="/assets/doha-katara-crescent-hero.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30"/>
+      <div className="absolute inset-0 bg-gradient-to-br from-[#042b77]/90 via-[#0967ff]/80 to-[#16b9b3]/70"/>
+      <div className="relative flex h-full max-w-lg flex-col">
+        <button onClick={() => navigate('splash')} className="w-fit text-3xl font-black">helpy<span className="text-[#bde7ff]">.</span></button>
+        <div className="my-auto"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"><ShieldCheck size={28} /></div><h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-.05em]">A more helpful way to get things done.</h1><p className="mt-5 text-lg leading-8 text-blue-100">Book the people and services your day needs—without the endless searching.</p></div>
+        <p className="text-sm font-bold text-blue-100">Verified providers. Simple booking. Total peace of mind.</p>
+      </div>
+    </div>
+    <div className="flex items-center justify-center px-5 py-12 sm:px-8">
+      <div className="w-full max-w-[440px]">
+        <button onClick={goBack} className="mb-10 inline-flex items-center gap-2 text-sm font-black text-[#64738f] transition hover:text-[#0967ff]"><ArrowLeft size={16}/> Back</button>
+        <p className="text-sm font-black uppercase tracking-[.14em] text-[#0967ff]">{verifying ? 'Almost there' : 'Welcome to Helpy'}</p>
+        <h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your number' : 'Let’s get you started'}</h2>
+        <p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 6-digit code to ${phone || 'your phone number'}.` : 'Enter your mobile number to sign in or create an account.'}</p>
+        {verifying ? <>
+          <div className="mt-8 flex justify-between gap-2 sm:gap-3" aria-label="Six-digit verification code">
+            {code.map((digit, index) => <input key={index} ref={element => { codeInputs.current[index] = element }} value={digit} onChange={event => updateCode(event.target.value, index)} onKeyDown={event => handleCodeKeyDown(event, index)} onFocus={event => event.currentTarget.select()} inputMode="numeric" autoComplete={index === 0 ? 'one-time-code' : 'off'} maxLength={6} aria-label={`Digit ${index + 1} of 6`} className="h-14 w-11 rounded-xl border border-[#dfe8f5] bg-white text-center text-xl font-black outline-none transition sm:h-16 sm:w-14 sm:text-2xl focus:border-[#0967ff] focus:ring-4 focus:ring-blue-100" />)}
+          </div>
+          <button onClick={() => navigate('home')} className="mt-7 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Verify & continue</button>
+          <button onClick={() => { setCode(Array(6).fill('')); codeInputs.current[0]?.focus() }} className="mt-5 w-full text-sm font-black text-[#0967ff]">Resend code</button>
+        </> : <>
+          <label className="mt-8 block text-sm font-black">Mobile number</label>
+          <div className="mt-2 flex h-14 rounded-2xl border border-[#dfe8f5] bg-white focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><span className="flex items-center border-r border-[#e5ecf7] px-4 text-sm font-black text-[#53627d]">+974</span><input value={phone} onChange={event => setPhone(event.target.value)} inputMode="tel" placeholder="55 000 000" className="min-w-0 flex-1 rounded-r-2xl px-4 text-base font-bold outline-none"/></div>
+          <button onClick={() => navigate('verify', { phone })} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Continue <ArrowRight size={17} className="ml-1 inline" /></button>
+          <div className="my-7 flex items-center gap-3 text-xs font-bold text-[#9aa6bb]"><div className="h-px flex-1 bg-[#e4ebf5]"/>or<div className="h-px flex-1 bg-[#e4ebf5]"/></div>
+          <button onClick={() => navigate('verify', { phone })} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe8f5] bg-white text-sm font-black transition hover:bg-[#f8faff]"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f4f7fc] text-xs font-black text-[#4285f4]">G</span>Continue with Google</button>
+        </>}
+      </div>
+    </div>
+  </div>
 }
 
 function DesktopHome({ navigate }: { navigate: (screen: Screen, params?: any) => void }) {
