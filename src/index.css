@@ -16,3 +16,7 @@ body{margin:0;background:#E8F0FE;font-family:'DM Sans',sans-serif;-webkit-font-s
 @media (max-width:640px){.website-wrap{width:min(100% - 32px,1180px)}}
 .website-shell button:focus-visible,.website-shell input:focus-visible{outline:3px solid rgba(9,103,255,.38);outline-offset:3px}
 .website-shell button{cursor:pointer}
+.banner-carousel-scroller{scrollbar-width:none;scroll-snap-type:x mandatory;overscroll-behavior-x:contain}
+.banner-carousel-scroller::-webkit-scrollbar{display:none}
+.banner-carousel-scroller>button{scroll-snap-align:start}
+@media (prefers-reduced-motion:reduce){.banner-carousel-scroller{scroll-behavior:auto}.banner-carousel-scroller *{animation-duration:.01ms!important;transition-duration:.01ms!important}}
