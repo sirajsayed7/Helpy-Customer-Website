@@ -150,13 +150,13 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
   })()
 
   return (
-    <div className="py-2 lg:py-4">
+    <div className={accountScreen === 'profile' ? '' : 'py-2 lg:py-4'}>
       <div>
-        <div className="mb-7 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
+        {accountScreen !== 'profile' && <div className="mb-7 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
           <button onClick={() => navigate('home')} className="transition hover:text-[#0967ff]">Home</button>
           <ChevronRight size={15} className="text-slate-300" />
           <span className="text-slate-800">My account</span>
-        </div>
+        </div>}
         <div className="grid items-start gap-7 xl:grid-cols-[286px_minmax(0,1fr)]">
           <AccountRail active={accountScreen} navigate={navigate} />
           <div className="min-w-0">{content}</div>
