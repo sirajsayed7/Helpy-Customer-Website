@@ -73,7 +73,7 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
     if (!scroller || !target) return
     if (animationRef.current) window.cancelAnimationFrame(animationRef.current)
 
-    if (behavior === 'auto' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    if (behavior === 'auto') {
       positionRef.current = target.offsetLeft
       scroller.scrollLeft = positionRef.current
       updateActive(index)
@@ -125,7 +125,7 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
 
   useEffect(() => {
     const scroller = scrollerRef.current
-    if (!scroller || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+    if (!scroller) return
 
     let previousTime = performance.now()
     const pixelsPerSecond = 42
