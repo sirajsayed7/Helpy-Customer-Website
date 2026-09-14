@@ -134,7 +134,7 @@ const legalSections = {
  */
 export default function DesktopAccountViews({ screen, navigate }: DesktopAccountViewsProps) {
   const accountScreen: AccountScreen = isAccountScreen(screen) ? screen : 'profile'
-  const compactTop = accountScreen === 'profile' || accountScreen === 'contact-us'
+  const compactTop = accountScreen !== 'terms' && accountScreen !== 'privacy'
 
   const content = (() => {
     switch (accountScreen) {
