@@ -36,11 +36,19 @@ const LOOP_BANNERS = [...BANNERS, ...BANNERS, ...BANNERS, ...BANNERS, ...BANNERS
 export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate }) {
   const scrollerRef = useRef<HTMLDivElement | null>(null)
   const animationRef = useRef<number | null>(null)
+  const motionRef = useRef<number | null>(null)
   const isAnimatingRef = useRef(false)
+  const positionRef = useRef(0)
+  const activeRef = useRef(BANNERS.length * 2)
+  const pausedRef = useRef(false)
   const [active, setActive] = useState(BANNERS.length * 2)
-  const [paused, setPaused] = useState(false)
   const [visible, setVisible] = useState(() => typeof window !== 'undefined' && window.matchMedia('(min-width: 1280px)').matches ? 3 : typeof window !== 'undefined' && window.matchMedia('(min-width: 1024px)').matches ? 2 : 1)
   const normalizeIndex = (index: number) => BANNERS.length * 2 + (((index % BANNERS.length) + BANNERS.length) % BANNERS.length)
+
+  const updateActive = (index: number) => {
+    activeRef.current = index
+    setActive(index)
+  }
 
   useEffect(() => {
     const desktop = window.matchMedia('(min-width: 1280px)')
@@ -66,8 +74,9 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
     if (animationRef.current) window.cancelAnimationFrame(animationRef.current)
 
     if (behavior === 'auto' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
-      scroller.scrollLeft = target.offsetLeft
-      setActive(index)
+      positionRef.current = target.offsetLeft
+      scroller.scrollLeft = positionRef.current
+      updateActive(index)
       return
     }
 
@@ -81,7 +90,8 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
     const animate = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / duration)
       const eased = 1 - Math.pow(1 - progress, 3)
-      scroller.scrollLeft = start + distance * eased
+      positionRef.current = start + distance * eased
+      scroller.scrollLeft = positionRef.current
 
       if (progress < 1) {
         animationRef.current = window.requestAnimationFrame(animate)
@@ -89,19 +99,23 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
       }
 
       const reset = index < BANNERS.length || index >= BANNERS.length * 4 ? normalizeIndex(index) : index
-      scroller.scrollLeft = (scroller.children[reset] as HTMLElement).offsetLeft
-      setActive(reset)
+      positionRef.current = (scroller.children[reset] as HTMLElement).offsetLeft
+      scroller.scrollLeft = positionRef.current
+      updateActive(reset)
       isAnimatingRef.current = false
       animationRef.current = null
     }
 
-    setActive(index)
+    updateActive(index)
     animationRef.current = window.requestAnimationFrame(animate)
   }
 
   useEffect(() => {
     scrollToBanner(BANNERS.length * 2, 'auto')
-    return () => { if (animationRef.current) window.cancelAnimationFrame(animationRef.current) }
+    return () => {
+      if (animationRef.current) window.cancelAnimationFrame(animationRef.current)
+      if (motionRef.current) window.clearInterval(motionRef.current)
+    }
   }, [])
 
   useEffect(() => {
@@ -110,13 +124,48 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
   }, [visible])
 
   useEffect(() => {
-    if (paused) return
-    const timer = window.setTimeout(() => scrollToBanner(active + 1), 3600)
-    return () => window.clearTimeout(timer)
-  }, [active, paused])
+    const scroller = scrollerRef.current
+    if (!scroller || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return
+
+    let previousTime = performance.now()
+    const pixelsPerSecond = 42
+
+    const glide = () => {
+      const time = performance.now()
+      if (!pausedRef.current && !isAnimatingRef.current) {
+        const elapsed = Math.min(time - previousTime, 40)
+        positionRef.current += pixelsPerSecond * elapsed / 1000
+        scroller.scrollLeft = positionRef.current
+
+        const loopStart = scroller.children[BANNERS.length * 2] as HTMLElement | undefined
+        const loopEnd = scroller.children[BANNERS.length * 3] as HTMLElement | undefined
+        const nextCard = scroller.children[BANNERS.length * 2 + 1] as HTMLElement | undefined
+
+        if (loopStart && loopEnd && nextCard) {
+          const loopWidth = loopEnd.offsetLeft - loopStart.offsetLeft
+          if (positionRef.current >= loopEnd.offsetLeft) {
+            positionRef.current -= loopWidth
+            scroller.scrollLeft = positionRef.current
+          }
+
+          const cardPitch = nextCard.offsetLeft - loopStart.offsetLeft
+          const nearest = BANNERS.length * 2 + Math.round((positionRef.current - loopStart.offsetLeft) / cardPitch)
+          if (nearest !== activeRef.current) updateActive(nearest)
+        }
+      }
+
+      previousTime = time
+    }
+
+    motionRef.current = window.setInterval(glide, 16)
+    return () => {
+      if (motionRef.current) window.clearInterval(motionRef.current)
+      motionRef.current = null
+    }
+  }, [visible])
 
   const move = (direction: number) => {
-    if (!isAnimatingRef.current) scrollToBanner(active + direction)
+    if (!isAnimatingRef.current) scrollToBanner(activeRef.current + direction)
   }
 
   const open = (banner: typeof BANNERS[number]) => {
@@ -128,10 +177,10 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
     className="group/carousel relative h-[230px] overflow-hidden sm:h-[250px] lg:h-[230px] xl:h-[236px]"
     aria-roledescription="carousel"
     aria-label="Featured services and offers"
-    onMouseEnter={() => setPaused(true)}
-    onMouseLeave={() => setPaused(false)}
-    onFocusCapture={() => setPaused(true)}
-    onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) setPaused(false) }}
+    onMouseEnter={() => { pausedRef.current = true }}
+    onMouseLeave={() => { pausedRef.current = false }}
+    onFocusCapture={() => { pausedRef.current = true }}
+    onBlurCapture={event => { if (!event.currentTarget.contains(event.relatedTarget)) pausedRef.current = false }}
     onKeyDown={event => {
       if (event.key === 'ArrowLeft') move(-1)
       if (event.key === 'ArrowRight') move(1)
