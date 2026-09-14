@@ -7,25 +7,25 @@ type Navigate = (screen: Screen, params?: any) => void
 const BANNERS = [
   {
     id: 'foot-champz',
-    image: '/assets/banner-foot-champz.jpeg',
+    image: '/assets/banner-foot-champz-no-cta.png',
     alt: 'Foot Champz football game and pitch booking',
     target: ['all-services', { query: 'football game' }],
   },
   {
     id: 'bubbleit',
-    image: '/assets/banner-bubbleit-car-care.jpeg',
+    image: '/assets/banner-bubbleit-car-care-no-cta.png',
     alt: 'Bubbleit premium mobile car care',
     target: ['service-detail', { provider: 'Sparkle Auto Wash', name: 'Premium Wash', price: '75.00', providerBg: 'bg-blue-500', providerEmoji: 'SA', providerImage: '/assets/ai-profile-sparkle-carwash.jpg', heroImg: '/assets/ai-banner-sparkle-carwash.jpg' }],
   },
   {
     id: 'heritage-luxury',
-    image: '/assets/banner-heritage-luxury.jpeg',
+    image: '/assets/banner-heritage-luxury-no-cta.png',
     alt: 'The Heritage luxury chauffeur, private aviation and concierge',
     target: ['service-detail', { provider: 'The Heritage', name: 'Flights & Hotels Package', price: '320.00', providerBg: 'bg-indigo-500', providerEmoji: 'TH', providerImage: '/assets/ai-banner-heritage.jpg', heroImg: '/assets/ai-banner-heritage.jpg' }],
   },
   {
     id: 'trendy-media',
-    image: '/assets/banner-trendy-media.jpeg',
+    image: '/assets/banner-trendy-media-no-cta.png',
     alt: 'Trendy social media and production services',
     target: ['category-services', { id: 'visuals', label: 'Media' }],
   },
