@@ -134,6 +134,7 @@ const legalSections = {
  */
 export default function DesktopAccountViews({ screen, navigate }: DesktopAccountViewsProps) {
   const accountScreen: AccountScreen = isAccountScreen(screen) ? screen : 'profile'
+  const compactTop = accountScreen === 'profile' || accountScreen === 'contact-us'
 
   const content = (() => {
     switch (accountScreen) {
@@ -150,9 +151,9 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
   })()
 
   return (
-    <div className={accountScreen === 'profile' ? '' : 'py-2 lg:py-4'}>
+    <div className={compactTop ? '' : 'py-2 lg:py-4'}>
       <div>
-        {accountScreen !== 'profile' && <div className="mb-7 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
+        {!compactTop && <div className="mb-7 flex flex-wrap items-center gap-2 text-sm font-semibold text-slate-500">
           <button onClick={() => navigate('home')} className="transition hover:text-[#0967ff]">Home</button>
           <ChevronRight size={15} className="text-slate-300" />
           <span className="text-slate-800">My account</span>
