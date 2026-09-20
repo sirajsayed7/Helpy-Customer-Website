@@ -83,13 +83,15 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
     const start = scroller.scrollLeft
     const end = target.offsetLeft
     const distance = end - start
-    const duration = 720
+    const duration = 880
     const startedAt = performance.now()
     isAnimatingRef.current = true
 
     const animate = (now: number) => {
       const progress = Math.min(1, (now - startedAt) / duration)
-      const eased = 1 - Math.pow(1 - progress, 3)
+      const eased = progress < 0.5
+        ? 4 * progress * progress * progress
+        : 1 - Math.pow(-2 * progress + 2, 3) / 2
       positionRef.current = start + distance * eased
       scroller.scrollLeft = positionRef.current
 
@@ -124,40 +126,11 @@ export default function DesktopBannerCarousel({ navigate }: { navigate: Navigate
   }, [visible])
 
   useEffect(() => {
-    const scroller = scrollerRef.current
-    if (!scroller) return
-
-    let previousTime = performance.now()
-    const pixelsPerSecond = 42
-
-    const glide = () => {
-      const time = performance.now()
-      if (!pausedRef.current && !isAnimatingRef.current) {
-        const elapsed = Math.min(time - previousTime, 40)
-        positionRef.current += pixelsPerSecond * elapsed / 1000
-        scroller.scrollLeft = positionRef.current
-
-        const loopStart = scroller.children[BANNERS.length * 2] as HTMLElement | undefined
-        const loopEnd = scroller.children[BANNERS.length * 3] as HTMLElement | undefined
-        const nextCard = scroller.children[BANNERS.length * 2 + 1] as HTMLElement | undefined
-
-        if (loopStart && loopEnd && nextCard) {
-          const loopWidth = loopEnd.offsetLeft - loopStart.offsetLeft
-          if (positionRef.current >= loopEnd.offsetLeft) {
-            positionRef.current -= loopWidth
-            scroller.scrollLeft = positionRef.current
-          }
-
-          const cardPitch = nextCard.offsetLeft - loopStart.offsetLeft
-          const nearest = BANNERS.length * 2 + Math.round((positionRef.current - loopStart.offsetLeft) / cardPitch)
-          if (nearest !== activeRef.current) updateActive(nearest)
-        }
-      }
-
-      previousTime = time
+    const pulse = () => {
+      if (!pausedRef.current && !isAnimatingRef.current) scrollToBanner(activeRef.current + 1)
     }
 
-    motionRef.current = window.setInterval(glide, 16)
+    motionRef.current = window.setInterval(pulse, 4200)
     return () => {
       if (motionRef.current) window.clearInterval(motionRef.current)
       motionRef.current = null
