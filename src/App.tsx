@@ -24,6 +24,7 @@ import LocationPickerPage from './subpages/LocationPickerPage'
 import HelperPages        from './subpages/HelperPages'
 import ReviewsPage        from './subpages/ReviewsPage'
 import DesktopWebsite     from './desktop/DesktopWebsite'
+import { HelpyDataProvider } from './context/HelpyDataContext'
 
 const AUTH = ['splash','login','verify']
 const FULLSCREEN = ['chat-thread','service-detail','booking-success','glow-checkout','booking-checkout','location','reviews']
@@ -81,5 +82,5 @@ function AppShell() {
 }
 
 export default function App() {
-  return <NavProvider><AppShell/></NavProvider>
+  return <NavProvider><HelpyDataProvider><AppShell/></HelpyDataProvider></NavProvider>
 }

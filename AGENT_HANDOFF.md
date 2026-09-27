@@ -1,0 +1,95 @@
+# Helpy customer website — agent handoff
+
+Last updated: 27 September 2026.
+
+## Goal and current boundary
+
+The desktop website is being migrated from demonstration records to contracts observed in the Helpy Android APK. Discovery, businesses, business services, availability, email OTP authentication, profile reads/edits, notifications, bookings, wallet reads, favourites reads and addresses use a shared live data layer.
+
+The booking workflow intentionally stops at final review. Do not call `/add-booking`, create a payment, or display success until staging and payment sandbox contracts are supplied.
+
+## Run and verify
+
+```powershell
+npm install
+Copy-Item .env.example .env
+# Set VITE_HELPY_API_ENABLED=true in .env
+npm run dev -- --host 127.0.0.1 --port 4173
+npx tsc --noEmit
+npm run build
+```
+
+Desktop entry: `http://127.0.0.1:4173/?desktop=1#home`.
+
+`.env` is ignored. Never commit bearer tokens, OTP values, Firebase ID/custom tokens, merchant credentials, service-account JSON, or private keys.
+
+## Important files
+
+- `src/api/helpy.ts`: API client, session separation, encodings and route wrappers.
+- `src/api/auth.ts`: email OTP adapter.
+- `src/api/chat.ts`: Firebase custom-token exchange and Firestore adapter.
+- `src/context/HelpyDataContext.tsx`: catalog/account loading and response mapping.
+- `src/desktop/DesktopLiveViews.tsx`: business discovery/profile, availability, checkout review, bookings and chat.
+- `src/desktop/DesktopAccountViews.tsx`: original profile and notification designs adapted to backend data.
+- `src/desktop/DesktopWebsite.tsx`: desktop routing and global header.
+- `BACKEND_INTEGRATION_AUDIT.md`: runtime-verified conventions and coverage.
+- `APK_ENDPOINT_INVENTORY.md`: full route inventory and status.
+- `CHAT_BACKEND_CONTRACT.md`: secure server requirement for messaging.
+
+## Active architecture
+
+`App.tsx` wraps navigation with `HelpyDataProvider`. Desktop widths render `DesktopWebsite`. Catalog reads use a guest token; private reads require a session explicitly tagged `user`, preventing a guest token from appearing logged in.
+
+Catalog loading:
+
+1. Guest bootstrap.
+2. Categories.
+3. Featured services, top providers and one service page per category.
+4. Group services by nested `created_by.id` into businesses.
+5. Search/category views show businesses; business profiles own service lists.
+6. Service/date selection requests `/vendor-availability`.
+
+After OTP login, profile, addresses, booking statuses 0/1/2, favourites, wallet history and notifications load in parallel.
+
+## Backend-driven desktop flows
+
+- Home: backend categories and grouped businesses; approved four local banners remain by design.
+- Browse: business-first search and category filtering.
+- Business profile: business identity, services, prices and live slots.
+- Checkout: service, date, slot, authenticated address and notes; submit disabled.
+- Profile: designed banner/cards/form using profile, wallet, booking, favourite and notification data.
+- Notifications: designed list using backend title/body/time/read state and contextual routing.
+- Bookings: backend status lists and detail refresh.
+- Messages: two-pane design with Firestore adapter; secure token endpoint required.
+
+## Contract caveats
+
+- Profile/address/notification mutations and booking detail need staging verification.
+- The analysis account had no bookings, addresses or favourites; populated variants remain unverified.
+- Catalog requests page 1, limit 100 for every category. Add pagination/consolidation.
+- `lan` and `long` default to Doha. Connect browser/selected-location coordinates.
+- Business profiles are grouped from creator records; consider refreshing vendor detail/offerings on open.
+- Mobile-width React pages still contain older local datasets.
+- Legacy placeholder components remain in source but are inactive in desktop routing.
+
+## Messaging continuation
+
+Never copy the APK's exposed Firebase Admin key into Vite code. Build the endpoint in `CHAT_BACKEND_CONTRACT.md`, rotate the compromised key, configure `VITE_HELPY_CHAT_TOKEN_ENDPOINT`, and test Firestore rules with two staging users. The browser adapter then loads users, polls messages and sends APK-compatible text messages.
+
+## Recommended next work
+
+1. Obtain backend source/OpenAPI and a staging account.
+2. Implement the secure chat-token endpoint.
+3. Capture populated booking/address/favourite/notification responses and tighten mappings.
+4. Connect global search, pagination and authoritative business detail loading.
+5. Add favourite toggle, review creation, unseen badges and logout.
+6. Implement cancellation/rescheduling in staging.
+7. Integrate booking creation and SkipCash sandbox with idempotency/webhooks.
+8. Move mobile-width pages onto the shared live data layer.
+
+## Safety constraints
+
+- Do not probe state-changing production routes to discover schemas.
+- Do not create real bookings, charges, payouts, addresses or profile changes without explicit authorization.
+- Never expose Firebase Admin, SkipCash merchant or other server credentials to the browser bundle.
+- Treat the embedded APK service-account key as compromised even if it still works.

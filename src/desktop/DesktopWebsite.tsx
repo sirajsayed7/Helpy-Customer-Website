@@ -1,7 +1,7 @@
 import {
   ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronRight, CircleHelp, Clock3, CreditCard, FileText, Heart,
-  Home, Inbox, Landmark, LayoutGrid, MapPin, Menu, MessageCircle, MoreHorizontal,
+  Home, Inbox, Landmark, LayoutGrid, Mail, MapPin, Menu, MessageCircle, MoreHorizontal,
   PackageCheck, Plus, Search, Send, Settings, ShieldCheck, Sparkles, Star,
   UserRound, Wallet, X, Zap, type LucideIcon,
 } from 'lucide-react'
@@ -9,6 +9,10 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNod
 import { type Screen, useNav } from '../context/NavContext'
 import DesktopAccountViews from './DesktopAccountViews'
 import DesktopBannerCarousel from './DesktopBannerCarousel'
+import { requestLoginOtp, verifyLoginOtp } from '../api/auth'
+import { helpyApiEnabled } from '../api/helpy'
+import { useHelpyData } from '../context/HelpyDataContext'
+import { LiveBackendView, LiveDesktopAccount, LiveDesktopBookings, LiveDesktopCheckout, LiveDesktopExplore, LiveDesktopHome, LiveDesktopService, LiveMessages } from './DesktopLiveViews'
 import {
   DesktopBookings,
   DesktopDiscoverySections,
@@ -85,14 +89,14 @@ const ACCOUNT_ITEMS: Array<{ screen: Screen; label: string; icon: typeof UserRou
 ]
 
 export default function DesktopWebsite() {
-  const { screen, params, navigate, goBack, canGoBack } = useNav()
+  const { screen, params, navigate, goBack, canGoBack, login } = useNav()
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }, [screen])
 
   if (screen === 'splash') return <WelcomeScreen navigate={navigate} />
-  if (screen === 'login' || screen === 'verify') return <DesktopAuthScreen screen={screen} navigate={navigate} goBack={goBack} />
+  if (screen === 'login' || screen === 'verify') return <DesktopAuthScreen screen={screen} params={params} navigate={navigate} goBack={goBack} login={login} />
 
   return <div className="website-shell min-h-screen bg-[#f4f7fc] text-[#102044]">
     <DesktopTopBar screen={screen} navigate={navigate} />
@@ -106,6 +110,7 @@ export default function DesktopWebsite() {
 }
 
 function DesktopTopBar({ screen, navigate }: { screen: Screen; navigate: (screen: Screen, params?: any) => void }) {
+  const { profile } = useHelpyData()
   const [query, setQuery] = useState('')
   const [profileOpen, setProfileOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
@@ -118,6 +123,8 @@ function DesktopTopBar({ screen, navigate }: { screen: Screen; navigate: (screen
     { screen: 'addresses', label: 'Saved locations', icon: MapPin },
     { screen: 'notifications', label: 'Notifications', icon: Bell },
   ]
+  const profileName = profile?.name || 'My account'
+  const profileInitials = profile?.name ? profile.name.split(/\s+/).map(word => word[0]).join('').slice(0, 2).toUpperCase() : <UserRound size={18}/>
   return <header className="sticky top-0 z-50 border-b border-[#e2eaf6] bg-white/95 backdrop-blur-xl">
     <div className="mx-auto flex h-[92px] max-w-[1840px] items-center gap-4 px-5 sm:px-8 lg:px-12 2xl:gap-5">
       <button onClick={() => navigate('home')} className="relative -left-3 grid h-16 w-[96px] shrink-0 place-items-center self-center bg-transparent p-0 shadow-none transition-transform duration-300 hover:scale-[1.02] hover:bg-transparent hover:shadow-none" aria-label="Helpy home"><img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="block h-14 w-[92px] object-contain object-center"/></button>
@@ -129,12 +136,12 @@ function DesktopTopBar({ screen, navigate }: { screen: Screen; navigate: (screen
       <div className="ml-auto flex shrink-0 items-center gap-2 border-l border-[#e5ecf6] pl-3 2xl:pl-5">
         <button onClick={() => navigate('location')} className="hidden items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-bold text-[#52617d] transition hover:bg-blue-50 lg:flex"><MapPin size={17} className="text-[#0967ff]"/>Doha</button>
         <button onClick={() => navigate('notifications')} className="relative rounded-xl p-2.5 text-[#52617d] transition hover:bg-blue-50" aria-label="Notifications"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#ff5c7a] ring-2 ring-white"/></button>
-        <button onClick={() => navigate('profile')} className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#0967ff] to-[#5f8cff] text-sm font-black text-white shadow-md shadow-blue-200" aria-label="Open profile">SS</button>
+        <button onClick={() => navigate('profile')} className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#0967ff] to-[#5f8cff] text-white shadow-md shadow-blue-200" aria-label="Open profile"><UserRound size={20}/></button>
         <button onClick={() => setProfileOpen(value => !value)} className={`rounded-xl p-2 text-[#52617d] transition hover:bg-blue-50 ${profileOpen ? 'bg-blue-50 text-[#0967ff]' : ''}`} aria-label="Open account menu"><ChevronDown size={18} className={`transition ${profileOpen ? 'rotate-180' : ''}`}/></button>
       </div>
     </div>
     {navOpen && <div className="border-t border-[#edf1f7] bg-white px-4 py-3 shadow-lg xl:hidden"><div className="mx-auto flex max-w-[1540px] gap-2 overflow-x-auto">{NAV_ITEMS.map(item => <button key={item.screen} onClick={() => { navigate(item.screen); setNavOpen(false) }} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-xs font-black ${selected(item.screen) ? 'bg-[#0967ff] text-white' : 'bg-[#f4f7fc] text-[#596984]'}`}><item.icon size={17}/>{item.label}</button>)}</div></div>}
-    {profileOpen && <><button onClick={() => setProfileOpen(false)} className="fixed inset-0 top-[92px] z-40" aria-label="Close account menu"/><div className="absolute right-5 top-[82px] z-50 w-[290px] overflow-hidden rounded-[24px] border border-[#e2eaf5] bg-white p-2 shadow-2xl shadow-[#102044]/15 lg:right-12"><button onClick={() => { navigate('profile'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-2xl bg-[#f3f8ff] p-3 text-left"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0967ff] text-sm font-black text-white">SS</span><span><span className="block text-sm font-black">Siraj Sayed</span><span className="mt-0.5 block text-xs font-semibold text-[#7b89a1]">View profile & account</span></span></button><div className="my-2 border-t border-[#edf1f7]"/>{accountLinks.map(link => <button key={link.screen} onClick={() => { navigate(link.screen); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><link.icon size={18}/>{link.label}</button>)}<div className="my-2 border-t border-[#edf1f7]"/><button onClick={() => { navigate('contact-us'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><CircleHelp size={18}/>Help centre</button></div></>}
+    {profileOpen && <><button onClick={() => setProfileOpen(false)} className="fixed inset-0 top-[92px] z-40" aria-label="Close account menu"/><div className="absolute right-5 top-[82px] z-50 w-[290px] overflow-hidden rounded-[24px] border border-[#e2eaf5] bg-white p-2 shadow-2xl shadow-[#102044]/15 lg:right-12"><button onClick={() => { navigate('profile'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-2xl bg-[#f3f8ff] p-3 text-left"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0967ff] text-sm font-black text-white">{profileInitials}</span><span><span className="block text-sm font-black">{profileName}</span><span className="mt-0.5 block text-xs font-semibold text-[#7b89a1]">View profile & account</span></span></button><div className="my-2 border-t border-[#edf1f7]"/>{accountLinks.map(link => <button key={link.screen} onClick={() => { navigate(link.screen); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><link.icon size={18}/>{link.label}</button>)}<div className="my-2 border-t border-[#edf1f7]"/><button onClick={() => { navigate('contact-us'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><CircleHelp size={18}/>Help centre</button></div></>}
   </header>
 }
 
@@ -165,19 +172,19 @@ function RailButton({ selected, icon, label, onClick }: { selected: boolean; ico
 
 function DesktopRoute({ screen, params, navigate }: { screen: Screen; params: any; navigate: (screen: Screen, params?: any) => void }) {
   switch (screen) {
-    case 'home': return <><DesktopHome navigate={navigate} /><div className="mt-8"><DesktopDiscoverySections navigate={navigate} /></div></>
-    case 'categories': case 'category-services': case 'all-services': case 'providers': case 'deals': case 'offers-events': return <DesktopExploreView screen={screen} params={params} navigate={navigate} />
-    case 'service-detail': return <DesktopProviderBooking params={params} navigate={navigate} />
-    case 'booking-checkout': case 'glow-checkout': case 'booking-confirm': return <DesktopCheckoutFlow service={asService(params?.booking || params)} initialAddress={params?.addressLabel} navigate={navigate} />
-    case 'booking-success': return <BookingSuccessView params={params} navigate={navigate} />
-    case 'orders': case 'order-detail': return <DesktopBookings screen={screen} params={params} navigate={navigate} />
-    case 'chat': return <DesktopMessages navigate={navigate} />
-    case 'chat-thread': return <ChatView screen={screen} params={params} navigate={navigate} />
-    case 'location': return <DesktopLocationFlow params={params} navigate={navigate} />
-    case 'reviews': return <DesktopReviews params={params} navigate={navigate} />
-    case 'profile': case 'wallet': case 'favorites': case 'addresses': case 'notifications':
-    case 'contact-us': case 'terms': case 'privacy': return <DesktopAccountViews screen={screen} navigate={navigate} />
-    default: return <DesktopAccountViews screen="profile" navigate={navigate} />
+    case 'home': return <LiveDesktopHome navigate={navigate}/>
+    case 'categories': case 'category-services': case 'all-services': case 'providers': case 'deals': case 'offers-events': return <LiveDesktopExplore screen={screen} params={params} navigate={navigate} />
+    case 'service-detail': return <LiveDesktopService params={params} navigate={navigate} />
+    case 'booking-checkout': case 'glow-checkout': case 'booking-confirm': return <LiveDesktopCheckout params={params} navigate={navigate} />
+    case 'booking-success': return <LiveBackendView screen={screen} params={params} navigate={navigate} />
+    case 'orders': case 'order-detail': return <LiveDesktopBookings params={params} navigate={navigate} />
+    case 'chat': case 'chat-thread': return <LiveMessages params={params} navigate={navigate} />
+    case 'location': return <LiveDesktopAccount screen="addresses" navigate={navigate} />
+    case 'reviews': return <LiveBackendView screen={screen} params={params} navigate={navigate} />
+    case 'profile': case 'notifications': return <DesktopAccountViews screen={screen} navigate={navigate} />
+    case 'wallet': case 'favorites': case 'addresses': return <LiveDesktopAccount screen={screen} navigate={navigate} />
+    case 'contact-us': case 'terms': case 'privacy': return <LiveBackendView screen={screen} params={params} navigate={navigate} />
+    default: return <LiveDesktopAccount screen="profile" navigate={navigate} />
   }
 }
 
@@ -193,16 +200,68 @@ function AuthScreen({ screen, navigate, goBack }: { screen: Screen; navigate: (s
   return <div className="grid min-h-screen bg-[#f4f7fc] lg:grid-cols-[1.05fr_.95fr]"><div className="relative hidden overflow-hidden bg-[#0967ff] p-12 text-white lg:block"><img src="/assets/doha-katara-crescent-hero.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30"/><div className="absolute inset-0 bg-gradient-to-br from-[#042b77]/90 via-[#0967ff]/80 to-[#16b9b3]/70"/><div className="relative flex h-full max-w-lg flex-col"><button onClick={() => navigate('splash')} className="w-fit text-3xl font-black">helpy<span className="text-[#bde7ff]">.</span></button><div className="my-auto"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"><ShieldCheck size={28} /></div><h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-.05em]">A more helpful way to get things done.</h1><p className="mt-5 text-lg leading-8 text-blue-100">Book the people and services your day needs—without the endless searching.</p></div><p className="text-sm font-bold text-blue-100">Verified providers. Simple booking. Total peace of mind.</p></div></div><div className="flex items-center justify-center px-5 py-12 sm:px-8"><div className="w-full max-w-[440px]"><button onClick={goBack} className="mb-10 inline-flex items-center gap-2 text-sm font-black text-[#64738f] hover:text-[#0967ff]"><ArrowLeft size={16}/> Back</button><p className="text-sm font-black uppercase tracking-[.14em] text-[#0967ff]">{verifying ? 'Almost there' : 'Welcome to Helpy'}</p><h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your number' : 'Let’s get you started'}</h2><p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 4-digit code to ${phone || 'your phone number'}.` : 'Enter your mobile number to sign in or create an account.'}</p>{verifying ? <><div className="mt-8 flex gap-3">{code.map((digit, index) => <input key={index} value={digit} onChange={event => updateCode(event.target.value, index)} inputMode="numeric" maxLength={1} className="h-16 w-14 rounded-2xl border border-[#dfe8f5] bg-white text-center text-2xl font-black outline-none transition focus:border-[#0967ff] focus:ring-4 focus:ring-blue-100" />)}</div><button onClick={() => navigate('home')} className="mt-7 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Verify & continue</button><button className="mt-5 w-full text-sm font-black text-[#0967ff]">Resend code</button></> : <><label className="mt-8 block text-sm font-black">Mobile number</label><div className="mt-2 flex h-14 rounded-2xl border border-[#dfe8f5] bg-white focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><span className="flex items-center border-r border-[#e5ecf7] px-4 text-sm font-black text-[#53627d]">+974</span><input value={phone} onChange={event => setPhone(event.target.value)} inputMode="tel" placeholder="55 000 000" className="min-w-0 flex-1 rounded-r-2xl px-4 text-base font-bold outline-none"/></div><button onClick={() => navigate('verify', { phone })} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Continue <ArrowRight size={17} className="ml-1 inline" /></button><div className="my-7 flex items-center gap-3 text-xs font-bold text-[#9aa6bb]"><div className="h-px flex-1 bg-[#e4ebf5]"/>or<div className="h-px flex-1 bg-[#e4ebf5]"/></div><button onClick={() => navigate('verify', { phone })} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe8f5] bg-white text-sm font-black transition hover:bg-[#f8faff]"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f4f7fc] text-xs font-black text-[#4285f4]">G</span>Continue with Google</button></>}</div></div></div>
 }
 
-function DesktopAuthScreen({ screen, navigate, goBack }: { screen: Screen; navigate: (screen: Screen, params?: any) => void; goBack: () => void }) {
-  const [phone, setPhone] = useState('')
+function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen: Screen; params: any; navigate: (screen: Screen, params?: any) => void; goBack: () => void; login: () => void }) {
+  const [email, setEmail] = useState(params?.email || '')
   const [code, setCode] = useState(Array(6).fill(''))
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
   const codeInputs = useRef<Array<HTMLInputElement | null>>([])
   const verifying = screen === 'verify'
+
+  const sendCode = async () => {
+    const value = email.trim().toLowerCase()
+    if (!/^\S+@\S+\.\S+$/.test(value)) {
+      setError('Enter a valid email address.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      await requestLoginOtp(value)
+      navigate('verify', { email: value })
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to send the verification code.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const verifyCode = async () => {
+    const value = code.join('')
+    const targetEmail = (params?.email || email).trim().toLowerCase()
+    if (!targetEmail || value.length !== 6) {
+      setError('Enter the complete 6-digit verification code.')
+      return
+    }
+    setLoading(true)
+    setError('')
+    try {
+      const verified = await verifyLoginOtp(targetEmail, value)
+      if (verified) login()
+      else setError('That verification code is not valid.')
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to verify the code.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const resendCode = async () => {
+    setCode(Array(6).fill(''))
+    setError('')
+    try {
+      await requestLoginOtp((params?.email || email).trim().toLowerCase())
+      codeInputs.current[0]?.focus()
+    } catch (reason) {
+      setError(reason instanceof Error ? reason.message : 'Unable to resend the code.')
+    }
+  }
 
   const updateCode = (value: string, index: number) => {
     const entered = value.replace(/\D/g, '')
     if (!entered) {
       setCode(current => current.map((digit, digitIndex) => digitIndex === index ? '' : digit))
+      setError('')
       return
     }
     setCode(current => {
@@ -210,6 +269,7 @@ function DesktopAuthScreen({ screen, navigate, goBack }: { screen: Screen; navig
       entered.slice(0, 6 - index).split('').forEach((digit, offset) => { next[index + offset] = digit })
       return next
     })
+    setError('')
     codeInputs.current[Math.min(index + entered.length, 5)]?.focus()
   }
 
@@ -233,20 +293,22 @@ function DesktopAuthScreen({ screen, navigate, goBack }: { screen: Screen; navig
       <div className="w-full max-w-[440px]">
         <button onClick={goBack} className="mb-10 inline-flex items-center gap-2 text-sm font-black text-[#64738f] transition hover:text-[#0967ff]"><ArrowLeft size={16}/> Back</button>
         <p className="text-sm font-black uppercase tracking-[.14em] text-[#0967ff]">{verifying ? 'Almost there' : 'Welcome to Helpy'}</p>
-        <h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your number' : 'Let’s get you started'}</h2>
-        <p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 6-digit code to ${phone || 'your phone number'}.` : 'Enter your mobile number to sign in or create an account.'}</p>
+        <h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your email' : 'Let’s get you started'}</h2>
+        <p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 6-digit code to ${params?.email || email || 'your email address'}.` : 'Enter your email address to receive a secure sign-in code.'}</p>
         {verifying ? <>
           <div className="mt-8 flex justify-between gap-2 sm:gap-3" aria-label="Six-digit verification code">
             {code.map((digit, index) => <input key={index} ref={element => { codeInputs.current[index] = element }} value={digit} onChange={event => updateCode(event.target.value, index)} onKeyDown={event => handleCodeKeyDown(event, index)} onFocus={event => event.currentTarget.select()} inputMode="numeric" autoComplete={index === 0 ? 'one-time-code' : 'off'} maxLength={6} aria-label={`Digit ${index + 1} of 6`} className="h-14 w-11 rounded-xl border border-[#dfe8f5] bg-white text-center text-xl font-black outline-none transition sm:h-16 sm:w-14 sm:text-2xl focus:border-[#0967ff] focus:ring-4 focus:ring-blue-100" />)}
           </div>
-          <button onClick={() => navigate('home')} className="mt-7 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Verify & continue</button>
-          <button onClick={() => { setCode(Array(6).fill('')); codeInputs.current[0]?.focus() }} className="mt-5 w-full text-sm font-black text-[#0967ff]">Resend code</button>
+          {error && <p role="alert" className="mt-4 text-sm font-bold text-red-500">{error}</p>}
+          <button onClick={verifyCode} disabled={loading} className="mt-7 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df] disabled:cursor-wait disabled:opacity-70">{loading ? 'Verifying…' : 'Verify & continue'}</button>
+          <button onClick={resendCode} disabled={loading} className="mt-5 w-full text-sm font-black text-[#0967ff] disabled:opacity-60">Resend code</button>
         </> : <>
-          <label className="mt-8 block text-sm font-black">Mobile number</label>
-          <div className="mt-2 flex h-14 rounded-2xl border border-[#dfe8f5] bg-white focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><span className="flex items-center border-r border-[#e5ecf7] px-4 text-sm font-black text-[#53627d]">+974</span><input value={phone} onChange={event => setPhone(event.target.value)} inputMode="tel" placeholder="55 000 000" className="min-w-0 flex-1 rounded-r-2xl px-4 text-base font-bold outline-none"/></div>
-          <button onClick={() => navigate('verify', { phone })} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]">Continue <ArrowRight size={17} className="ml-1 inline" /></button>
-          <div className="my-7 flex items-center gap-3 text-xs font-bold text-[#9aa6bb]"><div className="h-px flex-1 bg-[#e4ebf5]"/>or<div className="h-px flex-1 bg-[#e4ebf5]"/></div>
-          <button onClick={() => navigate('verify', { phone })} className="flex h-14 w-full items-center justify-center gap-3 rounded-2xl border border-[#dfe8f5] bg-white text-sm font-black transition hover:bg-[#f8faff]"><span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#f4f7fc] text-xs font-black text-[#4285f4]">G</span>Continue with Google</button>
+          <label className="mt-8 block text-sm font-black">Email address</label>
+          <div className="mt-2 flex h-14 items-center rounded-2xl border border-[#dfe8f5] bg-white px-4 focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><Mail size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={email} onChange={event => setEmail(event.target.value)} onKeyDown={event => event.key === 'Enter' && sendCode()} type="email" autoComplete="email" placeholder="you@example.com" className="min-w-0 flex-1 text-base font-bold outline-none"/></div>
+          <p className="mt-3 text-sm font-semibold leading-6 text-[#73809a]">We’ll send a one-time verification code. No password is required.</p>
+          {error && <p role="alert" className="mt-3 text-sm font-bold text-red-500">{error}</p>}
+          <button onClick={sendCode} disabled={loading} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df] disabled:cursor-wait disabled:opacity-70">{loading ? 'Sending code…' : <>Continue <ArrowRight size={17} className="ml-1 inline" /></>}</button>
+          {!helpyApiEnabled && <p className="mt-3 text-center text-xs font-semibold text-[#8a97ab]">Demo mode uses verification code 123456.</p>}
         </>}
       </div>
     </div>
@@ -411,7 +473,21 @@ function SectionTitle({ eyebrow, title, action, onAction }: { eyebrow: string; t
 
 function ServiceCard({ service, navigate }: { service: Service; navigate: (screen: Screen, params?: any) => void }) {
   const [saved, setSaved] = useState(false)
-  return <article className="group overflow-hidden rounded-[23px] bg-white shadow-sm ring-1 ring-[#e2ebf7] transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-100"><div className="relative h-44 overflow-hidden"><img src={service.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-[#071331]/50 via-transparent to-transparent"/><button onClick={() => setSaved(value => !value)} className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[#102044] shadow-md" aria-label="Save service"><Heart size={17} fill={saved ? '#ff5c7a' : 'none'} className={saved ? 'text-[#ff5c7a]' : ''}/></button><span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-2.5 py-1 text-[10px] font-black text-[#102044]">{service.category}</span></div><div className="p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-lg font-black">{service.name}</p><p className="mt-1 truncate text-sm font-bold text-[#77859d]">{service.provider}</p></div><span className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-black text-amber-600"><Star size={12} fill="currentColor"/>{service.rating}</span></div><div className="mt-5 flex items-center justify-between"><p className="text-sm font-black text-[#0967ff]">from QAR {service.price}</p><button onClick={() => navigate('service-detail', service)} className="rounded-xl bg-[#0967ff] px-3.5 py-2.5 text-xs font-black text-white transition hover:bg-[#0759df]">View details</button></div></div></article>
+  const openDetails = () => navigate('service-detail', service)
+  return <article
+    onClick={openDetails}
+    onKeyDown={event => {
+      if (event.target !== event.currentTarget) return
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault()
+        openDetails()
+      }
+    }}
+    role="link"
+    tabIndex={0}
+    aria-label={`View details for ${service.name} by ${service.provider}`}
+    className="group cursor-pointer overflow-hidden rounded-[23px] bg-white shadow-sm ring-1 ring-[#e2ebf7] transition hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-100 focus-visible:outline-none focus-visible:ring-4 focus-visible:ring-blue-200"
+  ><div className="relative h-44 overflow-hidden"><img src={service.image} alt="" loading="lazy" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/><div className="absolute inset-0 bg-gradient-to-t from-[#071331]/50 via-transparent to-transparent"/><button onClick={event => { event.stopPropagation(); setSaved(value => !value) }} className="absolute right-3 top-3 flex h-9 w-9 items-center justify-center rounded-xl bg-white/90 text-[#102044] shadow-md" aria-label="Save service"><Heart size={17} fill={saved ? '#ff5c7a' : 'none'} className={saved ? 'text-[#ff5c7a]' : ''}/></button><span className="absolute bottom-3 left-3 rounded-lg bg-white/95 px-2.5 py-1 text-[10px] font-black text-[#102044]">{service.category}</span></div><div className="p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><p className="truncate text-lg font-black">{service.name}</p><p className="mt-1 truncate text-sm font-bold text-[#77859d]">{service.provider}</p></div><span className="flex shrink-0 items-center gap-1 rounded-lg bg-amber-50 px-2 py-1 text-xs font-black text-amber-600"><Star size={12} fill="currentColor"/>{service.rating}</span></div><div className="mt-5 flex items-center justify-between"><p className="text-sm font-black text-[#0967ff]">from QAR {service.price}</p><span className="rounded-xl bg-[#0967ff] px-3.5 py-2.5 text-xs font-black text-white transition group-hover:bg-[#0759df]">View details</span></div></div></article>
 }
 
 function OfferPanel({ title, text, image, onClick }: { title: string; text: string; image: string; onClick: () => void }) {
