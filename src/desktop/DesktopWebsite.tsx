@@ -10,7 +10,7 @@ import { type Screen, useNav } from '../context/NavContext'
 import DesktopAccountViews from './DesktopAccountViews'
 import DesktopBannerCarousel from './DesktopBannerCarousel'
 import { requestLoginOtp, verifyLoginOtp } from '../api/auth'
-import { helpyApiEnabled } from '../api/helpy'
+import { hasHelpyUserSession, helpyApiEnabled } from '../api/helpy'
 import { useHelpyData } from '../context/HelpyDataContext'
 import { LiveBackendView, LiveDesktopAccount, LiveDesktopBookings, LiveDesktopCheckout, LiveDesktopExplore, LiveDesktopHome, LiveDesktopService, LiveMessages } from './DesktopLiveViews'
 import {
@@ -77,7 +77,6 @@ const CATEGORIES = [
 const NAV_ITEMS: Array<{ screen: Screen; label: string; icon: typeof Home }> = [
   { screen: 'home', label: 'Discover', icon: Home },
   { screen: 'all-services', label: 'Browse services', icon: LayoutGrid },
-  { screen: 'deals', label: 'Deals & offers', icon: Sparkles },
   { screen: 'orders', label: 'My bookings', icon: CalendarDays },
   { screen: 'chat', label: 'Messages', icon: MessageCircle },
 ]
@@ -90,6 +89,7 @@ const ACCOUNT_ITEMS: Array<{ screen: Screen; label: string; icon: typeof UserRou
 
 export default function DesktopWebsite() {
   const { screen, params, navigate, goBack, canGoBack, login } = useNav()
+  const topLevelScreens: Screen[] = ['home', 'all-services', 'providers', 'deals', 'orders', 'chat', 'profile', 'notifications', 'wallet', 'favorites', 'addresses']
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' })
@@ -102,7 +102,7 @@ export default function DesktopWebsite() {
     <DesktopTopBar screen={screen} navigate={navigate} />
     <main className="min-w-0 px-4 py-5 sm:px-7 lg:px-10 lg:py-7">
         <div className="mx-auto max-w-[1540px]">
-          {canGoBack && screen !== 'home' && <button onClick={goBack} className="mb-5 inline-flex items-center gap-2 text-sm font-black text-[#5d6c8b] transition hover:text-[#0967ff]"><ArrowLeft size={16} /> Back</button>}
+          {canGoBack && !topLevelScreens.includes(screen) && <button onClick={goBack} className="mb-5 inline-flex items-center gap-2 text-sm font-black text-[#5d6c8b] transition hover:text-[#0967ff]"><ArrowLeft size={16} /> Back</button>}
           <DesktopRoute screen={screen} params={params} navigate={navigate} />
         </div>
     </main>
@@ -115,33 +115,37 @@ function DesktopTopBar({ screen, navigate }: { screen: Screen; navigate: (screen
   const [profileOpen, setProfileOpen] = useState(false)
   const [navOpen, setNavOpen] = useState(false)
   const submit = () => navigate('all-services', { query })
+  const hasUserSession = hasHelpyUserSession()
   const selected = (target: Screen) => screen === target || (target === 'all-services' && ['categories', 'category-services', 'providers', 'offers-events', 'service-detail'].includes(screen))
   const accountLinks: Array<{ screen: Screen; label: string; icon: typeof UserRound }> = [
     { screen: 'profile', label: 'My profile', icon: UserRound },
     { screen: 'wallet', label: 'Wallet & payments', icon: Wallet },
     { screen: 'favorites', label: 'Saved services', icon: Heart },
     { screen: 'addresses', label: 'Saved locations', icon: MapPin },
-    { screen: 'notifications', label: 'Notifications', icon: Bell },
   ]
   const profileName = profile?.name || 'My account'
   const profileInitials = profile?.name ? profile.name.split(/\s+/).map(word => word[0]).join('').slice(0, 2).toUpperCase() : <UserRound size={18}/>
   return <header className="sticky top-0 z-50 border-b border-[#e2eaf6] bg-white/95 backdrop-blur-xl">
-    <div className="mx-auto flex h-[92px] max-w-[1840px] items-center gap-4 px-5 sm:px-8 lg:px-12 2xl:gap-5">
-      <button onClick={() => navigate('home')} className="relative -left-3 grid h-16 w-[96px] shrink-0 place-items-center self-center bg-transparent p-0 shadow-none transition-transform duration-300 hover:scale-[1.02] hover:bg-transparent hover:shadow-none" aria-label="Helpy home"><img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="block h-14 w-[92px] object-contain object-center"/></button>
-      <div className="relative hidden w-[280px] shrink-0 md:block 2xl:w-[340px]"><Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7e8da9]"/><input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && submit()} placeholder="Search services, providers and more" className="h-12 w-full rounded-2xl border border-[#dfe8f5] bg-[#f8faff] pl-11 pr-4 text-sm font-semibold outline-none transition focus:border-[#0967ff] focus:bg-white focus:ring-4 focus:ring-blue-50" /></div>
-      <nav className="hidden min-w-0 flex-1 items-center justify-center gap-2 xl:flex 2xl:gap-3" aria-label="Explore">
-        {NAV_ITEMS.map(item => <button key={item.screen} onClick={() => navigate(item.screen)} className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-xl px-2.5 text-[12px] font-black transition 2xl:px-3 2xl:text-[13px] ${selected(item.screen) ? 'bg-[#0967ff] text-white shadow-lg shadow-blue-200' : 'text-[#596984] hover:bg-[#f3f7ff] hover:text-[#0967ff]'}`}><item.icon size={17}/><span>{item.label}</span></button>)}
+    <div className="mx-auto flex h-[82px] max-w-[1840px] items-center gap-2 px-4 sm:gap-3 sm:px-5 lg:px-7 2xl:gap-5">
+      <button onClick={() => navigate('home')} className="relative grid h-14 w-[82px] shrink-0 place-items-center self-center bg-transparent p-0 shadow-none transition-transform duration-300 hover:scale-[1.02] hover:bg-transparent hover:shadow-none" aria-label="Helpy home"><img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="block h-12 w-[78px] object-contain object-center"/></button>
+      <div className="relative hidden min-w-0 flex-1 md:block"><Search size={17} className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-[#7e8da9]"/><input value={query} onChange={event => setQuery(event.target.value)} onKeyDown={event => event.key === 'Enter' && submit()} placeholder="Search services, providers and more" className="h-11 w-full rounded-2xl border border-[#dfe8f5] bg-[#f8faff] pl-11 pr-4 text-sm font-semibold outline-none transition focus:border-[#0967ff] focus:bg-white focus:ring-4 focus:ring-blue-50" /></div>
+      <nav className="hidden shrink-0 items-center gap-1 md:flex xl:gap-1.5 2xl:gap-3" aria-label="Explore">
+        {NAV_ITEMS.map(item => <button key={item.screen} onClick={() => navigate(item.screen)} aria-label={item.label} title={item.label} className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[12px] font-black transition 2xl:h-11 2xl:w-auto 2xl:gap-2 2xl:px-3 2xl:text-[13px] ${selected(item.screen) ? 'bg-[#0967ff] text-white shadow-lg shadow-blue-200' : 'text-[#596984] hover:bg-[#f3f7ff] hover:text-[#0967ff]'}`}><item.icon size={17}/><span className="hidden 2xl:inline">{item.label}</span></button>)}
       </nav>
-      <button onClick={() => setNavOpen(value => !value)} className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#52617d] transition hover:bg-blue-50 xl:hidden" aria-label="Open navigation"><Menu size={21}/></button>
-      <div className="ml-auto flex shrink-0 items-center gap-2 border-l border-[#e5ecf6] pl-3 2xl:pl-5">
+      <button onClick={() => setNavOpen(value => !value)} className="ml-1 flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-[#52617d] transition hover:bg-blue-50 md:hidden" aria-label="Open navigation"><Menu size={21}/></button>
+      <div className="ml-auto flex shrink-0 items-center gap-2 pl-3 2xl:pl-5">
+        <div className="flex items-center gap-2 border-l border-[#e5ecf6] pl-3 2xl:pl-5">
         <button onClick={() => navigate('location')} className="hidden items-center gap-2 rounded-xl px-2.5 py-2 text-sm font-bold text-[#52617d] transition hover:bg-blue-50 lg:flex"><MapPin size={17} className="text-[#0967ff]"/>Doha</button>
-        <button onClick={() => navigate('notifications')} className="relative rounded-xl p-2.5 text-[#52617d] transition hover:bg-blue-50" aria-label="Notifications"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#ff5c7a] ring-2 ring-white"/></button>
-        <button onClick={() => navigate('profile')} className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#0967ff] to-[#5f8cff] text-white shadow-md shadow-blue-200" aria-label="Open profile"><UserRound size={20}/></button>
-        <button onClick={() => setProfileOpen(value => !value)} className={`rounded-xl p-2 text-[#52617d] transition hover:bg-blue-50 ${profileOpen ? 'bg-blue-50 text-[#0967ff]' : ''}`} aria-label="Open account menu"><ChevronDown size={18} className={`transition ${profileOpen ? 'rotate-180' : ''}`}/></button>
+        <button onClick={() => navigate('notifications')} className="relative rounded-xl p-2.5 text-[#52617d] transition hover:bg-blue-50" aria-label="Notifications" title="Notifications"><Bell size={19}/><span className="absolute right-2 top-2 h-2 w-2 rounded-full bg-[#ff5c7a] ring-2 ring-white"/></button>
+        </div>
+        <div className="h-8 border-l border-[#e5ecf6]" aria-hidden="true"/>
+        <div className="flex items-center gap-2">
+        {hasUserSession ? <><button onClick={() => navigate('profile')} className="flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br from-[#0967ff] to-[#5f8cff] text-white shadow-md shadow-blue-200" aria-label="Open profile"><UserRound size={20}/></button><button onClick={() => setProfileOpen(value => !value)} className={`rounded-xl p-2 text-[#52617d] transition hover:bg-blue-50 ${profileOpen ? 'bg-blue-50 text-[#0967ff]' : ''}`} aria-label="Open account menu"><ChevronDown size={18} className={`transition ${profileOpen ? 'rotate-180' : ''}`}/></button></> : <button onClick={() => navigate('login')} className="inline-flex h-11 items-center gap-2 rounded-xl bg-gradient-to-br from-[#0967ff] to-[#5f8cff] px-3 text-sm font-black text-white shadow-md shadow-blue-200" aria-label="Sign in"><UserRound size={18}/><span className="hidden md:inline">Sign in</span></button>}
+        </div>
       </div>
     </div>
-    {navOpen && <div className="border-t border-[#edf1f7] bg-white px-4 py-3 shadow-lg xl:hidden"><div className="mx-auto flex max-w-[1540px] gap-2 overflow-x-auto">{NAV_ITEMS.map(item => <button key={item.screen} onClick={() => { navigate(item.screen); setNavOpen(false) }} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-xs font-black ${selected(item.screen) ? 'bg-[#0967ff] text-white' : 'bg-[#f4f7fc] text-[#596984]'}`}><item.icon size={17}/>{item.label}</button>)}</div></div>}
-    {profileOpen && <><button onClick={() => setProfileOpen(false)} className="fixed inset-0 top-[92px] z-40" aria-label="Close account menu"/><div className="absolute right-5 top-[82px] z-50 w-[290px] overflow-hidden rounded-[24px] border border-[#e2eaf5] bg-white p-2 shadow-2xl shadow-[#102044]/15 lg:right-12"><button onClick={() => { navigate('profile'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-2xl bg-[#f3f8ff] p-3 text-left"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0967ff] text-sm font-black text-white">{profileInitials}</span><span><span className="block text-sm font-black">{profileName}</span><span className="mt-0.5 block text-xs font-semibold text-[#7b89a1]">View profile & account</span></span></button><div className="my-2 border-t border-[#edf1f7]"/>{accountLinks.map(link => <button key={link.screen} onClick={() => { navigate(link.screen); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><link.icon size={18}/>{link.label}</button>)}<div className="my-2 border-t border-[#edf1f7]"/><button onClick={() => { navigate('contact-us'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><CircleHelp size={18}/>Help centre</button></div></>}
+    {navOpen && <div className="border-t border-[#edf1f7] bg-white px-4 py-3 shadow-lg md:hidden"><div className="mx-auto flex max-w-[1540px] gap-2 overflow-x-auto">{NAV_ITEMS.map(item => <button key={item.screen} onClick={() => { navigate(item.screen); setNavOpen(false) }} className={`inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-3 text-xs font-black ${selected(item.screen) ? 'bg-[#0967ff] text-white' : 'bg-[#f4f7fc] text-[#596984]'}`}><item.icon size={17}/>{item.label}</button>)}</div></div>}
+    {profileOpen && hasUserSession && <><button onClick={() => setProfileOpen(false)} className="fixed inset-0 top-[82px] z-40" aria-label="Close account menu"/><div className="absolute right-5 top-[74px] z-50 w-[290px] overflow-hidden rounded-[24px] border border-[#e2eaf5] bg-white p-2 shadow-2xl shadow-[#102044]/15 lg:right-12"><button onClick={() => { navigate('profile'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-2xl bg-[#f3f8ff] p-3 text-left"><span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#0967ff] text-sm font-black text-white">{profileInitials}</span><span><span className="block text-sm font-black">{profileName}</span><span className="mt-0.5 block text-xs font-semibold text-[#7b89a1]">View profile & account</span></span></button><div className="my-2 border-t border-[#edf1f7]"/>{accountLinks.map(link => <button key={link.screen} onClick={() => { navigate(link.screen); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><link.icon size={18}/>{link.label}</button>)}<div className="my-2 border-t border-[#edf1f7]"/><button onClick={() => { navigate('contact-us'); setProfileOpen(false) }} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold text-[#53627c] transition hover:bg-[#f4f8ff] hover:text-[#0967ff]"><CircleHelp size={18}/>Help centre</button></div></>}
   </header>
 }
 

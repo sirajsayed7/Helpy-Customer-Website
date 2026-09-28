@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Check, LoaderCircle, MapPin, MessageCircle, PackageCheck, Search, Send, Star, UserRound } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowRight, Check, ChevronLeft, ChevronRight, LayoutGrid, LoaderCircle, MapPin, MessageCircle, PackageCheck, Search, Send, Star, UserRound } from 'lucide-react'
 import type { Screen } from '../context/NavContext'
 import { useNav } from '../context/NavContext'
 import { helpyApi, hasHelpyUserSession, type HelpyAvailabilitySlot } from '../api/helpy'
@@ -29,7 +29,38 @@ function ServiceCard({ service, navigate }: { service: LiveService; navigate: Na
 
 function BusinessCard({ business, navigate }: { business: LiveBusiness; navigate: Navigate }) {
   const cover = business.services.find(item => item.image)?.image
-  return <button onClick={() => navigate('service-detail', { business })} className="group overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="relative h-44 overflow-hidden bg-blue-50">{cover ? <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-full place-items-center text-4xl font-black text-blue-200">{initials(business.name)}</div>}{business.image && <img src={business.image} alt="" className="absolute bottom-3 left-3 h-14 w-14 rounded-2xl border-2 border-white bg-white object-cover shadow"/>}</div><div className="p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate text-lg font-black">{business.name}</h2><p className="mt-1 text-xs font-bold text-[#0967ff]">{business.services.length} {business.services.length === 1 ? 'service' : 'services'}</p></div><span className="shrink-0 text-xs font-black text-[#66758f]"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{business.rating || 'New'}</span></div><p className="mt-4 text-sm font-black text-[#0967ff]">View business profile <ArrowRight size={14} className="inline"/></p></div></button>
+  const categories = Array.from(new Set(business.services.map(item => item.category).filter(Boolean))).slice(0, 2).join(' · ')
+  return <button onClick={() => navigate('service-detail', { business })} className="group overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="relative h-36 overflow-hidden bg-blue-50 sm:h-40">{cover ? <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-full place-items-center text-4xl font-black text-blue-200">{initials(business.name)}</div>}{business.image && <img src={business.image} alt="" className="absolute bottom-3 left-3 h-12 w-12 rounded-2xl border-2 border-white bg-white object-cover shadow"/>}</div><div className="p-5"><h2 className="truncate text-lg font-black text-[#102044]">{business.name}</h2><div className="mt-2 flex min-w-0 items-center gap-2 text-xs font-bold text-[#64738e]">{business.rating > 0 && <span className="shrink-0"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{business.rating}</span>}{categories && <span className="truncate rounded-full bg-[#f1f6ff] px-2.5 py-1 text-[#42618f]">{categories}</span>}</div></div></button>
+}
+
+function CategoryFilterCarousel({ categories, categoryId, onSelect }: { categories: Array<{ id: number; name: string; image: string }>; categoryId: number | null; onSelect: (id: number | null) => void }) {
+  const rail = useRef<HTMLDivElement>(null)
+  useEffect(() => { rail.current?.scrollTo({ left: 0 }) }, [])
+  const move = (direction: number) => {
+    const element = rail.current
+    const item = element?.querySelector<HTMLElement>('[data-category-item]')
+    if (!element || !item) return
+    const gap = Number.parseFloat(getComputedStyle(element).gap) || 0
+    element.scrollBy({ left: direction * 4 * (item.getBoundingClientRect().width + gap), behavior: 'smooth' })
+  }
+  const items = [{ id: null, name: 'All', image: '' }, ...categories]
+  return <section className="-mx-4 mt-3 py-7 sm:-mx-8 sm:py-9 xl:-mx-10">
+    <div className="relative mx-auto max-w-[1440px]">
+      <div ref={rail} className="flex justify-start gap-4 overflow-x-auto scroll-smooth px-16 [scrollbar-width:none] sm:gap-5 sm:px-20 xl:justify-center [&::-webkit-scrollbar]:hidden">
+        {items.map(item => {
+          const active = item.id === categoryId
+          return <button key={item.id ?? 'all'} data-category-item onClick={() => onSelect(item.id)} aria-pressed={active} className="group flex w-[86px] shrink-0 flex-col items-center gap-3 text-center sm:w-[104px]">
+            <span className={`grid h-[76px] w-[76px] place-items-center rounded-full transition sm:h-[88px] sm:w-[88px] ${active ? 'bg-[#0967ff] text-white shadow-[0_12px_24px_rgba(9,103,255,.32)]' : 'bg-[#f7faff] text-[#64738e] shadow-sm ring-1 ring-[#e2eaf5] group-hover:ring-2 group-hover:ring-blue-200'}`}>
+              {item.id === null ? <LayoutGrid size={27}/> : item.image ? <img src={item.image} alt="" className="h-full w-full rounded-full object-contain"/> : <span className="text-sm font-black text-blue-300">{initials(item.name)}</span>}
+            </span>
+            <span className={`line-clamp-2 min-h-8 text-xs font-black leading-4 sm:text-sm ${active ? 'text-[#0967ff]' : 'text-[#253656]'}`}>{item.name}</span>
+          </button>
+        })}
+      </div>
+      <button onClick={() => move(-1)} className="absolute left-3 top-7 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] transition hover:-translate-x-0.5 hover:text-[#0967ff] sm:left-5 sm:top-9" aria-label="Show previous categories"><ChevronLeft size={24}/></button>
+      <button onClick={() => move(1)} className="absolute right-3 top-7 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] transition hover:translate-x-0.5 hover:text-[#0967ff] sm:right-5 sm:top-9" aria-label="Show more categories"><ChevronRight size={24}/></button>
+    </div>
+  </section>
 }
 
 export function LiveDesktopHome({ navigate }: { navigate: Navigate }) {
@@ -43,7 +74,7 @@ export function LiveDesktopExplore({ screen, params, navigate }: { screen: Scree
   const data = useHelpyData(); const [query, setQuery] = useState(params?.query || ''); const [categoryId, setCategoryId] = useState<number | null>(params?.categoryId ?? null)
   const shown = useMemo(() => data.businesses.filter(business => business.services.some(item => (!categoryId || item.categoryId === categoryId) && `${business.name} ${item.name} ${item.category}`.toLowerCase().includes(query.toLowerCase()))), [data.businesses, categoryId, query])
   if (screen === 'categories') return <div><Heading eyebrow="LIVE CATALOG" title="Browse every category" copy="Categories currently published by the Helpy backend."/>{data.loading ? <div className="mt-8"><State loading/></div> : <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{data.categories.map(category => <button key={category.id} onClick={() => navigate('category-services', { categoryId: category.id, label: category.name })} className="rounded-[24px] border border-blue-100 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1"><div className="h-28">{category.image && <img src={category.image} alt="" className="h-full w-full object-contain"/>}</div><h2 className="mt-4 text-xl font-black">{category.name}</h2><p className="mt-2 text-sm font-bold text-[#0967ff]">View services <ArrowRight size={14} className="inline"/></p></button>)}</div>}</div>
-  return <div><Heading eyebrow="HELPY BUSINESSES" title={params?.label ? `${params.label} businesses` : 'Find the right business'} copy="Choose a business first, then view and book its services from its profile."/><div className="mt-7 flex flex-wrap gap-2 rounded-2xl bg-white p-3 ring-1 ring-blue-100"><div className="relative min-w-[240px] flex-1"><Search className="absolute left-3 top-3 text-slate-400" size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search businesses or services" className="h-11 w-full rounded-xl bg-[#f5f8fd] pl-10 pr-3 text-sm font-bold outline-none"/></div><button onClick={() => setCategoryId(null)} className={`rounded-xl px-4 text-xs font-black ${categoryId === null ? 'bg-[#0967ff] text-white' : 'bg-[#f5f8fd]'}`}>All</button>{data.categories.map(category => <button key={category.id} onClick={() => setCategoryId(category.id)} className={`rounded-xl px-4 py-3 text-xs font-black ${categoryId === category.id ? 'bg-[#0967ff] text-white' : 'bg-[#f5f8fd]'}`}>{category.name}</button>)}</div>{data.loading ? <div className="mt-6"><State loading/></div> : data.error ? <div className="mt-6"><State error={data.error} retry={data.refreshCatalog}/></div> : shown.length ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{shown.map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : <div className="mt-6"><State empty="No businesses match this view."/></div>}</div>
+  return <div><CategoryFilterCarousel categories={data.categories} categoryId={categoryId} onSelect={setCategoryId}/>{data.loading ? <div className="mt-6"><State loading/></div> : data.error ? <div className="mt-6"><State error={data.error} retry={data.refreshCatalog}/></div> : shown.length ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{shown.map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : <div className="mt-6"><State empty="No businesses match this view."/></div>}</div>
 }
 
 export function LiveDesktopService({ params, navigate }: { params: any; navigate: Navigate }) {
