@@ -10,7 +10,7 @@ import { type Screen, useNav } from '../context/NavContext'
 import DesktopAccountViews from './DesktopAccountViews'
 import DesktopBannerCarousel from './DesktopBannerCarousel'
 import { requestLoginOtp, verifyLoginOtp } from '../api/auth'
-import { hasHelpyUserSession, helpyApi, helpyApiEnabled } from '../api/helpy'
+import { hasHelpyUserSession, helpyApi } from '../api/helpy'
 import { useHelpyData } from '../context/HelpyDataContext'
 import { LiveBackendView, LiveDesktopAccount, LiveDesktopBookings, LiveDesktopCheckout, LiveDesktopExplore, LiveDesktopHome, LiveDesktopService, LiveMessages } from './DesktopLiveViews'
 import {
@@ -318,7 +318,6 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
           <p className="mt-3 text-sm font-semibold leading-6 text-[#73809a]">We’ll send a one-time verification code. No password is required.</p>
           {error && <p role="alert" className="mt-3 text-sm font-bold text-red-500">{error}</p>}
           <button onClick={sendCode} disabled={loading} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df] disabled:cursor-wait disabled:opacity-70">{loading ? 'Sending code…' : <>Continue <ArrowRight size={17} className="ml-1 inline" /></>}</button>
-          {!helpyApiEnabled && <p className="mt-3 text-center text-xs font-semibold text-[#8a97ab]">Demo mode uses verification code 123456.</p>}
         </>}
       </div>
     </div>

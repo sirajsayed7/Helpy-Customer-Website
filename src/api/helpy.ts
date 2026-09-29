@@ -98,8 +98,6 @@ export class HelpyApiError extends Error {
 
 const runtimeEnv = import.meta.env as Record<string, string | boolean | undefined>
 
-export const helpyApiEnabled = runtimeEnv.VITE_HELPY_API_ENABLED === 'true'
-
 function readToken() {
   if (typeof window === 'undefined') return null
   return window.sessionStorage.getItem(TOKEN_KEY)

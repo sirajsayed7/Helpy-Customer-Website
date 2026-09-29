@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { helpyApi, helpyApiEnabled, hasHelpyUserSession, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
+import { helpyApi, hasHelpyUserSession, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
 import { useNav } from './NavContext'
 
 const pick = (value: Record<string, unknown>, ...keys: string[]) => keys.map(key => value[key]).find(item => item !== null && item !== undefined && item !== '')
@@ -170,7 +170,6 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
 
   const refreshCatalog = useCallback(async () => {
     setLoading(true); setError('')
-    if (!helpyApiEnabled) { setError('Backend connection is disabled.'); setLoading(false); return }
     try {
       await helpyApi.ensureGuestSession()
       const categoryRows = await helpyApi.getCategories()

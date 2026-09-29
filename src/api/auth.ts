@@ -1,4 +1,4 @@
-import { helpyApi, helpyApiEnabled } from './helpy'
+import { helpyApi } from './helpy'
 
 const DEVICE_ID_KEY = 'helpy_web_device_id'
 
@@ -13,12 +13,10 @@ function getDeviceId() {
 }
 
 export async function requestLoginOtp(email: string) {
-  if (!helpyApiEnabled) return
   await helpyApi.sendLoginOtp(email.trim().toLowerCase())
 }
 
 export async function verifyLoginOtp(email: string, code: string) {
-  if (!helpyApiEnabled) return code === '123456'
   await helpyApi.loginWithOtp({
     email: email.trim().toLowerCase(),
     code,

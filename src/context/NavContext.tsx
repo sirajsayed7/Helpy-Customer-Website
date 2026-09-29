@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { hasHelpyUserSession, helpyApiEnabled } from '../api/helpy'
+import { hasHelpyUserSession } from '../api/helpy'
 
 export type Screen =
   | 'splash' | 'login' | 'verify' | 'home' | 'orders' | 'chat' | 'profile'
@@ -61,7 +61,7 @@ const updateUrl = (screen: Screen, replace = false) => {
 export function NavProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<NavState>(() => ({ screen: screenFromUrl(), history: [] }))
   const [activeTab, setActiveTabState] = useState('home')
-  const [isLoggedIn, setIsLoggedIn] = useState(() => helpyApiEnabled && hasHelpyUserSession())
+  const [isLoggedIn, setIsLoggedIn] = useState(() => hasHelpyUserSession())
   const [bookedServices, setBookedServices] = useState<BookedService[]>([])
   const [pendingReview, setPendingReview] = useState<BookedService | null>(null)
 

@@ -13,7 +13,7 @@ The booking workflow intentionally stops at final review. Do not call `/add-book
 ```powershell
 npm install
 Copy-Item .env.example .env
-# Set VITE_HELPY_API_ENABLED=true in .env
+# The backend is always enabled; optionally override VITE_HELPY_API_BASE in .env
 npm run dev -- --host 127.0.0.1 --port 4173
 npx tsc --noEmit
 npm run build

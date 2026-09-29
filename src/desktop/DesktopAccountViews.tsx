@@ -107,7 +107,7 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
       case 'profile': return <ProfileView />
       case 'wallet': return <WalletView />
       case 'favorites': return <FavoritesView navigate={navigate} />
-      case 'addresses': return <AddressesView navigate={navigate} />
+      case 'addresses': return <AddressesView />
       case 'contact-us': return <ContactView navigate={navigate} />
       case 'terms': return <LegalView type="terms" navigate={navigate} />
       case 'privacy': return <LegalView type="privacy" navigate={navigate} />

@@ -17,4 +17,4 @@ Copy-Item .env.example .env
 npm run dev -- --host 127.0.0.1 --port 4173
 ```
 
-Set `VITE_HELPY_API_ENABLED=true` in `.env` for the live API. Booking currently stops at final review and creates no order or payment.
+The Helpy backend is always enabled and defaults to `https://admin.helpyapp.tech/api/v1`. Override `VITE_HELPY_API_BASE` only when intentionally targeting another Helpy environment. Booking currently stops at final review and creates no order or payment.
