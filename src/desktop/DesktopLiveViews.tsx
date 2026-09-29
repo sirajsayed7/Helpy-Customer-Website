@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useState } from 'react'
-import { ArrowRight, Check, LoaderCircle, MapPin, MessageCircle, PackageCheck, Search, Send, Star, UserRound } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
+import { ArrowRight, Check, ChevronLeft, ChevronRight, LayoutGrid, LoaderCircle, MapPin, MessageCircle, PackageCheck, Search, Send, Star, UserRound, X } from 'lucide-react'
 import type { Screen } from '../context/NavContext'
 import { useNav } from '../context/NavContext'
 import { helpyApi, hasHelpyUserSession, type HelpyAvailabilitySlot } from '../api/helpy'
@@ -15,8 +15,8 @@ const money = (value: number) => `QAR ${value.toFixed(2)}`
 const readableDate = (value: string) => { if (!value) return 'Not selected'; const parsed = new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value); return Number.isNaN(parsed.getTime()) ? value : new Intl.DateTimeFormat('en-QA', { weekday: 'short', day: 'numeric', month: 'short' }).format(parsed) }
 const nextDates = Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setDate(date.getDate() + index); return date.toISOString().slice(0, 10) })
 
-function Heading({ eyebrow, title, copy }: { eyebrow: string; title: string; copy: string }) {
-  return <div><p className="text-[11px] font-black uppercase tracking-[.17em] text-[#0967ff]">{eyebrow}</p><h1 className="mt-2 text-3xl font-black tracking-[-.045em] text-[#102044] sm:text-4xl">{title}</h1><p className="mt-3 max-w-2xl text-sm font-semibold leading-7 text-[#6d7b94]">{copy}</p></div>
+function Heading({ title }: { eyebrow?: string; title: string; copy?: string }) {
+  return <h1 className="text-3xl font-black tracking-[-.045em] text-[#102044] sm:text-4xl">{title}</h1>
 }
 
 function State({ loading, error, empty, retry }: { loading?: boolean; error?: string; empty?: string; retry?: () => void }) {
@@ -24,36 +24,166 @@ function State({ loading, error, empty, retry }: { loading?: boolean; error?: st
 }
 
 function ServiceCard({ service, navigate }: { service: LiveService; navigate: Navigate }) {
-  return <button onClick={() => navigate('service-detail', { service })} className="group overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="h-44 overflow-hidden bg-blue-50">{service.image ? <img src={service.image} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-full place-items-center text-2xl font-black text-blue-300">{initials(service.name)}</div>}</div><div className="p-5"><p className="text-xs font-black text-[#0967ff]">{service.provider}</p><h2 className="mt-1 truncate text-lg font-black">{service.name}</h2><p className="mt-2 line-clamp-2 min-h-10 text-xs font-semibold leading-5 text-[#75839d]">{service.description || service.category}</p><div className="mt-4 flex items-end justify-between"><div><p className="text-[10px] font-bold text-[#93a0b5]">from</p><p className="text-lg font-black">{money(service.price)}</p></div><span className="text-xs font-black text-[#66758f]"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{service.rating || 'New'}</span></div></div></button>
+  return <button onClick={() => navigate('service-detail', { service })} className="overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm"><div className="h-44 overflow-hidden bg-blue-50">{service.image ? <img src={service.image} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-2xl font-black text-blue-300">{initials(service.name)}</div>}</div><div className="p-5"><p className="text-xs font-black text-[#0967ff]">{service.provider}</p><h2 className="mt-1 truncate text-lg font-black">{service.name}</h2><p className="mt-2 line-clamp-2 min-h-10 text-xs font-semibold leading-5 text-[#75839d]">{service.description || service.category}</p><div className="mt-4 flex items-end justify-between"><div><p className="text-[10px] font-bold text-[#93a0b5]">from</p><p className="text-lg font-black">{money(service.price)}</p></div><span className="text-xs font-black text-[#66758f]"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{service.rating || 'New'}</span></div></div></button>
 }
 
 function BusinessCard({ business, navigate }: { business: LiveBusiness; navigate: Navigate }) {
   const cover = business.services.find(item => item.image)?.image
-  return <button onClick={() => navigate('service-detail', { business })} className="group overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm transition hover:-translate-y-1 hover:shadow-xl"><div className="relative h-44 overflow-hidden bg-blue-50">{cover ? <img src={cover} alt="" className="h-full w-full object-cover transition duration-500 group-hover:scale-105"/> : <div className="grid h-full place-items-center text-4xl font-black text-blue-200">{initials(business.name)}</div>}{business.image && <img src={business.image} alt="" className="absolute bottom-3 left-3 h-14 w-14 rounded-2xl border-2 border-white bg-white object-cover shadow"/>}</div><div className="p-5"><div className="flex items-start justify-between gap-3"><div className="min-w-0"><h2 className="truncate text-lg font-black">{business.name}</h2><p className="mt-1 text-xs font-bold text-[#0967ff]">{business.services.length} {business.services.length === 1 ? 'service' : 'services'}</p></div><span className="shrink-0 text-xs font-black text-[#66758f]"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{business.rating || 'New'}</span></div><p className="mt-4 text-sm font-black text-[#0967ff]">View business profile <ArrowRight size={14} className="inline"/></p></div></button>
+  const categories = Array.from(new Set(business.services.map(item => item.category).filter(Boolean))).slice(0, 2).join(' · ')
+  return <button onClick={() => navigate('service-detail', { business })} className="overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm"><div className="relative h-36 overflow-hidden bg-blue-50 sm:h-40">{cover ? <img src={cover} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-4xl font-black text-blue-200">{initials(business.name)}</div>}{business.image && <img src={business.image} alt="" className="absolute bottom-3 left-3 h-12 w-12 rounded-2xl border-2 border-white bg-white object-cover shadow"/>}</div><div className="p-5"><h2 className="truncate text-lg font-black text-[#102044]">{business.name}</h2><div className="mt-2 flex min-w-0 items-center gap-2 text-xs font-bold text-[#64738e]">{business.rating > 0 && <span className="shrink-0"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{business.rating}</span>}{categories && <span className="truncate rounded-full bg-[#f1f6ff] px-2.5 py-1 text-[#42618f]">{categories}</span>}</div></div></button>
+}
+
+function CategoryFilterCarousel({ categories, categoryId, onSelect }: { categories: Array<{ id: number; name: string; image: string }>; categoryId: number | null; onSelect: (id: number | null) => void }) {
+  const rail = useRef<HTMLDivElement>(null)
+  useEffect(() => { rail.current?.scrollTo({ left: 0 }) }, [])
+  const move = (direction: number) => {
+    const element = rail.current
+    const item = element?.querySelector<HTMLElement>('[data-category-item]')
+    if (!element || !item) return
+    const gap = Number.parseFloat(getComputedStyle(element).gap) || 0
+    element.scrollBy({ left: direction * 4 * (item.getBoundingClientRect().width + gap), behavior: 'smooth' })
+  }
+  const items = [{ id: null, name: 'All', image: '' }, ...categories]
+  return <section className="-mx-4 mt-3 py-7 sm:-mx-8 sm:py-9 xl:-mx-10">
+    <div className="relative mx-auto max-w-[1440px]">
+      <div className="mx-[76px] overflow-hidden sm:mx-[92px]">
+        <div ref={rail} className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory [scrollbar-width:none] sm:gap-5 xl:justify-center [&::-webkit-scrollbar]:hidden">
+          {items.map(item => {
+            const active = item.id === categoryId
+            return <button key={item.id ?? 'all'} data-category-item onClick={() => onSelect(item.id)} aria-pressed={active} className="group flex w-[calc((100vw-216px)/5)] min-w-[78px] max-w-[112px] shrink-0 snap-start flex-col items-center gap-3 text-center sm:w-[calc((100vw-264px)/5)] sm:min-w-[86px] sm:max-w-[116px] xl:w-[104px] xl:min-w-0 xl:max-w-none">
+              <span className={`grid h-[76px] w-[76px] place-items-center rounded-full transition sm:h-[88px] sm:w-[88px] ${active ? 'bg-[#0967ff] text-white shadow-[0_12px_24px_rgba(9,103,255,.32)]' : 'bg-[#f7faff] text-[#64738e] shadow-sm ring-1 ring-[#e2eaf5] group-hover:ring-2 group-hover:ring-blue-200'}`}>
+                {item.id === null ? <LayoutGrid size={27}/> : item.image ? <img src={item.image} alt="" className="h-full w-full rounded-full object-contain"/> : <span className="text-sm font-black text-blue-300">{initials(item.name)}</span>}
+              </span>
+              <span className={`line-clamp-2 min-h-8 text-xs font-black leading-4 sm:text-sm ${active ? 'text-[#0967ff]' : 'text-[#253656]'}`}>{item.name}</span>
+            </button>
+          })}
+        </div>
+      </div>
+      <button onClick={() => move(-1)} className="absolute left-3 top-7 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] sm:left-5 sm:top-9" aria-label="Show previous categories"><ChevronLeft size={24}/></button>
+      <button onClick={() => move(1)} className="absolute right-3 top-7 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] sm:right-5 sm:top-9" aria-label="Show more categories"><ChevronRight size={24}/></button>
+    </div>
+  </section>
 }
 
 export function LiveDesktopHome({ navigate }: { navigate: Navigate }) {
   const data = useHelpyData()
   const picks = data.businesses.slice(0, 6)
   const next = data.bookings.find(item => item.status !== 'Completed')
-  return <div className="space-y-8"><DesktopBannerCarousel navigate={navigate}/><section><div className="mb-5 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.17em] text-[#0967ff]">START WITH A CATEGORY</p><h2 className="mt-1 text-2xl font-black">Your everyday, beautifully covered</h2></div><button onClick={() => navigate('categories')} className="text-sm font-black text-[#0967ff]">View all <ArrowRight size={14} className="inline"/></button></div>{data.loading ? <State loading/> : data.error ? <State error={data.error} retry={data.refreshCatalog}/> : data.categories.length ? <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 xl:grid-cols-8">{data.categories.slice(0,8).map(category => <button key={category.id} onClick={() => navigate('category-services', { categoryId: category.id, label: category.name })} className="rounded-2xl bg-white p-3 text-left shadow-sm ring-1 ring-[#e5edf8] transition hover:-translate-y-1"><div className="grid h-20 place-items-center overflow-hidden rounded-xl bg-[#f4f8ff]">{category.image ? <img src={category.image} alt="" className="h-full w-full object-contain"/> : <span className="font-black text-blue-300">{initials(category.name)}</span>}</div><p className="mt-3 truncate text-sm font-black">{category.name}</p></button>)}</div> : <State empty="No categories are currently published."/>}</section><section className="grid gap-6 xl:grid-cols-[1.5fr_.82fr]"><div><div className="mb-5 flex items-end justify-between"><div><p className="text-[10px] font-black uppercase tracking-[.17em] text-[#0967ff]">BUSINESSES ON HELPY</p><h2 className="mt-1 text-2xl font-black">Popular businesses</h2></div><button onClick={() => navigate('providers')} className="text-sm font-black text-[#0967ff]">See all <ArrowRight size={14} className="inline"/></button></div>{picks.length ? <div className="grid gap-5 md:grid-cols-2">{picks.slice(0,4).map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : !data.loading && <State empty="No businesses are currently available."/>}</div><aside className="h-fit rounded-[26px] bg-white p-6 shadow-sm ring-1 ring-[#e5edf8]"><p className="text-xs font-black uppercase tracking-[.14em] text-[#0967ff]">Your next booking</p>{data.accountLoading ? <p className="mt-4 text-sm font-bold text-[#71809a]">Loading…</p> : next ? <><h2 className="mt-2 text-xl font-black">{readableDate(next.date)} · {next.time}</h2><div className="mt-5 rounded-2xl bg-[#f5f9ff] p-4"><p className="text-sm font-black">{next.provider}</p><p className="mt-1 text-xs font-bold text-[#71809a]">{next.service}</p><button onClick={() => navigate('order-detail', { booking: next })} className="mt-4 text-xs font-black text-[#0967ff]">View booking <ArrowRight size={13} className="inline"/></button></div></> : <><p className="mt-3 text-sm font-semibold leading-6 text-[#71809a]">{hasHelpyUserSession() ? 'You have no upcoming bookings.' : 'Sign in to see your upcoming bookings.'}</p><button onClick={() => navigate(hasHelpyUserSession() ? 'providers' : 'login')} className="mt-5 w-full rounded-xl border border-[#dbe8fb] py-3 text-sm font-black text-[#0967ff]">{hasHelpyUserSession() ? 'Browse businesses' : 'Sign in'}</button></>}</aside></section></div>
+  return <div className="space-y-9"><DesktopBannerCarousel navigate={navigate}/><section><div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">Browse categories</h2><button onClick={() => navigate('categories')} className="shrink-0 text-sm font-black text-[#0967ff]">View all <ArrowRight size={14} className="inline"/></button></div>{data.loading ? <State loading/> : data.error ? <State error={data.error} retry={data.refreshCatalog}/> : data.categories.length ? <CategoryFilterCarousel categories={data.categories} categoryId={null} onSelect={id => { if (id === null) navigate('all-services'); else { const category = data.categories.find(item => item.id === id); navigate('category-services', { categoryId: id, label: category?.name }) } }}/> : <State empty="No categories are currently published."/>}</section><section className="grid gap-6 xl:grid-cols-[1.5fr_.82fr]"><div><div className="mb-5 flex items-center justify-between"><h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">Popular businesses</h2><button onClick={() => navigate('providers')} className="shrink-0 text-sm font-black text-[#0967ff]">See all <ArrowRight size={14} className="inline"/></button></div>{picks.length ? <div className="grid gap-5 md:grid-cols-2">{picks.slice(0,4).map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : !data.loading && <State empty="No businesses are currently available."/>}</div><aside className="h-fit rounded-[26px] bg-white p-6 shadow-sm ring-1 ring-[#e5edf8]"><p className="text-xs font-black uppercase tracking-[.14em] text-[#0967ff]">Your next booking</p>{data.accountLoading ? <p className="mt-4 text-sm font-bold text-[#71809a]">Loading…</p> : next ? <><h2 className="mt-2 text-xl font-black">{readableDate(next.date)} · {next.time}</h2><div className="mt-5 rounded-2xl bg-[#f5f9ff] p-4"><p className="text-sm font-black">{next.provider}</p><p className="mt-1 text-xs font-bold text-[#71809a]">{next.service}</p><button onClick={() => navigate('order-detail', { booking: next })} className="mt-4 text-xs font-black text-[#0967ff]">View booking <ArrowRight size={13} className="inline"/></button></div></> : <><p className="mt-3 text-sm font-semibold leading-6 text-[#71809a]">{hasHelpyUserSession() ? 'You have no upcoming bookings.' : 'Sign in to see your upcoming bookings.'}</p><button onClick={() => navigate(hasHelpyUserSession() ? 'providers' : 'login')} className="mt-5 w-full rounded-xl border border-[#dbe8fb] py-3 text-sm font-black text-[#0967ff]">{hasHelpyUserSession() ? 'Browse businesses' : 'Sign in'}</button></>}</aside></section></div>
 }
 
 export function LiveDesktopExplore({ screen, params, navigate }: { screen: Screen; params: any; navigate: Navigate }) {
   const data = useHelpyData(); const [query, setQuery] = useState(params?.query || ''); const [categoryId, setCategoryId] = useState<number | null>(params?.categoryId ?? null)
   const shown = useMemo(() => data.businesses.filter(business => business.services.some(item => (!categoryId || item.categoryId === categoryId) && `${business.name} ${item.name} ${item.category}`.toLowerCase().includes(query.toLowerCase()))), [data.businesses, categoryId, query])
-  if (screen === 'categories') return <div><Heading eyebrow="LIVE CATALOG" title="Browse every category" copy="Categories currently published by the Helpy backend."/>{data.loading ? <div className="mt-8"><State loading/></div> : <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{data.categories.map(category => <button key={category.id} onClick={() => navigate('category-services', { categoryId: category.id, label: category.name })} className="rounded-[24px] border border-blue-100 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1"><div className="h-28">{category.image && <img src={category.image} alt="" className="h-full w-full object-contain"/>}</div><h2 className="mt-4 text-xl font-black">{category.name}</h2><p className="mt-2 text-sm font-bold text-[#0967ff]">View services <ArrowRight size={14} className="inline"/></p></button>)}</div>}</div>
-  return <div><Heading eyebrow="HELPY BUSINESSES" title={params?.label ? `${params.label} businesses` : 'Find the right business'} copy="Choose a business first, then view and book its services from its profile."/><div className="mt-7 flex flex-wrap gap-2 rounded-2xl bg-white p-3 ring-1 ring-blue-100"><div className="relative min-w-[240px] flex-1"><Search className="absolute left-3 top-3 text-slate-400" size={17}/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search businesses or services" className="h-11 w-full rounded-xl bg-[#f5f8fd] pl-10 pr-3 text-sm font-bold outline-none"/></div><button onClick={() => setCategoryId(null)} className={`rounded-xl px-4 text-xs font-black ${categoryId === null ? 'bg-[#0967ff] text-white' : 'bg-[#f5f8fd]'}`}>All</button>{data.categories.map(category => <button key={category.id} onClick={() => setCategoryId(category.id)} className={`rounded-xl px-4 py-3 text-xs font-black ${categoryId === category.id ? 'bg-[#0967ff] text-white' : 'bg-[#f5f8fd]'}`}>{category.name}</button>)}</div>{data.loading ? <div className="mt-6"><State loading/></div> : data.error ? <div className="mt-6"><State error={data.error} retry={data.refreshCatalog}/></div> : shown.length ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{shown.map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : <div className="mt-6"><State empty="No businesses match this view."/></div>}</div>
+  if (screen === 'categories') return <div><Heading eyebrow="LIVE CATALOG" title="Browse every category" copy="Categories currently published by the Helpy backend."/>{data.loading ? <div className="mt-8"><State loading/></div> : <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{data.categories.map(category => <button key={category.id} onClick={() => navigate('category-services', { categoryId: category.id, label: category.name })} className="rounded-[24px] border border-blue-100 bg-white p-6 text-left shadow-sm transition"><div className="h-28">{category.image && <img src={category.image} alt="" className="h-full w-full object-contain"/>}</div><h2 className="mt-4 text-xl font-black">{category.name}</h2><p className="mt-2 text-sm font-bold text-[#0967ff]">View services <ArrowRight size={14} className="inline"/></p></button>)}</div>}</div>
+  return <div><CategoryFilterCarousel categories={data.categories} categoryId={categoryId} onSelect={setCategoryId}/>{data.loading ? <div className="mt-6"><State loading/></div> : data.error ? <div className="mt-6"><State error={data.error} retry={data.refreshCatalog}/></div> : shown.length ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{shown.map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : <div className="mt-6"><State empty="No businesses match this view."/></div>}</div>
 }
 
 export function LiveDesktopService({ params, navigate }: { params: any; navigate: Navigate }) {
-  const data = useHelpyData(); const initialBusiness = params?.business as LiveBusiness | undefined; const initial = (params?.service as LiveService | undefined) || initialBusiness?.services[0]; const [service, setService] = useState<LiveService | undefined>(initial); const [date, setDate] = useState(nextDates[0]); const [slots, setSlots] = useState<HelpyAvailabilitySlot[]>([]); const [slot, setSlot] = useState(''); const [loading, setLoading] = useState(false); const [error, setError] = useState('')
-  useEffect(() => { if (!service && params?.serviceVendorMapId) { void helpyApi.getVendorDetails(Number(params.serviceVendorMapId)).then(row => setService(mapService(row, data.categories))).catch(cause => setError(cause.message)) } }, [service, params, data.categories])
-  useEffect(() => { if (!service) return; const vendorId = service.vendorId || Number(service.raw.created_by); if (!vendorId) { setError('This service does not include a provider identifier, so availability cannot be requested.'); return } setLoading(true); setError(''); setSlot(''); void data.getAvailability(vendorId, date).then(setSlots).catch(cause => { setSlots([]); setError(cause.message) }).finally(() => setLoading(false)) }, [service, date])
+  const data = useHelpyData()
+  const initialBusiness = params?.business as LiveBusiness | undefined
+  const initial = (params?.service as LiveService | undefined) || initialBusiness?.services[0]
+  const [service, setService] = useState<LiveService | undefined>(initial)
+  const [preview, setPreview] = useState<LiveService | null>(null)
+  const [date, setDate] = useState(nextDates[0])
+  const [slots, setSlots] = useState<HelpyAvailabilitySlot[]>([])
+  const [slot, setSlot] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => { setService(initial); setSlot(''); setPreview(null) }, [initial?.id, initialBusiness?.id])
+  useEffect(() => {
+    if (service || !params?.serviceVendorMapId) return
+    let current = true
+    void helpyApi.getVendorDetails(Number(params.serviceVendorMapId))
+      .then(row => { if (current) setService(mapService(row, data.categories)) })
+      .catch(cause => { if (current) setError(cause.message) })
+    return () => { current = false }
+  }, [service, params?.serviceVendorMapId, data.categories])
+  useEffect(() => {
+    if (!service) return
+    let current = true
+    const vendorId = service.vendorId || Number(service.raw.created_by)
+    setSlot(''); setSlots([]); setError('')
+    if (!vendorId) { setLoading(false); setError('Booking is unavailable for this service.'); return }
+    setLoading(true)
+    void data.getAvailability(vendorId, date)
+      .then(values => { if (current) setSlots(values) })
+      .catch(cause => { if (current) setError(cause.message) })
+      .finally(() => { if (current) setLoading(false) })
+    return () => { current = false }
+  }, [service, date, data.getAvailability])
   if (!service) return <State loading={!error} error={error}/>
   const business = initialBusiness || data.businesses.find(item => item.id === service.vendorId) || { id: service.vendorId, name: service.provider, image: '', rating: service.rating, about: '', services: [service], raw: {} }
   const available = slots.filter(value => Boolean(value.isAvailable))
-  return <div><div className="overflow-hidden rounded-[30px] bg-gradient-to-r from-[#071b52] to-[#0967ff] p-7 text-white"><div className="flex flex-col gap-5 sm:flex-row sm:items-center">{business.image ? <img src={business.image} alt="" className="h-24 w-24 rounded-[24px] border-4 border-white/20 bg-white object-cover"/> : <div className="grid h-24 w-24 place-items-center rounded-[24px] bg-white/15 text-3xl font-black">{initials(business.name)}</div>}<div><p className="text-xs font-black uppercase tracking-[.16em] text-blue-200">Business profile</p><h1 className="mt-2 text-3xl font-black">{business.name}</h1><p className="mt-2 text-sm font-semibold text-blue-100">{business.about || `${business.services.length} services available to book through Helpy.`}</p><p className="mt-3 text-sm font-black"><Star size={15} className="mr-1 inline fill-amber-300 text-amber-300"/>{business.rating || 'New business'}</p></div></div></div><div className="mt-7 grid gap-7 xl:grid-cols-[1fr_430px]"><section><Heading eyebrow="SERVICES" title="Choose a service" copy={`All published services from ${business.name}.`}/><div className="mt-5 space-y-3">{business.services.map(item => <button key={item.id} onClick={() => setService(item)} className={`flex w-full items-center gap-4 rounded-[22px] border bg-white p-4 text-left transition ${service.id === item.id ? 'border-[#0967ff] ring-4 ring-blue-50' : 'border-blue-100 hover:border-blue-300'}`}>{item.image ? <img src={item.image} alt="" className="h-20 w-24 rounded-2xl object-cover"/> : <div className="grid h-20 w-24 place-items-center rounded-2xl bg-blue-50 font-black text-blue-300">{initials(item.name)}</div>}<span className="min-w-0 flex-1"><span className="block text-xs font-black text-[#0967ff]">{item.category}</span><span className="mt-1 block text-lg font-black">{item.name}</span><span className="mt-1 block line-clamp-1 text-xs font-semibold text-[#75839d]">{item.description || 'Service details available at booking.'}</span></span><strong className="shrink-0">{money(item.price)}</strong></button>)}</div></section><aside className="h-fit rounded-[28px] bg-white p-6 ring-1 ring-blue-100"><p className="text-xs font-black uppercase tracking-[.14em] text-[#0967ff]">Selected service</p><h2 className="mt-2 text-xl font-black">{service.name}</h2><p className="mt-1 text-sm font-bold text-[#73819a]">{money(service.price)}</p><div className="my-5 border-t border-blue-50"/><h3 className="font-black">Choose availability</h3><p className="mt-2 text-sm font-semibold text-[#73819a]">Slots are checked live for this business.</p><div className="mt-5 grid grid-cols-4 gap-2">{nextDates.map(value => <button key={value} onClick={() => setDate(value)} className={`rounded-xl p-3 text-xs font-black ${date === value ? 'bg-[#0967ff] text-white' : 'bg-[#f4f8fe]'}`}>{readableDate(value)}</button>)}</div><div className="mt-5 grid grid-cols-2 gap-2">{loading ? <p className="col-span-2 py-6 text-center text-sm font-bold text-[#73819a]">Checking availability…</p> : available.map(value => <button key={`${value.date}-${value.slot}`} onClick={() => setSlot(value.slot)} className={`rounded-xl border p-3 text-sm font-black ${slot === value.slot ? 'border-[#0967ff] bg-blue-50 text-[#0967ff]' : 'border-[#e2eaf5]'}`}>{value.slot}</button>)}</div>{!loading && !available.length && <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm font-bold text-amber-700">No available slots were returned for this date.</p>}{error && <p className="mt-4 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}<button disabled={!slot} onClick={() => navigate('booking-checkout', { booking: { service, date, slot } satisfies BookingDraft })} className="mt-6 w-full rounded-xl bg-[#0967ff] py-4 text-sm font-black text-white disabled:cursor-not-allowed disabled:opacity-40">Continue to booking review <ArrowRight size={15} className="inline"/></button></aside></div></div>
+  const cover = business.services.find(item => item.image)?.image || business.image
+  const category = Array.from(new Set(business.services.map(item => item.category).filter(Boolean))).join(' · ')
+  const chooseService = (item: LiveService) => { setSlot(''); setService(item) }
+
+  return <div data-service-detail className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
+    <div className="min-w-0 space-y-6">
+      <section aria-label={business.name} className="relative overflow-hidden rounded-[28px] bg-[#102044]">
+        {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full bg-white object-contain" />}
+        <div className="absolute inset-0 bg-gradient-to-r from-[#071b52]/95 via-[#071b52]/70 to-[#071b52]/15" />
+        <div className="relative flex min-h-[260px] flex-col justify-end p-7 text-white xl:min-h-[300px] xl:p-8">
+          {category && <span className="w-fit max-w-full rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold [overflow-wrap:anywhere]">{category}</span>}
+          <div className="mt-4 flex min-w-0 items-center gap-4">
+            {business.image && <img src={business.image} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-white bg-white object-contain" />}
+            <h1 className="min-w-0 text-[32px] font-black leading-tight tracking-[-.04em] [overflow-wrap:anywhere] xl:text-4xl">{business.name}</h1>
+          </div>
+          {business.about && <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-blue-50">{business.about}</p>}
+          {business.rating > 0 && <p className="mt-4 flex items-center gap-1.5 text-sm font-bold"><Star size={16} className="fill-amber-400 text-amber-400" />{business.rating}</p>}
+        </div>
+      </section>
+
+      <section aria-labelledby="service-options-title" className="rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm xl:p-6">
+        <h2 id="service-options-title" className="text-xl font-black text-[#102044]">Select a service</h2>
+        <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-3">
+          {business.services.map(item => {
+            const selected = service.id === item.id
+            return <article key={item.id} className={`min-w-0 overflow-hidden rounded-2xl border ${selected ? 'border-[#0967ff] bg-blue-50/60' : 'border-[#e5edf7] bg-white'}`}>
+              <button onClick={() => chooseService(item)} aria-label={`Select ${item.name}`} aria-pressed={selected} className="w-full p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0967ff]">
+                <div className="flex items-center gap-3">
+                  {item.image && <img src={item.image} alt="" className="h-14 w-14 shrink-0 rounded-xl bg-white object-contain" />}
+                  <h3 className="min-w-0 flex-1 text-sm font-black leading-5 text-[#102044] [overflow-wrap:anywhere]">{item.name}</h3>
+                  <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${selected ? 'border-[#0967ff] bg-[#0967ff] text-white' : 'border-slate-300 bg-white'}`}>{selected && <Check size={13} />}</span>
+                </div>
+                {item.description && <p className="mt-3 line-clamp-2 min-h-10 text-xs font-medium leading-5 text-[#73819a]">{item.description}</p>}
+                <p className="mt-3 text-sm font-black text-[#0967ff]">{money(item.price)}</p>
+              </button>
+              {item.description && <button onClick={() => setPreview(item)} aria-label={`View details for ${item.name}`} className="w-full border-t border-blue-100/60 px-4 py-2.5 text-left text-xs font-bold text-[#0967ff]">View details <ArrowRight size={12} className="ml-1 inline" /></button>}
+            </article>
+          })}
+        </div>
+      </section>
+    </div>
+
+    <aside aria-label="Booking options" className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm lg:sticky lg:top-28 xl:p-6">
+      <h2 className="text-xl font-black text-[#102044]">Book a time</h2>
+      <div className="mt-4 flex min-w-0 items-start justify-between gap-3 border-b border-blue-50 pb-5" aria-live="polite"><p className="min-w-0 text-sm font-bold text-[#64738e] [overflow-wrap:anywhere]">{service.name}</p><p className="shrink-0 text-sm font-black text-[#0967ff]">{money(service.price)}</p></div>
+      <h3 className="mt-5 text-sm font-bold">Day</h3>
+      <div className="mt-3 grid grid-cols-4 gap-2">
+        {nextDates.map(value => { const parsed = new Date(`${value}T12:00:00`); return <button key={value} aria-label={readableDate(value)} aria-pressed={date === value} onClick={() => { setSlot(''); setDate(value) }} className={`min-w-0 rounded-xl px-1 py-3 text-center ${date === value ? 'bg-[#0967ff] text-white' : 'bg-[#f4f8fe] text-[#60708c]'}`}><span className="block text-[11px] font-semibold">{new Intl.DateTimeFormat('en-QA', { weekday: 'short' }).format(parsed)}</span><span className="mt-1 block text-xs font-black">{new Intl.DateTimeFormat('en-QA', { day: 'numeric', month: 'short' }).format(parsed)}</span></button> })}
+      </div>
+      <h3 className="mt-5 text-sm font-bold">Available times</h3>
+      {loading ? <p role="status" className="py-6 text-center text-sm font-medium text-[#73819a]">Loading times…</p> : <div className="mt-3 grid grid-cols-2 gap-2">{available.map(value => <button key={`${value.date}-${value.slot}`} aria-pressed={slot === value.slot} onClick={() => setSlot(value.slot)} className={`min-w-0 rounded-xl border px-2 py-3 text-xs font-bold [overflow-wrap:anywhere] ${slot === value.slot ? 'border-[#0967ff] bg-blue-50 text-[#0967ff]' : 'border-[#e2eaf5] text-[#60708c]'}`}>{value.slot}</button>)}</div>}
+      {!loading && !error && !available.length && <p className="mt-3 rounded-xl bg-[#f4f8fe] p-3 text-sm font-medium leading-5 text-[#73819a]">No times available on this date. Try another day.</p>}
+      {error && <p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
+      <button disabled={!slot || loading} onClick={() => navigate('booking-checkout', { booking: { service, date, slot } satisfies BookingDraft })} className="mt-6 w-full rounded-xl bg-[#0967ff] px-3 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Continue to booking <ArrowRight size={15} className="ml-1 inline" /></button>
+    </aside>
+    {preview && <ServiceDetailsDialog service={preview} onClose={() => setPreview(null)} onSelect={() => { chooseService(preview); setPreview(null) }} />}
+  </div>
+}
+
+function ServiceDetailsDialog({ service, onClose, onSelect }: { service: LiveService; onClose: () => void; onSelect: () => void }) {
+  const dialog = useRef<HTMLDialogElement>(null)
+  useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close() }, [])
+  return <dialog ref={dialog} aria-labelledby="service-preview-title" onCancel={event => { event.preventDefault(); onClose() }} onClick={event => { if (event.target === event.currentTarget) onClose() }} className="fixed max-h-[85dvh] w-[calc(100%-48px)] max-w-[600px] overflow-y-auto rounded-[24px] border-0 bg-white p-6 text-[#102044] shadow-2xl backdrop:bg-[#071b52]/45">
+    <div className="flex items-start justify-between gap-4"><h2 id="service-preview-title" className="min-w-0 text-2xl font-black [overflow-wrap:anywhere]">{service.name}</h2><button autoFocus onClick={onClose} aria-label="Close service details" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f4f8fe] text-[#64738e]"><X size={19} /></button></div>
+    {service.image && <img src={service.image} alt="" className="mt-5 h-44 w-full rounded-2xl bg-[#f4f8fe] object-contain" />}
+    <p className="mt-5 whitespace-pre-line text-sm font-medium leading-7 text-[#64738e] [overflow-wrap:anywhere]">{service.description}</p>
+    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-blue-100 pt-5"><p className="text-xl font-black text-[#0967ff]">{money(service.price)}</p><button onClick={onSelect} className="rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-bold text-white">Select service</button></div>
+  </dialog>
 }
 
 export function LiveDesktopCheckout({ params, navigate }: { params: any; navigate: Navigate }) {
@@ -122,7 +252,7 @@ function LiveAddresses({ navigate }: { navigate: Navigate }) {
   return <div><Heading eyebrow="YOUR PLACES" title="Saved locations" copy="Addresses returned by your account and used during booking."/><button onClick={() => setShow(value => !value)} className="mt-6 rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-black text-white">{show ? 'Close form' : 'Add address'}</button>{show && <div className="mt-5 rounded-[26px] bg-white p-6 ring-1 ring-blue-100"><div className="grid gap-4 sm:grid-cols-2"><Input label="Label" value={form.title} onChange={value => setForm(current => ({ ...current, title: value }))}/><Input label="Full address" value={form.address} onChange={value => setForm(current => ({ ...current, address: value }))}/><label className="text-sm font-black">State<select value={form.stateId} onChange={event => setForm(current => ({ ...current, stateId: Number(event.target.value), cityId: 0 }))} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-3"><option value={0}>Select state</option>{states.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label className="text-sm font-black">City<select value={form.cityId} onChange={event => setForm(current => ({ ...current, cityId: Number(event.target.value) }))} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-3"><option value={0}>Select city</option>{cities.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>{error && <p className="mt-4 text-sm font-bold text-red-600">{error}</p>}<button disabled={saving || !form.title || !form.address || !form.stateId || !form.cityId} onClick={async () => { setSaving(true); setError(''); try { await data.addAddress(form); setShow(false) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save address.') } finally { setSaving(false) } }} className="mt-5 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white disabled:opacity-40">{saving ? 'Saving…' : 'Save address'}</button></div>}<div className="mt-7 grid gap-4 md:grid-cols-2">{data.addresses.map(address => <article key={address.id} className="rounded-[22px] border border-blue-100 bg-white p-5"><MapPin className="text-[#0967ff]"/><h2 className="mt-3 font-black">{address.title}</h2><p className="mt-1 text-sm font-semibold text-[#73819a]">{address.address}</p></article>)}</div>{!data.addresses.length && !show && <div className="mt-7"><State empty="No saved addresses were returned."/></div>}</div>
 }
 
-function SignInState({ navigate, title }: { navigate: Navigate; title: string }) { return <div><Heading eyebrow="ACCOUNT" title={title} copy="This information is private and requires your Helpy user session."/><button onClick={() => navigate('login')} className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white">Sign in</button></div> }
+function SignInState({ navigate, title }: { navigate: Navigate; title: string }) { return <div><Heading title={title}/><button onClick={() => navigate('login')} className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white">Sign in</button></div> }
 function Review({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl bg-[#f5f8fd] p-4"><p className="text-[10px] font-black uppercase tracking-wide text-[#8a97ab]">{label}</p><p className="mt-2 text-sm font-black">{value}</p></div> }
 function Field({ label, value, editing, onChange }: { label: string; value: string; editing: boolean; onChange: (value: string) => void }) { return <label className="text-sm font-black">{label}<input value={value} disabled={!editing} onChange={event => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-4 text-sm font-semibold disabled:text-[#65738c]"/></label> }
 function Input({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="text-sm font-black">{label}<input value={value} onChange={event => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-4 text-sm font-semibold outline-none"/></label> }
