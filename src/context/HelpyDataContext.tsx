@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { helpyApi, helpyApiEnabled, hasHelpyUserSession, type HelpyAvailabilitySlot, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
+import { helpyApi, helpyApiEnabled, hasHelpyUserSession, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
 import { useNav } from './NavContext'
 
 const pick = (value: Record<string, unknown>, ...keys: string[]) => keys.map(key => value[key]).find(item => item !== null && item !== undefined && item !== '')
@@ -8,6 +8,7 @@ const number = (value: unknown, fallback = 0) => Number.isFinite(Number(value)) 
 const cleanText = (value: unknown) => text(value).replace(/<[^>]*>/g, ' ').replace(/&amp;/g, '&').replace(/&nbsp;/g, ' ').replace(/\s+/g, ' ').trim()
 
 export type LiveCategory = { id: number; name: string; image: string; count: number }
+export type LiveBanner = { id: number; name: string; image: string; serviceId: number; targetType: string; targetId: number; raw: Record<string, unknown> }
 export type LiveService = {
   id: string; serviceVendorMapId: number; serviceId: number; categoryId: number; vendorId: number
   name: string; provider: string; category: string; price: number; rating: number; reviews: number
@@ -22,6 +23,25 @@ export type LiveBooking = { id: string; service: string; provider: string; date:
 function mapCategory(item: HelpyCategory): LiveCategory {
   const raw = item as Record<string, unknown>
   return { id: number(item.category_id), name: text(pick(raw, 'name_english', 'name'), 'Category'), image: text(pick(raw, 'category_image_url', 'category_image')), count: number(pick(raw, 'service_count', 'services_count', 'total_services')) }
+}
+
+function mapBanner(item: HelpyBanner): LiveBanner {
+  const raw = item as Record<string, unknown>
+  const images = raw.banner_images
+  const image = Array.isArray(images)
+    ? text(images.find(value => typeof value === 'string' || (value && typeof value === 'object')))
+    : images && typeof images === 'object'
+      ? text(pick(images as Record<string, unknown>, 'url', 'image_url', 'image', 'path'))
+      : text(images)
+  return {
+    id: number(item.banner_id),
+    name: text(item.name, 'Featured service'),
+    image,
+    serviceId: number(item.service_id),
+    targetType: text(item.target_type),
+    targetId: number(item.target_id),
+    raw,
+  }
 }
 
 export function mapService(item: HelpyService, categories: LiveCategory[] = []): LiveService {
@@ -63,7 +83,9 @@ function mapProvider(item: HelpyProvider, categories: LiveCategory[]): LiveProvi
 
 function mapAddress(value: unknown): LiveAddress {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
-  return { id: text(pick(raw, 'id', 'address_id'), crypto.randomUUID()), title: text(pick(raw, 'title', 'name', 'address_type'), 'Saved address'), address: text(pick(raw, 'address_english', 'address_en', 'address', 'full_address')), stateId: number(pick(raw, 'state_id')), cityId: number(pick(raw, 'city_id')), raw }
+  const rawTitle = text(pick(raw, 'address_type_english', 'address_type', 'label', 'title', 'name'))
+  const title = /^\d+$/.test(rawTitle) ? text(pick(raw, 'name', 'address_type_english', 'address_type'), 'Saved address') : rawTitle || 'Saved address'
+  return { id: text(pick(raw, 'id', 'address_id'), crypto.randomUUID()), title, address: text(pick(raw, 'full_address_english', 'full_address', 'address_english', 'address_en', 'address', 'street_address')), stateId: number(pick(raw, 'state_id')), cityId: number(pick(raw, 'city_id')), raw }
 }
 
 export function mapBooking(value: unknown, status: string): LiveBooking {
@@ -90,7 +112,7 @@ export function mapBooking(value: unknown, status: string): LiveBooking {
 }
 
 type DataContext = {
-  loading: boolean; accountLoading: boolean; error: string; categories: LiveCategory[]; services: LiveService[]; featured: LiveService[]; providers: LiveProvider[]; businesses: LiveBusiness[]
+  loading: boolean; accountLoading: boolean; error: string; banners: LiveBanner[]; categories: LiveCategory[]; services: LiveService[]; featured: LiveService[]; providers: LiveProvider[]; businesses: LiveBusiness[]
   profile: LiveProfile | null; addresses: LiveAddress[]; bookings: LiveBooking[]; favorites: unknown[]; walletHistory: unknown[]; notifications: unknown[]
   refreshCatalog: () => Promise<void>; refreshAccount: () => Promise<void>; getAvailability: (vendorId: number, date: string) => Promise<HelpyAvailabilitySlot[]>
   updateProfile: (input: { name: string; email: string; phoneNumber: string; aboutMe?: string }) => Promise<void>
@@ -104,6 +126,7 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true)
   const [accountLoading, setAccountLoading] = useState(false)
   const [error, setError] = useState('')
+  const [banners, setBanners] = useState<LiveBanner[]>([])
   const [categories, setCategories] = useState<LiveCategory[]>([])
   const [services, setServices] = useState<LiveService[]>([])
   const [featured, setFeatured] = useState<LiveService[]>([])
@@ -153,10 +176,11 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
       const categoryRows = await helpyApi.getCategories()
       const mappedCategories = categoryRows.map(mapCategory)
       setCategories(mappedCategories)
-      const [featuredRows, providerRows, ...servicePages] = await Promise.all([
-        helpyApi.getFeaturedServices(), helpyApi.getTopProviders(),
+      const [bannerRows, featuredRows, providerRows, ...servicePages] = await Promise.all([
+        helpyApi.getBanners().catch(() => []), helpyApi.getFeaturedServices(), helpyApi.getTopProviders(),
         ...mappedCategories.map(category => helpyApi.getServices(category.id).catch(() => ({ total_records: 0, page: 1, limit: 100, data: [] }))),
       ])
+      setBanners(bannerRows.map(mapBanner).filter(banner => Boolean(banner.image)))
       const deduped = new Map<string, LiveService>()
       servicePages.flatMap(page => page.data || []).map(item => mapService(item, mappedCategories)).forEach(item => deduped.set(item.id, item))
       setServices([...deduped.values()])
@@ -185,12 +209,12 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
   useEffect(() => { void refreshAccount() }, [refreshAccount, isLoggedIn])
 
   const value = useMemo<DataContext>(() => ({
-    loading, accountLoading, error, categories, services, featured, providers, businesses, profile, addresses, bookings, favorites, walletHistory, notifications,
+    loading, accountLoading, error, banners, categories, services, featured, providers, businesses, profile, addresses, bookings, favorites, walletHistory, notifications,
     refreshCatalog, refreshAccount,
     getAvailability: (vendorId, date) => helpyApi.getVendorAvailability(vendorId, date),
     updateProfile: async input => { await helpyApi.updateUserProfile(input); await refreshAccount() },
     addAddress: async input => { await helpyApi.storeAddress(input); await refreshAccount() },
-  }), [loading, accountLoading, error, categories, services, featured, providers, businesses, profile, addresses, bookings, favorites, walletHistory, notifications, refreshCatalog, refreshAccount])
+  }), [loading, accountLoading, error, banners, categories, services, featured, providers, businesses, profile, addresses, bookings, favorites, walletHistory, notifications, refreshCatalog, refreshAccount])
 
   return <Context.Provider value={value}>{children}</Context.Provider>
 }
