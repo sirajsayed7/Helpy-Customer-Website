@@ -85,6 +85,22 @@ export type HelpyAvailabilitySlot = {
   isAvailable: boolean | number
 }
 
+export type HelpyAddressInput = {
+  title: string
+  address: string
+  stateId: number
+  cityId: number
+  buildingNumber?: string
+  zone?: string
+  street?: string
+  floor?: string
+  apartment?: string
+  landmark?: string
+  latitude?: number
+  longitude?: number
+  notes?: string
+}
+
 export class HelpyApiError extends Error {
   constructor(
     message: string,
@@ -378,15 +394,7 @@ class HelpyApiClient {
     })).data
   }
 
-  async storeAddress(input: {
-    title: string
-    address: string
-    stateId: number
-    cityId: number
-    latitude?: number
-    longitude?: number
-    notes?: string
-  }) {
+  async storeAddress(input: HelpyAddressInput) {
     return (await this.request<Record<string, unknown>>('store-address', {
       method: 'POST',
       multipart: {
@@ -396,6 +404,17 @@ class HelpyApiClient {
         address_ar: input.address,
         state_id: input.stateId,
         city_id: input.cityId,
+        building: input.buildingNumber,
+        building_no: input.buildingNumber,
+        building_number: input.buildingNumber,
+        zone: input.zone,
+        zone_number: input.zone,
+        street: input.street,
+        street_name: input.street,
+        floor: input.floor || '',
+        flat: input.apartment || '',
+        apartment: input.apartment || '',
+        landmark: input.landmark || '',
         latitude: input.latitude ?? 25.2854,
         longitude: input.longitude ?? 51.5310,
         notes: input.notes || '',

@@ -1,4 +1,6 @@
-import { useEffect, useState, type ElementType, type ReactNode } from 'react'
+import { useEffect, useRef, useState, type ElementType, type ReactNode } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
 import {
   ArrowLeft,
   ArrowRight,
@@ -16,11 +18,14 @@ import {
   Home,
   LockKeyhole,
   LogOut,
+  LocateFixed,
+  LoaderCircle,
   Mail,
   MapPin,
   MessageCircle,
   Phone,
   Plus,
+  Search,
   Send,
   ShieldCheck,
   Sparkles,
@@ -307,10 +312,252 @@ function FavoritesView({ navigate }: { navigate: Navigate }) {
 
 function AddressesView() {
   const data = useHelpyData()
+  const [adding, setAdding] = useState(false)
+  const [saved, setSaved] = useState(false)
   return <>
-    <PageHeading title="Saved addresses" />
-    {data.accountLoading && !data.addresses.length ? <div className="rounded-[28px] border border-blue-100 bg-white px-6 py-16 text-center text-sm font-bold text-slate-500">Loading saved addresses…</div> : data.addresses.length ? <section className="grid gap-4">{data.addresses.map(address => { const raw = address.raw; const details = ['building', 'building_no', 'building_number', 'street', 'street_name', 'zone', 'zone_number', 'floor', 'flat', 'apartment', 'landmark', 'notes', 'city_name', 'state_name'].map(key => textOf(raw, key)).filter(Boolean); return <article key={address.id} className="flex gap-5 rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm"><span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-50 text-[#0967ff]"><MapPin size={22}/></span><div className="min-w-0"><h2 className="text-base font-black text-[#0b1637]">{address.title || 'Saved address'}</h2><p className="mt-1 text-sm font-bold text-slate-600">{address.address || 'Address details unavailable'}</p>{details.length > 0 && <p className="mt-2 text-sm leading-6 font-medium text-slate-500">{[...new Set(details)].join(' · ')}</p>}</div></article> })}</section> : <div className="rounded-[28px] border border-dashed border-blue-200 bg-white px-6 py-20 text-center"><MapPin className="mx-auto text-[#0967ff]" size={29}/><h2 className="mt-5 text-xl font-black text-[#0b1637]">No saved addresses yet</h2><p className="mt-2 text-sm font-medium text-slate-500">Your saved service locations will appear here.</p></div>}
+    <PageHeading title="Saved addresses" icon={MapPin} action={<button onClick={() => setAdding(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#0967ff] px-4 py-3 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df]"><Plus size={17}/>Add location</button>} />
+    {saved && <div role="status" className="mb-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700"><CheckCircle2 size={17}/>Your location has been saved and is ready for bookings.</div>}
+    {data.accountLoading && !data.addresses.length ? <div className="rounded-[28px] border border-blue-100 bg-white px-6 py-16 text-center text-sm font-bold text-slate-500">Loading saved addresses…</div> : data.addresses.length ? <section className="grid gap-4">{data.addresses.map(address => { const raw = address.raw; const details = ['building', 'building_no', 'building_number', 'street', 'street_name', 'zone', 'zone_number', 'floor', 'flat', 'apartment', 'landmark', 'notes', 'city_name', 'state_name'].map(key => textOf(raw, key)).filter(Boolean); return <article key={address.id} className="flex gap-5 rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm"><span className="grid h-14 w-14 shrink-0 place-items-center rounded-2xl bg-blue-50 text-[#0967ff]"><MapPin size={22}/></span><div className="min-w-0"><h2 className="text-base font-black text-[#0b1637]">{address.title || 'Saved address'}</h2><p className="mt-1 text-sm font-bold text-slate-600">{address.address || 'Address details unavailable'}</p>{details.length > 0 && <p className="mt-2 text-sm leading-6 font-medium text-slate-500">{[...new Set(details)].join(' · ')}</p>}</div></article> })}</section> : <div className="rounded-[28px] border border-dashed border-blue-200 bg-white px-6 py-16 text-center"><MapPin className="mx-auto text-[#0967ff]" size={29}/><h2 className="mt-5 text-xl font-black text-[#0b1637]">No saved addresses yet</h2><p className="mt-2 text-sm font-medium text-slate-500">Add a location once and select it quickly during checkout.</p><button onClick={() => setAdding(true)} className="mt-5 inline-flex items-center gap-2 rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-black text-white"><Plus size={16}/>Add your first location</button></div>}
+    {adding && <AddressLocationDialog
+      onClose={() => setAdding(false)}
+      onSaved={() => { setAdding(false); setSaved(true); window.setTimeout(() => setSaved(false), 3200) }}
+    />}
   </>
+}
+
+type LocationForm = {
+  title: string
+  buildingNumber: string
+  zone: string
+  street: string
+  stateId: string
+  cityId: string
+  floor: string
+  apartment: string
+  landmark: string
+  notes: string
+  latitude?: number
+  longitude?: number
+}
+
+const emptyLocationForm: LocationForm = { title: '', buildingNumber: '', zone: '', street: '', stateId: '', cityId: '', floor: '', apartment: '', landmark: '', notes: '' }
+
+function AddressLocationDialog({ onClose, onSaved }: { onClose: () => void; onSaved: () => void }) {
+  const data = useHelpyData()
+  const [step, setStep] = useState<'map' | 'details'>('map')
+  const [form, setForm] = useState<LocationForm>(emptyLocationForm)
+  const [states, setStates] = useState<Array<{ id: number; name: string }>>([])
+  const [cities, setCities] = useState<Array<{ id: number; name: string; latitude?: number; longitude?: number }>>([])
+  const [loadingRegions, setLoadingRegions] = useState(true)
+  const [loadingCities, setLoadingCities] = useState(false)
+  const [locating, setLocating] = useState(false)
+  const [resolving, setResolving] = useState(false)
+  const [searching, setSearching] = useState(false)
+  const [saving, setSaving] = useState(false)
+  const [mapQuery, setMapQuery] = useState('')
+  const [detectedAddress, setDetectedAddress] = useState('')
+  const [searchResults, setSearchResults] = useState<Array<{ id: string; label: string; latitude: number; longitude: number }>>([])
+  const [error, setError] = useState('')
+  const searchSequence = useRef(0)
+  const searchTimer = useRef<number | null>(null)
+  const skipNextAutocomplete = useRef(false)
+
+  useEffect(() => {
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => { document.body.style.overflow = previousOverflow }
+  }, [])
+
+  useEffect(() => {
+    let active = true
+    helpyApi.getStates()
+      .then(rows => { if (active) setStates(rows.map(row => ({ id: row.id, name: row.name }))) })
+      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : 'Unable to load municipalities.') })
+      .finally(() => { if (active) setLoadingRegions(false) })
+    return () => { active = false }
+  }, [])
+
+  useEffect(() => {
+    const stateId = Number(form.stateId)
+    if (!stateId) { setCities([]); return }
+    let active = true
+    setLoadingCities(true)
+    helpyApi.getCities(stateId)
+      .then(rows => { if (active) setCities(rows.map(row => ({ id: row.id, name: row.name, latitude: row.latitude ? Number(row.latitude) : undefined, longitude: row.longitude ? Number(row.longitude) : undefined }))) })
+      .catch(cause => { if (active) setError(cause instanceof Error ? cause.message : 'Unable to load areas.') })
+      .finally(() => { if (active) setLoadingCities(false) })
+    return () => { active = false }
+  }, [form.stateId])
+
+  const update = (key: keyof LocationForm, value: string | number | undefined) => setForm(current => ({ ...current, [key]: value }))
+  const useCurrentLocation = () => {
+    if (!navigator.geolocation) { setError('Location services are not supported by this browser.'); return }
+    setLocating(true); setError('')
+    navigator.geolocation.getCurrentPosition(
+      position => { setForm(current => ({ ...current, latitude: position.coords.latitude, longitude: position.coords.longitude })); setLocating(false) },
+      reason => { setError(reason.code === reason.PERMISSION_DENIED ? 'Allow location access in your browser to use your current position.' : 'We could not detect your current position. You can still enter the address manually.'); setLocating(false) },
+      { enableHighAccuracy: true, timeout: 12000, maximumAge: 60000 },
+    )
+  }
+  const searchMap = async (requestedQuery = mapQuery) => {
+    const query = requestedQuery.trim()
+    if (query.length < 3) { setError('Enter at least three characters to search for a location.'); return }
+    const sequence = ++searchSequence.current
+    setSearching(true); setError('')
+    try {
+      const params = new URLSearchParams({ q: query, format: 'jsonv2', addressdetails: '1', countrycodes: 'qa', limit: '5', 'accept-language': 'en' })
+      const response = await fetch(`https://nominatim.openstreetmap.org/search?${params}`)
+      if (!response.ok) throw new Error('Location search is temporarily unavailable.')
+      const rows = await response.json() as Array<Record<string, unknown>>
+      if (sequence !== searchSequence.current) return
+      setSearchResults(rows.map(row => ({ id: String(row.place_id), label: String(row.display_name || query), latitude: Number(row.lat), longitude: Number(row.lon) })).filter(row => Number.isFinite(row.latitude) && Number.isFinite(row.longitude)))
+      if (!rows.length) setError('No matching Qatar locations were found. Try a nearby landmark or area.')
+    } catch (cause) { if (sequence === searchSequence.current) setError(cause instanceof Error ? cause.message : 'Unable to search locations.') }
+    finally { if (sequence === searchSequence.current) setSearching(false) }
+  }
+
+  useEffect(() => {
+    if (skipNextAutocomplete.current) { skipNextAutocomplete.current = false; return }
+    const query = mapQuery.trim()
+    if (query.length < 3) { searchSequence.current += 1; setSearching(false); setSearchResults([]); return }
+    searchTimer.current = window.setTimeout(() => { searchTimer.current = null; void searchMap(query) }, 700)
+    return () => { if (searchTimer.current !== null) window.clearTimeout(searchTimer.current) }
+  }, [mapQuery])
+  const searchImmediately = () => { if (searchTimer.current !== null) { window.clearTimeout(searchTimer.current); searchTimer.current = null }; void searchMap() }
+  const resolvePin = async () => {
+    if (form.latitude === undefined || form.longitude === undefined) { setError('Select a point on the map before continuing.'); return }
+    setResolving(true); setError('')
+    try {
+      const params = new URLSearchParams({ lat: String(form.latitude), lon: String(form.longitude), format: 'jsonv2', addressdetails: '1', zoom: '18', 'accept-language': 'en' })
+      const response = await fetch(`https://nominatim.openstreetmap.org/reverse?${params}`)
+      if (!response.ok) throw new Error('We could not look up this pin automatically.')
+      const result = await response.json() as Record<string, unknown>
+      const address = result.address && typeof result.address === 'object' ? result.address as Record<string, unknown> : {}
+      const value = (...keys: string[]) => String(keys.map(key => address[key]).find(item => item !== null && item !== undefined && item !== '') || '')
+      const streetNumberFromMap = (() => {
+        const rawStreet = value('street_number', 'road_reference', 'road', 'pedestrian', 'residential')
+        if (/^\d{1,4}$/.test(rawStreet.trim())) return rawStreet.trim()
+        return rawStreet.match(/(?:street|st|road)\s*[-#:]?\s*(\d{1,4})/i)?.[1]
+          || rawStreet.match(/^(\d{1,4})(?:st|nd|rd|th)?\s+(?:street|road)\b/i)?.[1]
+          || ''
+      })()
+      const normalized = (input: string) => input.toLowerCase().replace(/municipality/g, '').replace(/[^a-z0-9]+/g, '').trim()
+      const distance = (left: string, right: string) => {
+        const values = Array.from({ length: right.length + 1 }, (_, index) => index)
+        for (let i = 1; i <= left.length; i += 1) { let previous = values[0]; values[0] = i; for (let j = 1; j <= right.length; j += 1) { const saved = values[j]; values[j] = Math.min(values[j] + 1, values[j - 1] + 1, previous + (left[i - 1] === right[j - 1] ? 0 : 1)); previous = saved } }
+        return values[right.length]
+      }
+      const closest = <T extends { name: string }>(items: T[], target: string) => {
+        const key = normalized(target)
+        if (!key) return undefined
+        const exact = items.find(item => normalized(item.name).includes(key) || key.includes(normalized(item.name)))
+        if (exact) return exact
+        return items.map(item => ({ item, score: distance(normalized(item.name), key) })).sort((a, b) => a.score - b.score)[0]?.score <= 3 ? items.map(item => ({ item, score: distance(normalized(item.name), key) })).sort((a, b) => a.score - b.score)[0].item : undefined
+      }
+      const municipalityName = value('municipality', 'state_district', 'state', 'city')
+      const areaName = value('suburb', 'city_district', 'neighbourhood', 'town', 'village', 'city')
+      const stateMatch = closest(states, municipalityName)
+      let availableCities = cities
+      if (stateMatch) {
+        const rows = await helpyApi.getCities(stateMatch.id)
+        availableCities = rows.map(row => ({ id: row.id, name: row.name, latitude: row.latitude ? Number(row.latitude) : undefined, longitude: row.longitude ? Number(row.longitude) : undefined }))
+        setCities(availableCities)
+      }
+      const namedCity = closest(availableCities, areaName)
+      const cityMatch = namedCity || availableCities.filter(item => Number.isFinite(item.latitude) && Number.isFinite(item.longitude)).map(item => ({ item, distance: Math.hypot((item.latitude as number) - (form.latitude as number), ((item.longitude as number) - (form.longitude as number)) * .9) })).sort((a, b) => a.distance - b.distance)[0]?.item
+      setDetectedAddress(String(result.display_name || 'Selected map location'))
+      setForm(current => ({
+        ...current,
+        title: current.title || 'Home',
+        buildingNumber: current.buildingNumber || value('house_number', 'building'),
+        street: current.street || streetNumberFromMap,
+        stateId: current.stateId || (stateMatch ? String(stateMatch.id) : ''),
+        cityId: current.cityId || (cityMatch ? String(cityMatch.id) : ''),
+        landmark: current.landmark || value('amenity', 'shop', 'tourism'),
+      }))
+    } catch (cause) {
+      setError(`${cause instanceof Error ? cause.message : 'Address lookup was unavailable.'} You can complete the details manually.`)
+    } finally { setResolving(false); setStep('details') }
+  }
+  const save = async () => {
+    const required = [form.title, form.buildingNumber, form.zone, form.street, form.stateId, form.cityId]
+    if (required.some(value => !value.trim())) { setError('Complete the title, building, zone, street, municipality and area fields.'); return }
+    if (!/^\d{1,4}$/.test(form.street.trim())) { setError('Enter a valid Qatar street number.'); return }
+    if (!/^\d{1,3}$/.test(form.zone.trim())) { setError('Enter a valid Qatar zone number.'); return }
+    const state = states.find(item => item.id === Number(form.stateId))?.name
+    const city = cities.find(item => item.id === Number(form.cityId))?.name
+    const address = [`Building ${form.buildingNumber.trim()}`, `Street ${form.street.trim()}`, `Zone ${form.zone.trim()}`, city, state].filter(Boolean).join(', ')
+    setSaving(true); setError('')
+    try {
+      await data.addAddress({ title: form.title.trim(), address, stateId: Number(form.stateId), cityId: Number(form.cityId), buildingNumber: form.buildingNumber.trim(), zone: form.zone.trim(), street: form.street.trim(), floor: form.floor.trim(), apartment: form.apartment.trim(), landmark: form.landmark.trim(), latitude: form.latitude, longitude: form.longitude, notes: form.notes.trim() })
+      onSaved()
+    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save this location.') }
+    finally { setSaving(false) }
+  }
+
+  return <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#07152f]/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="location-title">
+    <div className="max-h-[calc(100dvh-32px)] w-full max-w-4xl overflow-y-auto rounded-[28px] bg-white shadow-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <header className="sticky top-0 z-[500] flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-6 py-5">
+        <h2 id="location-title" className="text-2xl font-black tracking-tight text-[#0b1637]">{step === 'map' ? 'Choose a location' : 'Address details'}</h2>
+        <button onClick={onClose} disabled={saving} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-slate-100 text-slate-500" aria-label="Close"><X size={18}/></button>
+      </header>
+      {step === 'map' ? <div className="p-4 sm:p-6">
+        <div className="relative h-[min(48vh,440px)] min-h-[300px] overflow-hidden rounded-[24px] border border-blue-100 bg-[#e8f1fb]">
+          <LocationMap latitude={form.latitude} longitude={form.longitude} onSelect={(latitude, longitude) => { setForm(current => ({ ...current, latitude, longitude })); setDetectedAddress(''); setSearchResults([]); setError('') }}/>
+          <div className="absolute left-4 right-4 top-4 z-[450] sm:right-auto sm:w-[380px]"><div className="flex items-center gap-2 rounded-2xl bg-white p-2 shadow-xl"><Search size={18} className="ml-2 shrink-0 text-slate-400"/><input value={mapQuery} onChange={event => { setMapQuery(event.target.value); if (!event.target.value) setSearchResults([]) }} onKeyDown={event => { if (event.key === 'Enter') { event.preventDefault(); searchImmediately() } }} placeholder="Search building, street or landmark" className="h-10 min-w-0 flex-1 bg-transparent text-sm font-semibold outline-none placeholder:text-slate-400"/><button onClick={searchImmediately} disabled={searching} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0967ff] text-white disabled:opacity-60">{searching ? <LoaderCircle className="animate-spin" size={17}/> : <ArrowRight size={17}/>}</button></div>{searchResults.length > 0 && <div className="mt-2 max-h-52 overflow-y-auto rounded-2xl bg-white p-2 shadow-xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">{searchResults.map(result => { const [primary, ...rest] = result.label.split(','); return <button key={result.id} onClick={() => { skipNextAutocomplete.current = true; setForm(current => ({ ...current, latitude: result.latitude, longitude: result.longitude })); setDetectedAddress(result.label); setMapQuery(primary); setSearchResults([]); setError('') }} className="flex w-full items-start gap-3 rounded-xl p-3 text-left transition hover:bg-blue-50"><MapPin size={16} className="mt-0.5 shrink-0 text-[#0967ff]"/><span className="min-w-0"><span className="block truncate text-sm font-black text-[#0b1637]">{primary}</span><span className="mt-0.5 line-clamp-1 text-xs font-semibold text-slate-500">{rest.join(',').trim() || 'Qatar'}</span></span></button> })}</div>}</div>
+          <button onClick={useCurrentLocation} disabled={locating} className="absolute bottom-4 right-4 z-[450] flex h-11 items-center gap-2 rounded-xl bg-white px-3 text-sm font-black text-[#0967ff] shadow-xl transition hover:bg-blue-50 disabled:opacity-60">{locating ? <LoaderCircle className="animate-spin" size={18}/> : <LocateFixed size={18}/>}<span className="hidden sm:inline">Current location</span></button>
+        </div>
+        {error && <div role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">{error}</div>}
+        <div className="sticky bottom-0 z-[500] -mx-4 mt-4 flex justify-end gap-3 border-t border-slate-100 bg-white/95 px-4 pb-1 pt-4 backdrop-blur sm:-mx-6 sm:px-6"><button onClick={onClose} className="rounded-xl px-5 py-3 text-sm font-black text-slate-500">Cancel</button><button onClick={() => void resolvePin()} disabled={resolving || loadingRegions} className="inline-flex min-w-44 items-center justify-center gap-2 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60">{resolving ? <><LoaderCircle className="animate-spin" size={17}/>Finding address…</> : <><Check size={17}/>Confirm this pin</>}</button></div>
+      </div> : <div>
+        <div className="grid lg:grid-cols-[260px_minmax(0,1fr)]">
+          <aside className="flex flex-col border-b border-blue-100 bg-[#f4f8ff] p-5 lg:min-h-[560px] lg:border-b-0 lg:border-r">
+            <div className="h-64 min-h-64 flex-1 overflow-hidden rounded-2xl border border-blue-100 bg-blue-100"><LocationMap latitude={form.latitude} longitude={form.longitude} onSelect={() => {}}/></div>
+            <button onClick={() => { setError(''); setStep('map') }} className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white py-3 text-sm font-black text-[#0967ff]"><ArrowLeft size={16}/>Adjust map pin</button>
+          </aside>
+          <div className="p-5 sm:p-6">
+            <section><p className="text-xs font-black uppercase tracking-[.12em] text-slate-400">Save this place as</p><div className="mt-3 grid grid-cols-3 gap-3">{[{ label: 'Home', icon: Home }, { label: 'Work', icon: Building2 }, { label: 'Other', icon: MapPin }].map(({ label, icon: Icon }) => { const active = label === 'Other' ? !['Home', 'Work'].includes(form.title) : form.title === label; return <button key={label} onClick={() => update('title', label === 'Other' ? '' : label)} className={`flex items-center justify-center gap-2 rounded-xl border px-3 py-3 text-sm font-black transition ${active ? 'border-[#0967ff] bg-blue-50 text-[#0967ff] ring-2 ring-blue-100' : 'border-slate-100 text-slate-500 hover:border-blue-200'}`}><Icon size={17}/>{label}</button> })}</div>{!['Home', 'Work'].includes(form.title) && <div className="mt-3"><LocationInput label="Custom title" value={form.title} onChange={value => update('title', value)} placeholder="Parents’ home, School, Gym…"/></div>}</section>
+            <section className="mt-5 overflow-hidden rounded-2xl border border-blue-100"><div className="flex items-center justify-between bg-[#0967ff] px-4 py-3 text-white"><div><p className="text-[10px] font-black uppercase tracking-[.15em] text-blue-100">Qatar address plate</p><p className="mt-0.5 text-sm font-black">Building · Street · Zone</p></div><span className="rounded-lg bg-white/15 px-2.5 py-1 text-[10px] font-black">Required</span></div><div className="grid gap-4 p-4 sm:grid-cols-3"><LocationInput label="Building" value={form.buildingNumber} onChange={value => update('buildingNumber', value.replace(/[^\dA-Za-z-]/g, ''))} placeholder="24" inputMode="text"/><LocationInput label="Street" value={form.street} onChange={value => update('street', value.replace(/\D/g, '').slice(0, 4))} placeholder="950" inputMode="numeric"/><LocationInput label="Zone" value={form.zone} onChange={value => update('zone', value.replace(/\D/g, '').slice(0, 3))} placeholder="66" inputMode="numeric"/></div></section>
+            <div className="mt-5 grid gap-4 sm:grid-cols-2"><label><span className="mb-2 block text-xs font-black text-slate-600">Municipality</span><select value={form.stateId} onChange={event => setForm(current => ({ ...current, stateId: event.target.value, cityId: '' }))} disabled={loadingRegions} className="h-12 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#0967ff] focus:ring-2 focus:ring-blue-100"><option value="">{loadingRegions ? 'Loading municipalities…' : 'Select municipality'}</option>{states.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label><span className="mb-2 block text-xs font-black text-slate-600">Area</span><select value={form.cityId} onChange={event => update('cityId', event.target.value)} disabled={!form.stateId || loadingCities} className="h-12 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 text-sm font-bold text-slate-700 outline-none focus:border-[#0967ff] focus:ring-2 focus:ring-blue-100"><option value="">{loadingCities ? 'Loading areas…' : 'Select area'}</option>{cities.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>
+            <details className="group mt-5 rounded-2xl border border-slate-100 bg-slate-50"><summary className="flex cursor-pointer list-none items-center justify-between px-4 py-3 text-sm font-black text-slate-600">Additional arrival details <ChevronRight size={17} className="transition group-open:rotate-90"/></summary><div className="grid gap-4 border-t border-slate-100 p-4 sm:grid-cols-2"><LocationInput label="Floor" value={form.floor} onChange={value => update('floor', value)} placeholder="e.g. 3"/><LocationInput label="Apartment / unit" value={form.apartment} onChange={value => update('apartment', value)} placeholder="e.g. 12B"/><LocationInput label="Nearby landmark" value={form.landmark} onChange={value => update('landmark', value)} placeholder="Opposite the metro station" className="sm:col-span-2"/><LocationInput label="Provider instructions" value={form.notes} onChange={value => update('notes', value)} placeholder="Gate, parking or access instructions" className="sm:col-span-2"/></div></details>
+            {error && <div role="alert" className="mt-4 rounded-xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">{error}</div>}
+          </div>
+        </div>
+        <div className="sticky bottom-0 z-[500] flex items-center justify-between gap-3 border-t border-slate-100 bg-white/95 px-5 py-4 backdrop-blur sm:px-6"><p className="hidden text-xs font-semibold text-slate-400 sm:block">Required fields are marked above.</p><div className="ml-auto flex gap-3"><button onClick={() => setStep('map')} disabled={saving} className="rounded-xl px-5 py-3 text-sm font-black text-slate-500">Back</button><button onClick={() => void save()} disabled={saving || loadingRegions} className="inline-flex min-w-40 items-center justify-center gap-2 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white disabled:cursor-wait disabled:opacity-60">{saving ? <><LoaderCircle className="animate-spin" size={17}/>Saving…</> : <><MapPin size={17}/>Save location</>}</button></div></div>
+      </div>}
+    </div>
+  </div>
+}
+
+function LocationMap({ latitude, longitude, onSelect }: { latitude?: number; longitude?: number; onSelect: (latitude: number, longitude: number) => void }) {
+  const container = useRef<HTMLDivElement>(null)
+  const map = useRef<L.Map | null>(null)
+  const marker = useRef<L.Marker | null>(null)
+
+  useEffect(() => {
+    if (!container.current || map.current) return
+    const instance = L.map(container.current, { zoomControl: false, preferCanvas: true }).setView([latitude ?? 25.2854, longitude ?? 51.5310], latitude === undefined ? 12 : 16)
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19, attribution: '&copy; OpenStreetMap contributors' }).addTo(instance)
+    L.control.zoom({ position: 'topright' }).addTo(instance)
+    instance.on('click', event => onSelect(event.latlng.lat, event.latlng.lng))
+    map.current = instance
+    window.setTimeout(() => instance.invalidateSize(), 0)
+    return () => { instance.remove(); map.current = null }
+  }, [])
+
+  useEffect(() => {
+    const instance = map.current
+    if (!instance || latitude === undefined || longitude === undefined) return
+    if (!marker.current) marker.current = L.marker([latitude, longitude], { keyboard: false }).addTo(instance)
+    else marker.current.setLatLng([latitude, longitude])
+    instance.flyTo([latitude, longitude], Math.max(instance.getZoom(), 16), { animate: true, duration: .65 })
+  }, [latitude, longitude])
+
+  return <div ref={container} className="h-full w-full" aria-label="Interactive location map"/>
+}
+
+function LocationInput({ label, value, onChange, placeholder, inputMode = 'text', className = '' }: { label: string; value: string; onChange: (value: string) => void; placeholder: string; inputMode?: 'text' | 'numeric'; className?: string }) {
+  return <label className={className}><span className="mb-2 block text-xs font-black text-slate-600">{label}</span><input value={value} onChange={event => onChange(event.target.value)} placeholder={placeholder} inputMode={inputMode} className="h-12 w-full rounded-xl border border-slate-100 bg-slate-50 px-4 text-sm font-bold text-slate-700 outline-none placeholder:font-medium placeholder:text-slate-400 focus:border-[#0967ff] focus:ring-2 focus:ring-blue-100"/></label>
 }
 
 function NotificationsView({ navigate }: { navigate: Navigate }) {

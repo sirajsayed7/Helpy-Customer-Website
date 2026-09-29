@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { helpyApi, hasHelpyUserSession, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
+import { helpyApi, hasHelpyUserSession, type HelpyAddressInput, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
 import { useNav } from './NavContext'
 
 const pick = (value: Record<string, unknown>, ...keys: string[]) => keys.map(key => value[key]).find(item => item !== null && item !== undefined && item !== '')
@@ -116,7 +116,7 @@ type DataContext = {
   profile: LiveProfile | null; addresses: LiveAddress[]; bookings: LiveBooking[]; favorites: unknown[]; walletHistory: unknown[]; notifications: unknown[]
   refreshCatalog: () => Promise<void>; refreshAccount: () => Promise<void>; getAvailability: (vendorId: number, date: string) => Promise<HelpyAvailabilitySlot[]>
   updateProfile: (input: { name: string; email: string; phoneNumber: string; aboutMe?: string }) => Promise<void>
-  addAddress: (input: { title: string; address: string; stateId: number; cityId: number; notes?: string }) => Promise<void>
+  addAddress: (input: HelpyAddressInput) => Promise<void>
 }
 
 const Context = createContext<DataContext>(null as never)
