@@ -11,7 +11,8 @@
       "typedRoutes": true
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.sleping.helpy-customer"
     },
     "android": {
       "adaptiveIcon": {
@@ -27,7 +28,14 @@
     },
     "plugins": [
       "expo-router",
-      "expo-secure-store"
+      "expo-secure-store",
+      "expo-font",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Helpy uses your location to find your address and show services near you."
+        }
+      ]
     ]
   }
 }

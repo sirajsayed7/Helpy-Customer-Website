@@ -62,11 +62,11 @@ export default function VerifyScreen() {
     <SafeAreaView style={styles.safe}>
       <KeyboardAvoidingView style={styles.screen} behavior={Platform.select({ ios: 'padding', android: undefined })}>
         <View style={styles.topRow}>
-          <Pressable accessibilityLabel="Back to sign in" hitSlop={10} onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
+          <Pressable accessibilityLabel="Back to Sign In" hitSlop={10} onPress={() => router.back()}><Text style={styles.back}>‹ Back</Text></Pressable>
           <HelpyMark size={74} />
         </View>
         <View style={styles.copy}>
-          <Text style={styles.title}>Verify code</Text>
+          <Text style={styles.title}>Verify Code</Text>
           <Text style={styles.subtitle}>We sent a verification code to</Text>
           <Text numberOfLines={1} style={styles.email}>{email || 'your email address'}</Text>
         </View>

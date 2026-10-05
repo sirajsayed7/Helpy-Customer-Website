@@ -1,6 +1,7 @@
 const DEFAULT_API_BASE = 'https://admin.helpyapp.tech/api/v1'
 const TOKEN_KEY = 'helpy_session_token'
 const SESSION_KIND_KEY = 'helpy_session_kind'
+const FIREBASE_CUSTOM_TOKEN_KEY = 'helpy_firebase_custom_token'
 
 type RequestMethod = 'GET' | 'POST'
 type QueryValue = string | number | boolean | null | undefined
@@ -86,8 +87,10 @@ export type HelpyAvailabilitySlot = {
 }
 
 export type HelpyAddressInput = {
+  addressType?: 1 | 2 | 3
   title: string
   address: string
+  countryId?: number
   stateId: number
   cityId: number
   buildingNumber?: string
@@ -123,6 +126,15 @@ export function getHelpyAccessToken() {
   return readToken()
 }
 
+export function getHelpyFirebaseCustomToken() {
+  if (typeof window === 'undefined') return null
+  return window.sessionStorage.getItem(FIREBASE_CUSTOM_TOKEN_KEY)
+}
+
+export function clearHelpyFirebaseCustomToken() {
+  if (typeof window !== 'undefined') window.sessionStorage.removeItem(FIREBASE_CUSTOM_TOKEN_KEY)
+}
+
 export function hasHelpySession() {
   return Boolean(readToken())
 }
@@ -135,6 +147,12 @@ function writeToken(token: string, kind: 'guest' | 'user') {
   if (typeof window !== 'undefined') {
     window.sessionStorage.setItem(TOKEN_KEY, token)
     window.sessionStorage.setItem(SESSION_KIND_KEY, kind)
+  }
+}
+
+function writeFirebaseCustomToken(value: unknown) {
+  if (typeof window !== 'undefined' && typeof value === 'string' && value.trim()) {
+    window.sessionStorage.setItem(FIREBASE_CUSTOM_TOKEN_KEY, value)
   }
 }
 
@@ -224,6 +242,8 @@ class HelpyApiClient {
     if (typeof window !== 'undefined') {
       window.sessionStorage.removeItem(TOKEN_KEY)
       window.sessionStorage.removeItem(SESSION_KIND_KEY)
+      window.sessionStorage.removeItem(FIREBASE_CUSTOM_TOKEN_KEY)
+      window.sessionStorage.removeItem('helpy_firebase_session')
     }
   }
 
@@ -266,6 +286,7 @@ class HelpyApiClient {
     })
     if (!response.token) throw new HelpyApiError('Login response did not include a token', 200, response)
     writeToken(response.token, 'user')
+    writeFirebaseCustomToken(response.data.firebaseToken)
     return response.data
   }
 
@@ -277,7 +298,7 @@ class HelpyApiClient {
     return (await this.request<HelpyBanner[]>('get-banner-list')).data
   }
 
-  async getCategories(categoryImageSize = '64_65') {
+  async getCategories(categoryImageSize = '64_64') {
     return (await this.request<HelpyCategory[]>('get-category-list', { query: { categoryImageSize } })).data
   }
 
@@ -344,7 +365,7 @@ class HelpyApiClient {
   }
 
   async markNotificationRead(notificationId: string | number) {
-    return (await this.request<unknown>('notification-mark-as-read', { method: 'POST', form: { notification_id: notificationId } })).data
+    return (await this.request<unknown>('notification-mark-as-read', { method: 'POST', form: { notification_history_id: notificationId } })).data
   }
 
   async markAllNotificationsRead() {
@@ -362,8 +383,8 @@ class HelpyApiClient {
   }
 
   async getBookingDetails(bookingId: string | number) {
-    return (await this.request<Record<string, unknown>>('get-booking-details', {
-      method: 'POST', form: { booking_id: bookingId },
+    return (await this.request<Record<string, unknown>[]>('get-booking-details', {
+      query: { booking_id: bookingId, serviceSetupImageSize: '375_240', userImageSize: '100_100' },
     })).data
   }
 
@@ -386,7 +407,7 @@ class HelpyApiClient {
       method: 'POST',
       multipart: {
         name: input.name,
-        name_en: input.name,
+        name_ar: '',
         email: input.email,
         phone_number: input.phoneNumber,
         about_me: input.aboutMe || '',
@@ -395,29 +416,26 @@ class HelpyApiClient {
   }
 
   async storeAddress(input: HelpyAddressInput) {
+    const addressType = input.addressType ?? (/^home$/i.test(input.title.trim()) ? 1 : /^(work|office)$/i.test(input.title.trim()) ? 2 : 3)
     return (await this.request<Record<string, unknown>>('store-address', {
       method: 'POST',
       multipart: {
-        title: input.title,
+        address_type: addressType,
         address: input.address,
-        address_en: input.address,
-        address_ar: input.address,
+        address_ar: '',
+        country_id: input.countryId ?? 179,
         state_id: input.stateId,
         city_id: input.cityId,
-        building: input.buildingNumber,
-        building_no: input.buildingNumber,
-        building_number: input.buildingNumber,
-        zone: input.zone,
-        zone_number: input.zone,
-        street: input.street,
-        street_name: input.street,
-        floor: input.floor || '',
-        flat: input.apartment || '',
-        apartment: input.apartment || '',
+        flat_or_building: input.buildingNumber,
+        flat_or_building_ar: '',
+        postal_code: input.zone,
+        locality_or_street: input.street,
+        locality_or_street_ar: '',
         landmark: input.landmark || '',
+        landmark_ar: '',
         latitude: input.latitude ?? 25.2854,
+        latitute: input.latitude ?? 25.2854,
         longitude: input.longitude ?? 51.5310,
-        notes: input.notes || '',
         is_default: 0,
       },
     })).data

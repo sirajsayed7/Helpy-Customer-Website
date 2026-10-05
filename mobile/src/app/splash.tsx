@@ -18,7 +18,7 @@ export default function SplashScreen() {
   }, [])
 
   return (
-    <View style={styles.container} accessibilityLabel="Helpy loading">
+    <View style={styles.container} accessibilityLabel="Helpy Loading">
       <Image source={require('../../assets/helpy/splash-start.png')} style={styles.background} resizeMode="cover" />
       <Image source={require('../../assets/helpy/splash-end.png')} style={styles.brand} resizeMode="cover" />
     </View>

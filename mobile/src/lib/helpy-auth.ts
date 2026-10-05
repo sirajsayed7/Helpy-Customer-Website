@@ -1,5 +1,5 @@
 import { Platform } from 'react-native'
-import { getOrCreateDeviceId, readAccessToken, writeSession } from './session'
+import { getOrCreateDeviceId, readAccessToken, writeFirebaseCustomToken, writeSession } from './session'
 
 const DEFAULT_API_BASE = 'https://admin.helpyapp.tech/api/v1'
 const API_BASE = (process.env.EXPO_PUBLIC_HELPY_API_BASE || DEFAULT_API_BASE).replace(/\/$/, '')
@@ -78,4 +78,6 @@ export async function verifyLoginOtp(email: string, code: string) {
 
   if (!payload.token) throw new HelpyAuthError('Login response did not include a token.', 200)
   await writeSession(payload.token, 'user')
+  const firebaseToken = payload.data?.firebaseToken
+  if (typeof firebaseToken === 'string') await writeFirebaseCustomToken(firebaseToken)
 }

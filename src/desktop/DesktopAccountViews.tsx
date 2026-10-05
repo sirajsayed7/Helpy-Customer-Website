@@ -576,7 +576,7 @@ function NotificationsView({ navigate }: { navigate: Navigate }) {
     const target: Screen = bookingId ? 'order-detail' : isMessage ? 'chat-thread' : isWallet ? 'wallet' : isReview ? 'reviews' : isOffer ? 'deals' : 'notifications'
     const Icon = bookingId ? CalendarDays : isMessage ? MessageCircle : isWallet ? Wallet : isReview ? Star : isOffer ? Gift : Bell
     const iconClass = bookingId ? 'bg-blue-50 text-[#0967ff]' : isMessage ? 'bg-violet-50 text-violet-600' : isWallet ? 'bg-emerald-50 text-emerald-600' : isReview ? 'bg-amber-50 text-amber-600' : isOffer ? 'bg-rose-50 text-rose-500' : 'bg-blue-50 text-[#0967ff]'
-    return { id: text('id', 'notification_id') || String(index), icon: Icon, iconClass, title: text('title', 'notification_title', 'subject') || 'Helpy update', description: text('message', 'body', 'description', 'notification_message'), time: text('created_at_formatted', 'time_ago', 'created_at', 'date'), unread: !row.read_at && row.is_read !== 1 && row.is_read !== true && row.status !== 'read', screen: target, params: bookingId ? { id: bookingId } : peerId ? { peerId } : undefined }
+    return { id: text('notification_history_id', 'id', 'notification_id') || String(index), icon: Icon, iconClass, title: text('title', 'notification_title', 'subject') || 'Helpy update', description: text('message', 'body', 'description', 'notification_message'), time: text('created_at_formatted', 'time_ago', 'created_at', 'date'), unread: !row.read_at && row.is_read !== 1 && row.is_read !== true && row.status !== 'read', screen: target, params: bookingId ? { id: bookingId } : peerId ? { peerId } : undefined }
   }
   const [notifications, setNotifications] = useState<NotificationRow[]>([])
   const [error, setError] = useState('')

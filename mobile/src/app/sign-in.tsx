@@ -37,11 +37,11 @@ export default function SignInScreen() {
         <KeyboardAvoidingView style={styles.content} behavior={Platform.select({ ios: 'padding', android: undefined })}>
           <View style={styles.brand}><HelpyMark /></View>
           <View style={styles.intro}>
-            <Text style={styles.title}>Welcome back</Text>
+            <Text style={styles.title}>Welcome Back</Text>
             <Text style={styles.subtitle}>Sign in to continue and explore services near you.</Text>
           </View>
 
-          <Text style={styles.label}>Email address</Text>
+          <Text style={styles.label}>Email Address</Text>
           <TextInput
             autoCapitalize="none"
             autoComplete="email"
@@ -59,7 +59,7 @@ export default function SignInScreen() {
           {error ? <Text accessibilityRole="alert" style={styles.error}>{error}</Text> : null}
 
           <Pressable accessibilityRole="button" disabled={loading} onPress={() => void submit()} style={({ pressed }) => [styles.primaryButton, (pressed || loading) && styles.primaryButtonPressed]}>
-            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Sign in</Text>}
+            {loading ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryButtonText}>Sign In</Text>}
           </Pressable>
         </KeyboardAvoidingView>
       </SafeAreaView>
