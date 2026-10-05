@@ -20,9 +20,20 @@ export type LiveProfile = { name: string; email: string; phone: string; about: s
 export type LiveAddress = { id: string; title: string; address: string; stateId: number; cityId: number; raw: Record<string, unknown> }
 export type LiveBooking = { id: string; service: string; provider: string; date: string; time: string; price: number; status: string; image: string; address: string; raw: Record<string, unknown> }
 
+const categoryImageOverrides: Record<number, string> = {
+  1: '/assets/ai-homecat-home_services.png',
+  2: '/assets/cat-uniform-health-wellness.png',
+  3: '/assets/ai-homecat-education.png',
+  4: '/assets/cat-uniform-digital.png',
+  8: '/assets/cat-uniform-marketplace.png',
+  13: '/assets/cat-car-services-user-exact.png',
+  14: '/assets/cat-pets-dog-cat-food.png',
+}
+
 function mapCategory(item: HelpyCategory): LiveCategory {
   const raw = item as Record<string, unknown>
-  return { id: number(item.category_id), name: text(pick(raw, 'name_english', 'name'), 'Category'), image: text(pick(raw, 'category_image_url', 'category_image')), count: number(pick(raw, 'service_count', 'services_count', 'total_services')) }
+  const id = number(item.category_id)
+  return { id, name: text(pick(raw, 'name_english', 'name'), 'Category'), image: categoryImageOverrides[id] || text(pick(raw, 'category_image_url', 'category_image')), count: number(pick(raw, 'service_count', 'services_count', 'total_services')) }
 }
 
 function mapBanner(item: HelpyBanner): LiveBanner {
