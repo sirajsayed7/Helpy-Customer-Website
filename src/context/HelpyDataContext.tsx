@@ -83,27 +83,35 @@ function mapProvider(item: HelpyProvider, categories: LiveCategory[]): LiveProvi
 
 function mapAddress(value: unknown): LiveAddress {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
-  const rawTitle = text(pick(raw, 'address_type_english', 'address_type', 'label', 'title', 'name'))
-  const title = /^\d+$/.test(rawTitle) ? text(pick(raw, 'name', 'address_type_english', 'address_type'), 'Saved address') : rawTitle || 'Saved address'
-  return { id: text(pick(raw, 'id', 'address_id'), crypto.randomUUID()), title, address: text(pick(raw, 'full_address_english', 'full_address', 'address_english', 'address_en', 'address', 'street_address')), stateId: number(pick(raw, 'state_id')), cityId: number(pick(raw, 'city_id')), raw }
+  const addressType = number(raw.address_type)
+  const backendLabel = addressType === 1 ? 'Home' : addressType === 2 ? 'Work' : addressType === 3 ? 'Other' : ''
+  const title = ['address_type_text', 'address_type_english', 'label', 'title', 'name']
+    .map(key => text(raw[key]).trim())
+    .find(candidate => candidate && !/^\d+$/.test(candidate)) || backendLabel || 'Saved address'
+  return { id: text(pick(raw, 'user_address_id', 'id', 'address_id'), crypto.randomUUID()), title, address: text(pick(raw, 'full_address_english', 'full_address', 'address_english', 'address_en', 'address', 'street_address')), stateId: number(pick(raw, 'state_id')), cityId: number(pick(raw, 'city_id')), raw }
 }
 
 export function mapBooking(value: unknown, status: string): LiveBooking {
   const raw = value && typeof value === 'object' ? value as Record<string, unknown> : {}
+  const bookingItems = Array.isArray(raw.booking_items) ? raw.booking_items : []
+  const firstItem = bookingItems[0] && typeof bookingItems[0] === 'object' ? bookingItems[0] as Record<string, unknown> : {}
   const objectAt = (...keys: string[]) => { const found = pick(raw, ...keys); return found && typeof found === 'object' ? found as Record<string, unknown> : {} }
-  const setup = objectAt('service_setup', 'service_vendor_map', 'service_vendor_mapp', 'service_details')
-  const service = Object.keys(objectAt('service')).length ? objectAt('service') : (setup.service && typeof setup.service === 'object' ? setup.service as Record<string, unknown> : setup)
-  const vendor = Object.keys(objectAt('vendor', 'provider', 'created_by')).length ? objectAt('vendor', 'provider', 'created_by') : (setup.created_by && typeof setup.created_by === 'object' ? setup.created_by as Record<string, unknown> : {})
+  const nestedSetup = firstItem.service_setup && typeof firstItem.service_setup === 'object' ? firstItem.service_setup as Record<string, unknown> : {}
+  const setup = Object.keys(nestedSetup).length ? nestedSetup : objectAt('service_setup', 'service_vendor_map', 'service_vendor_mapp', 'service_details')
+  const nestedService = firstItem.service_details && typeof firstItem.service_details === 'object' ? firstItem.service_details as Record<string, unknown> : {}
+  const service = Object.keys(nestedService).length ? nestedService : (Object.keys(objectAt('service')).length ? objectAt('service') : (setup.service && typeof setup.service === 'object' ? setup.service as Record<string, unknown> : setup))
+  const nestedVendor = setup.created_by && typeof setup.created_by === 'object' ? setup.created_by as Record<string, unknown> : {}
+  const vendor = Object.keys(nestedVendor).length ? nestedVendor : objectAt('vendor', 'provider', 'created_by')
   const address = objectAt('booking_address', 'user_address', 'address_data')
   const payment = objectAt('payment', 'payment_details')
   const imageList = Array.isArray(setup.all_service_images) ? setup.all_service_images : []
   return {
     id: text(pick(raw, 'id', 'order_id', 'booking_id'), crypto.randomUUID()),
-    service: text(pick(raw, 'service_name') || pick(service, 'name_english', 'name', 'service_name') || pick(setup, 'name_english', 'name'), 'Booked service'),
-    provider: text(pick(raw, 'vendor_name', 'provider_name', 'created_by_name') || pick(vendor, 'name_english', 'name'), 'Service provider'),
+    service: text(pick(firstItem, 'service_name', 'name') || pick(raw, 'service_name') || pick(service, 'name_english', 'name', 'service_name') || pick(setup, 'name_english', 'name'), 'Booked service'),
+    provider: text(pick(firstItem, 'provider_name', 'vendor_name') || pick(raw, 'vendor_name', 'provider_name', 'created_by_name') || pick(vendor, 'name_english', 'name'), 'Service provider'),
     date: text(pick(raw, 'selected_date', 'booking_date', 'date', 'service_date', 'scheduled_date')),
     time: text(pick(raw, 'selected_time', 'booking_time', 'time', 'slot', 'booking_slot')),
-    price: number(pick(raw, 'total_amount', 'total_price', 'payable_amount', 'price', 'amount') || pick(payment, 'total_amount', 'amount')),
+    price: number(pick(raw, 'total_amount', 'total_price', 'payable_amount', 'price', 'amount') || pick(firstItem, 'final_price', 'total_price') || pick(payment, 'total_amount', 'amount')),
     status: text(pick(raw, 'status_text', 'booking_status_text', 'order_status_text'), status),
     image: text(pick(raw, 'service_image', 'service_setup_image_url', 'image_url') || pick(setup, 'service_image_url', 'image_url') || imageList[0]),
     address: text(pick(raw, 'service_address', 'address_english') || pick(address, 'address_english', 'address_en', 'address', 'full_address')),
@@ -156,17 +164,8 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
         raw: creator,
       })
     })
-    providers.forEach(provider => {
-      const current = grouped.get(provider.id)
-      if (current) {
-        current.image ||= provider.image
-        current.rating ||= provider.rating
-        return
-      }
-      grouped.set(provider.id, { id: provider.id, name: provider.name, image: provider.image, rating: provider.rating, about: cleanText(pick(provider.raw, 'about_me_english', 'about_me')), services: provider.service ? [provider.service] : [], raw: provider.raw })
-    })
-    return [...grouped.values()].sort((a, b) => b.services.length - a.services.length || b.rating - a.rating)
-  }, [services, providers])
+    return [...grouped.values()].sort((a, b) => b.services.length - a.services.length || b.rating - a.rating || a.name.localeCompare(b.name) || a.id - b.id)
+  }, [services])
 
   const refreshCatalog = useCallback(async () => {
     setLoading(true); setError('')
@@ -196,7 +195,8 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
       const [profileRaw, addressRows, active, progress, completed, favoriteRows, walletRows, notificationRows] = await Promise.all([
         helpyApi.getUserProfile(), helpyApi.getAddresses(), helpyApi.getBookings(0), helpyApi.getBookings(1), helpyApi.getBookings(2), helpyApi.getFavorites(), helpyApi.getWalletHistory(), helpyApi.getNotifications(),
       ])
-      setProfile({ name: text(pick(profileRaw, 'name_english', 'name')), email: text(profileRaw.email), phone: text(profileRaw.phone_number), about: text(pick(profileRaw, 'about_me_english', 'about_me')), image: text(pick(profileRaw, 'user_profile_image_url', 'profile_photo')), memberSince: text(pick(profileRaw, 'member_since', 'created_at_formatted')), wallet: number(profileRaw.wallet), raw: profileRaw })
+      const wallet = profileRaw.wallet && typeof profileRaw.wallet === 'object' ? profileRaw.wallet as Record<string, unknown> : {}
+      setProfile({ name: text(pick(profileRaw, 'name_english', 'name')), email: text(profileRaw.email), phone: text(profileRaw.phone_number), about: text(pick(profileRaw, 'about_me_english', 'about_me')), image: text(pick(profileRaw, 'user_profile_image_url', 'profile_photo')), memberSince: text(pick(profileRaw, 'member_since', 'created_at_formatted')), wallet: number(pick(wallet, 'balance', 'wallet_balance', 'amount') ?? profileRaw.wallet), raw: profileRaw })
       setAddresses(addressRows.map(mapAddress))
       setBookings([...active.map(row => mapBooking(row, 'Confirmed')), ...progress.map(row => mapBooking(row, 'In progress')), ...completed.map(row => mapBooking(row, 'Completed'))])
       setFavorites(favoriteRows); setWalletHistory(walletRows); setNotifications(notificationRows)
