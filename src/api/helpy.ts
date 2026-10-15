@@ -165,7 +165,9 @@ function toSearchParams(values: Record<string, QueryValue>) {
 }
 
 class HelpyApiClient {
-  private readonly baseUrl = String(runtimeEnv.VITE_HELPY_API_BASE || DEFAULT_API_BASE).replace(/\/$/, '')
+  // Keep every local request same-origin so Vite can proxy it to the API without
+  // the browser applying the production site's CORS policy to localhost.
+  private readonly baseUrl = String(runtimeEnv.DEV ? '/api/v1' : (runtimeEnv.VITE_HELPY_API_BASE || DEFAULT_API_BASE)).replace(/\/$/, '')
   private guestPromise: Promise<string> | null = null
 
   private async request<T>(

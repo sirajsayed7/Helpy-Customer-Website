@@ -109,14 +109,14 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
 
   const content = (() => {
     switch (accountScreen) {
-      case 'profile': return <ProfileView />
+      case 'profile': return <ProfileView navigate={navigate} />
       case 'wallet': return <WalletView />
       case 'favorites': return <FavoritesView navigate={navigate} />
       case 'addresses': return <AddressesView />
       case 'contact-us': return <ContactView navigate={navigate} />
       case 'terms': return <LegalView type="terms" navigate={navigate} />
       case 'privacy': return <LegalView type="privacy" navigate={navigate} />
-      default: return <ProfileView />
+      default: return <ProfileView navigate={navigate} />
     }
   })()
 
@@ -127,8 +127,8 @@ export default function DesktopAccountViews({ screen, navigate }: DesktopAccount
           <ChevronRight size={15} className="text-slate-300" />
           <span className="text-slate-800">My account</span>
         </div>}
-        <div data-account-layout className="mb-8 grid grid-cols-[204px_minmax(0,1fr)] items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-7 xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8">
-          <AccountRail active={accountScreen} navigate={navigate} />
+        <div data-account-layout className={`mb-8 ${accountScreen === 'profile' ? '' : 'grid grid-cols-[204px_minmax(0,1fr)] items-start gap-6 lg:grid-cols-[220px_minmax(0,1fr)] lg:gap-7 xl:grid-cols-[240px_minmax(0,1fr)] xl:gap-8'}`}>
+          {accountScreen !== 'profile' && <AccountRail active={accountScreen} navigate={navigate} />}
           <div className="min-w-0">{content}</div>
         </div>
         <AccountLegalFooter navigate={navigate} />
@@ -171,7 +171,7 @@ function PageHeading({ title, action, icon: Icon }: { eyebrow?: string; title: s
   return <div className="mb-6 flex min-w-0 flex-wrap items-center justify-between gap-4"><div className="flex min-w-0 items-center gap-3">{Icon && <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0967ff]"><Icon size={23} aria-hidden="true" /></span>}<h1 className="min-w-0 text-[28px] font-black leading-tight tracking-[-.035em] text-[#0b1637] [overflow-wrap:anywhere]">{title}</h1></div>{action}</div>
 }
 
-function ProfileView() {
+function ProfileView({ navigate }: { navigate: Navigate }) {
   const data = useHelpyData()
   const [editing, setEditing] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -194,14 +194,31 @@ function ProfileView() {
     } finally { setSaving(false) }
   }
 
+  const nextBooking = data.bookings.find(booking => !/completed|cancelled|canceled/i.test(booking.status)) || data.bookings[0]
+  const latestWallet = data.walletHistory[0] ? asRecord(data.walletHistory[0]) : null
+  const unreadNotifications = data.notifications.filter(value => {
+    const row = asRecord(value)
+    return row.read_at === null || row.read_at === undefined ? row.is_read !== true && row.is_read !== 1 && row.status !== 'read' : false
+  }).length
+
   return <>
     <PageHeading title="My profile" icon={User} action={<div className="flex shrink-0 items-center gap-2">{editing && <button disabled={saving} onClick={() => { setEditing(false); setError('') }} className="rounded-xl border border-blue-100 bg-white px-4 py-2.5 text-sm font-bold text-slate-600 disabled:opacity-60">Cancel</button>}<button disabled={saving || data.accountLoading || !profile} onClick={() => editing ? void saveProfile() : setEditing(true)} className="inline-flex items-center gap-2 rounded-xl bg-[#0967ff] px-4 py-2.5 text-sm font-bold text-white hover:bg-[#0759df] disabled:opacity-60"><Edit3 size={16} />{saving ? 'Saving…' : editing ? 'Save changes' : 'Edit profile'}</button></div>} />
     {saved && <div role="status" className="mb-5 flex items-center gap-2 rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-sm font-bold text-emerald-700"><CheckCircle2 size={17} />Your profile changes have been saved.</div>}
     {error && <div role="alert" className="mb-5 rounded-2xl border border-rose-100 bg-rose-50 px-4 py-3 text-sm font-bold text-rose-600">{error}</div>}
-    <section aria-label="Personal information" className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-6 shadow-sm">
-      {data.accountLoading && !profile ? <p role="status" className="text-sm font-semibold text-slate-500">Loading your profile…</p> : <div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-5"><Field label="Full name" value={form.name} editing={editing} onChange={value => setForm(current => ({ ...current, name: value }))} /><Field label="Email address" value={form.email} editing={editing} type="email" onChange={value => setForm(current => ({ ...current, email: value }))} /><Field label="Mobile number" value={form.phone} editing={editing} type="tel" onChange={value => setForm(current => ({ ...current, phone: value }))} /></div>}
+    <section aria-label="Profile overview" className="min-w-0 overflow-hidden rounded-[26px] border border-blue-100 bg-white shadow-sm">
+      {data.accountLoading && !profile ? <p role="status" className="p-6 text-sm font-semibold text-slate-500">Loading your profile…</p> : <><div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-center"><span className="grid h-20 w-20 shrink-0 place-items-center overflow-hidden rounded-[24px] bg-blue-50 text-2xl font-black text-[#0967ff]">{profile?.image ? <img src={profile.image} alt="" className="h-full w-full object-cover"/> : (profile?.name || 'H').slice(0, 1).toUpperCase()}</span><div className="min-w-0 flex-1"><div className="flex flex-wrap items-center gap-2"><h2 className="truncate text-xl font-black text-[#0b1637]">{profile?.name || 'Your Helpy account'}</h2><span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wide text-emerald-700"><Check size={12}/>Verified</span></div><p className="mt-1 truncate text-sm font-semibold text-slate-500">{profile?.email || 'Add your email address'}</p><p className="mt-1 text-sm font-semibold text-slate-500">{profile?.phone || 'Add your mobile number'}</p></div><div className="min-w-[170px]"><div className="flex items-center justify-between text-xs font-black text-slate-600"><span>Profile complete</span><span>{[form.name, form.email, form.phone].filter(Boolean).length * 33}%</span></div><div className="mt-2 h-2 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-[#0967ff]" style={{ width: `${[form.name, form.email, form.phone].filter(Boolean).length * 33}%` }}/></div><p className="mt-2 text-xs font-medium text-slate-500">Keep your details ready for booking.</p></div></div><div className="border-t border-slate-100 p-6"><div className="grid min-w-0 grid-cols-[repeat(auto-fit,minmax(min(100%,220px),1fr))] gap-5"><Field label="Full name" value={form.name} editing={editing} onChange={value => setForm(current => ({ ...current, name: value }))} /><Field label="Email address" value={form.email} editing={editing} type="email" onChange={value => setForm(current => ({ ...current, email: value }))} /><Field label="Mobile number" value={form.phone} editing={editing} type="tel" onChange={value => setForm(current => ({ ...current, phone: value }))} /></div></div></>}
     </section>
+    <section className="mt-6 grid gap-5 lg:grid-cols-3">
+      <button onClick={() => navigate('orders')} className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-5 text-left shadow-sm transition hover:border-blue-200 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 text-sm font-black text-[#0b1637]"><CalendarDays size={18} className="text-[#0967ff]"/>Upcoming booking</span><ArrowRight size={17} className="text-[#0967ff]"/></div>{nextBooking ? <div className="mt-5"><p className="truncate text-base font-black text-[#0b1637]">{nextBooking.service}</p><p className="mt-1 truncate text-sm font-semibold text-slate-500">{nextBooking.provider}</p><p className="mt-4 text-xs font-black text-[#0967ff]">{[nextBooking.date, nextBooking.time].filter(Boolean).join(' · ') || nextBooking.status}</p></div> : <p className="mt-5 text-sm font-semibold leading-6 text-slate-500">No upcoming booking yet. Explore services when you are ready.</p>}</button>
+      <button onClick={() => navigate('wallet')} className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-5 text-left shadow-sm transition hover:border-blue-200 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 text-sm font-black text-[#0b1637]"><Wallet size={18} className="text-[#0967ff]"/>Helpy wallet</span><ArrowRight size={17} className="text-[#0967ff]"/></div><p className="mt-5 text-2xl font-black tracking-tight text-[#0b1637]">QAR {money(profile?.wallet)}</p><p className="mt-1 text-sm font-semibold text-slate-500">Available balance</p><p className="mt-4 truncate text-xs font-bold text-slate-500">{latestWallet ? textOf(latestWallet, 'title', 'description', 'remarks', 'transaction_type_text') || 'Latest wallet activity' : 'No wallet activity yet'}</p></button>
+      <button onClick={() => navigate('addresses')} className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-5 text-left shadow-sm transition hover:border-blue-200 hover:shadow-md"><div className="flex items-center justify-between gap-3"><span className="inline-flex items-center gap-2 text-sm font-black text-[#0b1637]"><MapPin size={18} className="text-[#0967ff]"/>Saved addresses</span><ArrowRight size={17} className="text-[#0967ff]"/></div>{data.addresses[0] ? <div className="mt-5"><p className="text-base font-black text-[#0b1637]">{data.addresses[0].title || 'Saved location'}</p><p className="mt-1 line-clamp-2 text-sm font-semibold leading-6 text-slate-500">{data.addresses[0].address || 'Address details are ready for checkout.'}</p><p className="mt-4 text-xs font-black text-[#0967ff]">{data.addresses.length} saved {data.addresses.length === 1 ? 'address' : 'addresses'}</p></div> : <p className="mt-5 text-sm font-semibold leading-6 text-slate-500">Save an address once for faster checkout.</p>}</button>
+    </section>
+    <section className="mt-6 rounded-[26px] border border-blue-100 bg-white p-6 shadow-sm"><div className="flex flex-wrap items-center justify-between gap-3"><div><h2 className="text-lg font-black text-[#0b1637]">Your account</h2><p className="mt-1 text-sm font-medium text-slate-500">Everything important, in one place.</p></div><button onClick={() => navigate('notifications')} className="inline-flex items-center gap-2 text-sm font-black text-[#0967ff]"><Bell size={17}/>{unreadNotifications ? `${unreadNotifications} new updates` : 'Notifications'}<ArrowRight size={15}/></button></div><div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-3"><ProfileShortcut icon={<Heart size={18}/>} title="Saved services" detail={data.favorites.length ? `${data.favorites.length} saved for later` : 'Keep providers you love close'} onClick={() => navigate('favorites')} /><ProfileShortcut icon={<Bell size={18}/>} title="Booking updates" detail={unreadNotifications ? `${unreadNotifications} unread notification${unreadNotifications === 1 ? '' : 's'}` : 'You are all caught up'} onClick={() => navigate('notifications')} /><ProfileShortcut icon={<MessageCircle size={18}/>} title="Help & support" detail="Chat with Helpy when you need us" onClick={() => navigate('contact-us')} /></div></section>
   </>
+}
+
+function ProfileShortcut({ icon, title, detail, onClick }: { icon: ReactNode; title: string; detail: string; onClick: () => void }) {
+  return <button onClick={onClick} className="flex min-w-0 items-center gap-3 rounded-2xl border border-slate-100 bg-[#fbfdff] p-4 text-left transition hover:border-blue-100 hover:bg-blue-50"><span className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-blue-50 text-[#0967ff]">{icon}</span><span className="min-w-0 flex-1"><span className="block text-sm font-black text-[#0b1637]">{title}</span><span className="mt-0.5 block truncate text-xs font-semibold text-slate-500">{detail}</span></span><ChevronRight size={17} className="shrink-0 text-slate-400"/></button>
 }
 
 function LegacyWalletView() {
