@@ -2,6 +2,8 @@ import { ArrowLeft, Star, MapPin, Heart, Search } from 'lucide-react'
 import { useState } from 'react'
 import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
+import { useHelpyData } from '../context/HelpyDataContext'
+import { mobileServiceParams } from '../mobileCatalog'
 
 const SERVICES_BY_CAT: Record<string, any[]> = {
   cleaning: [
@@ -62,9 +64,10 @@ const DEFAULT_SERVICES = SERVICES_BY_CAT.home
 
 export default function CategoryServicesPage() {
   const { goBack, navigate, params } = useNav()
-  const id = params?.id || 'home'
+  const data = useHelpyData()
+  const id = params?.categoryId ?? params?.id
   const label = params?.label || 'Services'
-  const services = SERVICES_BY_CAT[id] || DEFAULT_SERVICES
+  const services = data.services.filter(service => id ? Number(id) === service.categoryId || service.category.toLowerCase() === String(label).toLowerCase() : true)
   const [liked, setLiked] = useState<string[]>([])
 
   return (
@@ -84,18 +87,18 @@ export default function CategoryServicesPage() {
         </div>
       </div>
       <div className="flex-1 overflow-y-auto px-4 pb-32 space-y-3">
-        <p className="text-[13px] font-bold text-gray-500">{services.length} providers found</p>
+        <p className="text-[13px] font-bold text-gray-500">{services.length} services from live businesses</p>
         {services.map((s,i)=>(
-          <button key={i} onClick={()=>navigate('service-detail',s.service)}
+          <button key={s.id || i} onClick={()=>navigate('service-detail', mobileServiceParams(s))}
             className="w-full bg-white rounded-2xl shadow-sm overflow-hidden flex text-left active:scale-[0.99] transition-transform">
             <div className="w-28 bg-blue-50 flex items-center justify-center shrink-0 overflow-hidden" style={{minHeight:116}}>
-              <img src={s.image} className="w-full h-full object-cover"/>
+              {s.image ? <img src={s.image} className="w-full h-full object-cover"/> : <span className="text-sm font-black text-[#0967ff]">{s.provider.slice(0, 2).toUpperCase()}</span>}
             </div>
             <div className="flex-1 p-4 min-w-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="flex-1 min-w-0">
-                  <p className="text-[14px] font-black text-gray-950 truncate">{s.name}</p>
-                  <span className="inline-block text-[11px] font-bold text-brand-500 bg-blue-50 px-2.5 py-0.5 rounded-full mt-0.5">{s.tag}</span>
+                  <p className="text-[14px] font-black text-gray-950 truncate">{s.provider}</p>
+                  <span className="inline-block text-[11px] font-bold text-brand-500 bg-blue-50 px-2.5 py-0.5 rounded-full mt-0.5">{s.name}</span>
                 </div>
                 <button onClick={e=>{e.stopPropagation();setLiked(p=>p.includes(s.name)?p.filter(x=>x!==s.name):[...p,s.name])}}
                   className="w-8 h-8 rounded-lg bg-gray-50 flex items-center justify-center shrink-0">
@@ -103,10 +106,10 @@ export default function CategoryServicesPage() {
                 </button>
               </div>
               <div className="flex items-center justify-between mt-2">
-                <div><p className="text-[10px] text-gray-400">from</p><p className="text-[15px] font-black text-brand-500">{s.from} QR</p></div>
+                <div><p className="text-[10px] text-gray-400">from</p><p className="text-[15px] font-black text-brand-500">{Number(s.price).toFixed(2)} QR</p></div>
                 <div className="text-right">
-                  <div className="flex items-center gap-1"><Star size={12} className="text-amber-400 fill-amber-400"/><span className="text-[12px] font-semibold text-gray-700">{s.rating} ({s.reviews})</span></div>
-                  <div className="flex items-center gap-1 mt-0.5"><MapPin size={11} className="text-gray-400"/><span className="text-[11px] text-gray-400">{s.dist} away</span></div>
+                  <div className="flex items-center gap-1"><Star size={12} className="text-amber-400 fill-amber-400"/><span className="text-[12px] font-semibold text-gray-700">{s.rating || 'New'} {s.reviews ? `(${s.reviews})` : ''}</span></div>
+                  <div className="flex items-center gap-1 mt-0.5"><MapPin size={11} className="text-gray-400"/><span className="text-[11px] text-gray-400">Available in Qatar</span></div>
                 </div>
               </div>
             </div>

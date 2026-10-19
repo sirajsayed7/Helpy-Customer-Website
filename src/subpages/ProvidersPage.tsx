@@ -2,6 +2,8 @@ import { useState } from 'react'
 import { ArrowLeft, Search, Star, BadgeCheck } from 'lucide-react'
 import { StatusBar } from '../components/shared'
 import { useNav } from '../context/NavContext'
+import { useHelpyData } from '../context/HelpyDataContext'
+import { mobileServiceParams, primaryBusinessService } from '../mobileCatalog'
 
 const PROVIDERS = [
   {cat:'Salon', name:'Glow Spa', full:'Glow Salon & Spa', rating:4.9, reviews:215, img:'/assets/ai-profile-glow-salon.jpg', service:{provider:'Glow Salon & Spa',name:'Salon & Spa Package',price:'120.00',providerBg:'bg-pink-500',providerEmoji:'GS',providerImage:'/assets/ai-profile-glow-salon.jpg',heroImg:'/assets/ai-banner-glow-salon.jpg'}},
@@ -27,9 +29,15 @@ const FILTERS = ['All','Home','Car','Salon','Digital','Education','Laundry','Mai
 
 export default function ProvidersPage() {
   const { goBack, navigate } = useNav()
+  const data = useHelpyData()
   const [filter, setFilter] = useState('All')
   const [query, setQuery] = useState('')
-  const providers = PROVIDERS
+  const filters = ['All', ...data.categories.map(category => category.name)]
+  const businessCards = data.businesses.map(business => {
+    const service = primaryBusinessService(business)
+    return service ? { cat: service.category, name: business.name, full: business.name, rating: business.rating || service.rating, reviews: service.reviews, img: business.image || service.image, service } : null
+  }).filter(Boolean) as Array<{ cat: string; name: string; full: string; rating: number; reviews: number; img: string; service: import('../context/HelpyDataContext').LiveService }>
+  const providers = businessCards
     .filter(p => filter === 'All' || p.cat === filter)
     .filter(p => !query.trim() || `${p.name} ${p.full} ${p.cat}`.toLowerCase().includes(query.trim().toLowerCase()))
     .sort((a,b) => b.rating - a.rating || b.reviews - a.reviews)
@@ -54,7 +62,7 @@ export default function ProvidersPage() {
           <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search providers..." className="flex-1 min-w-0 bg-transparent outline-none text-[14px] placeholder:text-[#73789b]" />
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {FILTERS.map(f=>(
+          {filters.map(f=>(
             <button key={f} onClick={()=>setFilter(f)} className={`shrink-0 h-9 rounded-[17px] px-3.5 text-[12px] font-black shadow-sm transition ${filter===f?'bg-[#0967ff] text-white':'bg-white text-[#10152f]'}`}>
               {f}
             </button>
@@ -64,9 +72,9 @@ export default function ProvidersPage() {
       <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-32 pt-1">
         <div className="grid grid-cols-3 gap-3">
           {providers.map((p)=>(
-            <button key={p.full} onClick={()=>navigate('service-detail', p.service)} className="relative h-[126px] rounded-[20px] bg-white px-1.5 pt-2 pb-1 text-center shadow-sm active:scale-95 transition overflow-hidden">
+            <button key={p.full} onClick={()=>navigate('service-detail', mobileServiceParams(p.service))} className="relative h-[126px] rounded-[20px] bg-white px-1.5 pt-2 pb-1 text-center shadow-sm active:scale-95 transition overflow-hidden">
               <div className="mx-auto flex h-[78px] w-[78px] items-center justify-center overflow-hidden rounded-[18px] bg-[#f4faff] shadow-inner">
-                <img src={p.img} className={`h-full w-full ${/\.(jpg|jpeg)$/i.test(p.img) ? 'object-cover' : 'object-contain scale-110'}`} />
+                {p.img ? <img src={p.img} className={`h-full w-full ${/\.(jpg|jpeg)$/i.test(p.img) ? 'object-cover' : 'object-contain scale-110'}`} /> : <span className="text-sm font-black text-[#0967ff]">{p.name.slice(0, 2).toUpperCase()}</span>}
               </div>
               <p className="mt-1 line-clamp-2 min-h-[17px] whitespace-normal px-0.5 text-[12px] leading-[12px] font-black text-[#10152f]">{p.name}</p>
               <p className="mt-0 flex items-center justify-center gap-0.5 text-[10.5px] font-bold leading-3 text-[#65708a]">
@@ -76,7 +84,8 @@ export default function ProvidersPage() {
             </button>
           ))}
         </div>
-        {providers.length === 0 && (
+        {data.loading && <p className="col-span-3 py-10 text-center text-[13px] font-bold text-[#65708a]">Loading businesses…</p>}
+        {!data.loading && providers.length === 0 && (
           <button onClick={()=>{setFilter('All'); setQuery('')}} className="mt-8 w-full rounded-[22px] bg-white py-8 text-center text-[14px] font-bold text-[#0967ff] shadow-sm">
             No providers found. Clear filters
           </button>

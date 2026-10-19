@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, Star, Heart, MapPin, Shield, Users, Clock, ChevronUp, ChevronDown, Check, Home, Sparkles, Sofa, Refrigerator, Shirt, CalendarDays, Info, ArrowRight, Car, Plane, Hotel, Luggage, Droplets, Scissors, Flower2, Wind, Wrench, Headphones, Laptop, Code2, MonitorSmartphone, BookOpen, Calculator, Languages, X } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 import { StatusBar } from '../components/shared'
+import type { LiveService } from '../context/HelpyDataContext'
 
 export type ServiceOption = { label: string; desc: string; price: number; icon: any; image?: string }
 export type ExtraOption = { label: string; price: number; icon: any }
@@ -417,8 +418,21 @@ const TIMES = ['08:00 AM','10:00 AM','12:00 PM','02:00 PM','04:00 PM','06:00 PM'
 
 export default function ServiceDetailPage() {
   const { goBack, navigate, params, addBooking } = useNav()
-  const provider = params?.provider || 'Scrubs Cleaning'
-  const cfg = PROVIDERS[provider] || PROVIDERS['Scrubs Cleaning']
+  const liveService = params?.liveService as LiveService | undefined
+  const provider = liveService?.provider || params?.provider || 'Scrubs Cleaning'
+  const cfg: ProviderConfig = liveService ? {
+    label: liveService.provider,
+    category: liveService.category || 'Services',
+    desc: liveService.description || `Book ${liveService.name} with ${liveService.provider}.`,
+    heroImg: liveService.image,
+    providerImage: liveService.image,
+    rating: liveService.rating ? String(liveService.rating) : 'New',
+    reviews: liveService.reviews ? String(liveService.reviews) : '0',
+    distance: 'Available in Qatar',
+    duration: liveService.duration || 'Duration confirmed by provider',
+    services: [{ label: liveService.name, desc: liveService.description || 'Service details are confirmed before booking.', price: liveService.price, icon: Sparkles, image: liveService.image }],
+    extras: [],
+  } : (PROVIDERS[provider] || PROVIDERS['Scrubs Cleaning'])
   const initialService = cfg.services.find(s => s.label === params?.name)?.label || ''
   const isGlow = provider === 'Glow Salon & Spa'
   const useCheckoutFlow = true

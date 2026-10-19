@@ -2,6 +2,8 @@ import { useMemo, useState } from 'react'
 import { ArrowLeft, Search, Star, MapPin, SlidersHorizontal, ChevronDown } from 'lucide-react'
 import { StatusBar } from '../components/shared'
 import { useNav } from '../context/NavContext'
+import { useHelpyData } from '../context/HelpyDataContext'
+import { mobileServiceParams } from '../mobileCatalog'
 
 const SERVICES = [
   {cat:'Home', provider:'Scrubs Cleaning', name:'General Cleaning', price:160, rating:4.8, reviews:230, dist:'2.27 KM', img:'/assets/scrubs-hero.png', fit:'object-cover object-top', badge:'Verified', service:{provider:'Scrubs Cleaning',name:'General Cleaning',price:'160.00',providerBg:'bg-red-500',providerEmoji:'SC',providerImage:'/assets/scrubs-leaf-logo-clean.png',heroImg:'/assets/scrubs-booking-hero-clean.png'}},
@@ -33,15 +35,17 @@ const SORT_LABELS: Record<string, string> = {
 
 export default function AllServicesPage() {
   const { goBack, navigate } = useNav()
+  const data = useHelpyData()
   const [category, setCategory] = useState('All')
   const [query, setQuery] = useState('')
   const [sort, setSort] = useState('recommended')
   const [openSort, setOpenSort] = useState(false)
   const sortLabel = SORT_LABELS[sort] || 'Recommended'
 
+  const categories = ['All', ...data.categories.map(item => item.name)]
   const services = useMemo(() => {
     const q = query.trim().toLowerCase()
-    const filtered = SERVICES.filter(s => (category === 'All' || s.cat === category) && (!q || `${s.name} ${s.provider} ${s.cat}`.toLowerCase().includes(q)))
+    const filtered = data.services.filter(s => (category === 'All' || s.category === category) && (!q || `${s.name} ${s.provider} ${s.category}`.toLowerCase().includes(q)))
     return [...filtered].sort((a,b) => {
       if (sort === 'rating-high') return b.rating - a.rating || b.reviews - a.reviews
       if (sort === 'rating-low') return a.rating - b.rating || a.reviews - b.reviews
@@ -49,7 +53,7 @@ export default function AllServicesPage() {
       if (sort === 'price-low') return a.price - b.price
       return (b.rating * 100 + b.reviews / 10) - (a.rating * 100 + a.reviews / 10)
     })
-  }, [category, query, sort])
+  }, [data.services, category, query, sort])
 
   return (
     <div className="relative flex flex-col flex-1 bg-[#eaf6ff] overflow-hidden">
@@ -72,7 +76,7 @@ export default function AllServicesPage() {
           <input value={query} onChange={e=>setQuery(e.target.value)} placeholder="Search all services..." className="flex-1 min-w-0 bg-transparent outline-none text-[14px] placeholder:text-[#73789b]" />
         </div>
         <div className="mt-3 flex gap-2 overflow-x-auto pb-2 no-scrollbar">
-          {CATEGORIES.map(c=>(
+          {categories.map(c=>(
             <button key={c} onClick={()=>setCategory(c)} className={`shrink-0 h-9 rounded-[17px] px-3.5 text-[12px] font-black shadow-sm transition ${category===c?'bg-[#0967ff] text-white':'bg-white text-[#10152f]'}`}>
               {c}
             </button>
@@ -112,19 +116,19 @@ export default function AllServicesPage() {
       <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-32 pt-4 space-y-3">
         <p className="text-[12px] font-black text-[#65708a]">{services.length} services found</p>
         {services.map(s=>(
-          <button key={`${s.provider}-${s.name}`} onClick={()=>navigate('service-detail', s.service)} className="w-full rounded-[21px] bg-white p-2.5 text-left shadow-sm active:scale-[0.99] transition flex gap-3">
+          <button key={`${s.provider}-${s.name}`} onClick={()=>navigate('service-detail', mobileServiceParams(s))} className="w-full rounded-[21px] bg-white p-2.5 text-left shadow-sm active:scale-[0.99] transition flex gap-3">
             <div className="relative h-[92px] w-[118px] shrink-0 overflow-hidden rounded-[17px] bg-blue-50">
-              <img src={s.img} className={`h-full w-full ${s.fit}`} />
-              <span className="absolute left-2 top-2 rounded-md bg-[#dfff2d] px-1.5 py-0.5 text-[9px] font-black text-[#1d2b00]">{s.badge}</span>
+              {s.image ? <img src={s.image} className="h-full w-full object-cover" /> : <span className="grid h-full place-items-center text-lg font-black text-[#0967ff]">{s.provider.slice(0, 2).toUpperCase()}</span>}
+              <span className="absolute left-2 top-2 rounded-md bg-[#dfff2d] px-1.5 py-0.5 text-[9px] font-black text-[#1d2b00]">{s.category || 'Service'}</span>
             </div>
             <div className="min-w-0 flex-1 py-1">
               <p className="truncate text-[11px] font-black text-[#0967ff]">{s.provider}</p>
               <p className="mt-0.5 line-clamp-2 text-[17px] leading-[19px] font-black text-[#10152f]">{s.name}</p>
-              <p className="mt-1 text-[11px] font-bold text-[#65708a]"><Star size={11} className="inline fill-yellow-400 text-yellow-400"/> {s.rating} ({s.reviews}) <MapPin size={11} className="ml-1 inline"/> {s.dist}</p>
+              <p className="mt-1 text-[11px] font-bold text-[#65708a]"><Star size={11} className="inline fill-yellow-400 text-yellow-400"/> {s.rating || 'New'} {s.reviews ? `(${s.reviews})` : ''} <MapPin size={11} className="ml-1 inline"/> Qatar</p>
               <div className="mt-1.5 flex items-end justify-between gap-2">
                 <div>
                   <p className="text-[10px] text-[#65708a]">from</p>
-                  <p className="text-[18px] leading-5 font-black text-[#0967ff]">{s.price.toFixed(2)} QR</p>
+                  <p className="text-[18px] leading-5 font-black text-[#0967ff]">{Number(s.price).toFixed(2)} QR</p>
                 </div>
                 <span className="rounded-[14px] bg-[#0967ff] px-4 py-2 text-[12px] font-black text-white">Book</span>
               </div>

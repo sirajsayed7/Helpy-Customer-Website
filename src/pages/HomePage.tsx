@@ -3,6 +3,8 @@ import { Search, Bell, ChevronRight, MapPin, Star, Bookmark, Wallet, ChevronDown
 import { StatusBar } from '../components/shared'
 import { useNav } from '../context/NavContext'
 import ProviderPromotion from '../components/ProviderPromotion'
+import { useHelpyData } from '../context/HelpyDataContext'
+import { mobileServiceParams, primaryBusinessService } from '../mobileCatalog'
 
 const ADS = [
   {id:'city', img:'/assets/doha-katara-crescent-hero.png', brand:'Helpy', title:'Your City,', sub:'Our Services', desc:'Book trusted professionals for every need.', service:{provider:'Scrubs Cleaning',name:'General Cleaning',price:'160.00',providerBg:'bg-red-500',providerEmoji:'SC',providerImage:'/assets/scrubs-leaf-logo-clean.png',heroImg:'/assets/scrubs-booking-hero-clean.png'}},
@@ -81,12 +83,13 @@ const SEARCH_PROMPTS = ['Cleaning Services', 'Car Wash', 'Salon & Spa', 'Laundry
 
 export default function HomePage() {
   const { navigate, pendingReview, clearPendingReview } = useNav()
+  const data = useHelpyData()
   const [activeDiscoveryFilters, setActiveDiscoveryFilters] = useState<string[]>([])
   const [ratingSort, setRatingSort] = useState<'none' | 'desc' | 'asc'>('none')
   const [priceSort, setPriceSort] = useState<'none' | 'desc' | 'asc'>('none')
   const [showDiscoverySort, setShowDiscoverySort] = useState(false)
   const [showOverlayAd, setShowOverlayAd] = useState(false)
-  const [activeAd, setActiveAd] = useState(ADS.length * 2)
+  const [activeAd, setActiveAd] = useState(0)
   const [searchPrompt, setSearchPrompt] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
   const [reviewComment, setReviewComment] = useState('')
@@ -95,9 +98,21 @@ export default function HomePage() {
   const adScrollerRef = useRef<HTMLDivElement | null>(null)
   const adAnimationRef = useRef<number | null>(null)
   const isAnimatingAdRef = useRef(false)
-  const realActiveAd = ((activeAd % ADS.length) + ADS.length) % ADS.length
+  const mobileCategories = data.categories.slice(0, 8).map(category => ({ id: category.id, label: category.name, img: category.image }))
+  const liveFeatured = data.businesses.map(business => {
+    const service = primaryBusinessService(business)
+    return service ? { provider: business.name, name: business.name, tag: service.category, from: `${Number(service.price).toFixed(2)} QR`, rating: service.rating ? String(service.rating) : 'New', reviews: service.reviews ? String(service.reviews) : '', dist: 'Qatar', img: business.image || service.image, bg: 'bg-blue-50', imgFit: 'object-cover object-center', service } : null
+  }).filter(Boolean) as Array<{ provider: string; name: string; tag: string; from: string; rating: string; reviews: string; dist: string; img: string; bg: string; imgFit: string; service: import('../context/HelpyDataContext').LiveService }>
+  const livePopular = liveFeatured.slice(0, 10)
+  const liveAds = data.banners.map(banner => {
+    const service = data.services.find(item => item.serviceId === banner.serviceId || item.serviceVendorMapId === banner.targetId)
+    return service && banner.image ? { id: String(banner.id), img: banner.image, title: banner.name || service.provider, sub: service.name, desc: service.description || `Explore ${service.name} from ${service.provider}.`, service } : null
+  }).filter(Boolean) as Array<{ id: string; img: string; title: string; sub: string; desc: string; service: import('../context/HelpyDataContext').LiveService }>
+  const ads = liveAds.length ? liveAds : liveFeatured.map(item => ({ id: item.service.id, img: item.img, title: item.name, sub: item.service.name, desc: item.service.description || `Explore ${item.service.name} from ${item.name}.`, service: item.service }))
+  const loopAds = [...ads, ...ads, ...ads, ...ads, ...ads]
+  const realActiveAd = ads.length ? ((activeAd % ads.length) + ads.length) % ads.length : 0
 
-  const normalizeAdIndex = (index: number) => ADS.length * 2 + (((index % ADS.length) + ADS.length) % ADS.length)
+  const normalizeAdIndex = (index: number) => ads.length * 2 + (((index % ads.length) + ads.length) % ads.length)
 
   const syncAdFromScroll = () => {
     const scroller = adScrollerRef.current
@@ -143,7 +158,7 @@ export default function HomePage() {
         return
       }
 
-      const reset = index < ADS.length || index >= ADS.length * 4 ? normalizeAdIndex(index) : index
+      const reset = index < ads.length || index >= ads.length * 4 ? normalizeAdIndex(index) : index
       scroller.scrollLeft = (scroller.children[reset] as HTMLElement).offsetLeft
       setActiveAd(reset)
       isAnimatingAdRef.current = false
@@ -178,18 +193,19 @@ export default function HomePage() {
   }, [pendingReview])
 
   useEffect(() => {
-    scrollToAd(ADS.length * 2, 'auto')
-  }, [])
+    if (ads.length) scrollToAd(ads.length * 2, 'auto')
+  }, [ads.length])
 
   useEffect(() => {
-    const delay = ADS[realActiveAd]?.id === 'city' ? 3000 : 1500
+    if (!ads.length) return
+    const delay = 3500
     const timer = window.setTimeout(() => {
       const next = activeAd + 1
       scrollToAd(next)
     }, delay)
 
     return () => window.clearTimeout(timer)
-  }, [activeAd, realActiveAd])
+  }, [activeAd, realActiveAd, ads.length])
 
   useEffect(() => {
     let promptIndex = 0
@@ -233,10 +249,10 @@ export default function HomePage() {
     )
   }
 
-  const visibleFeatured = FEATURED.filter(f => {
-    if (activeDiscoveryFilters.includes('Available today') && f.dist === 'Online') return false
+  const visibleFeatured = liveFeatured.filter(f => {
+    if (activeDiscoveryFilters.includes('Available today') && !f.service.duration) return false
     if (activeDiscoveryFilters.includes('Verified') && Number.parseFloat(f.rating) < 4.8) return false
-    if (activeDiscoveryFilters.includes('Brings equipment') && !['Scrubs Cleaning','FreshFold Laundry','Sparkle Car Wash'].includes(f.name)) return false
+    if (activeDiscoveryFilters.includes('Brings equipment') && !/home|car|maintenance|clean/i.test(f.tag)) return false
     return true
   }).sort((a,b) => {
     if (ratingSort !== 'none') {
@@ -310,19 +326,19 @@ export default function HomePage() {
             const el = e.currentTarget
             if (isAnimatingAdRef.current) return
             const next = syncAdFromScroll()
-            if (next < ADS.length || next >= ADS.length * 4) {
+            if (ads.length && (next < ads.length || next >= ads.length * 4)) {
               const reset = normalizeAdIndex(next)
               window.requestAnimationFrame(()=>scrollToAd(reset, 'auto'))
             }
           }}
           className="mt-3 overflow-x-auto snap-x snap-mandatory flex gap-3 no-scrollbar"
         >
-          {LOOP_ADS.map((ad,index)=> (
-            <button key={`${ad.id}-${index}`} onClick={()=>navigate(ad.id === 'city' ? 'all-services' : 'service-detail', ad.id === 'city' ? undefined : ad.service)} className="relative shrink-0 snap-center w-full h-[166px] max-[360px]:h-[150px] rounded-[20px] overflow-hidden text-left shadow-sm bg-white">
+          {loopAds.map((ad,index)=> (
+            <button key={`${ad.id}-${index}`} onClick={()=>navigate('service-detail', mobileServiceParams(ad.service))} className="relative shrink-0 snap-center w-full h-[166px] max-[360px]:h-[150px] rounded-[20px] overflow-hidden text-left shadow-sm bg-white">
               <img
                 src={ad.img}
                 className="absolute inset-0 w-full h-full object-cover"
-                style={{ objectPosition: ad.id === 'city' ? 'center' : 'center' }}
+                style={{ objectPosition: 'center' }}
               />
               <div className="absolute inset-0 bg-gradient-to-r from-white/96 via-white/76 to-white/5"/>
               <div className="relative h-full p-4 text-[#07133d]">
@@ -335,11 +351,11 @@ export default function HomePage() {
           ))}
         </div>
         <div className="flex justify-center gap-2 mt-3">
-          {ADS.map((ad,i)=>(
+          {ads.map((ad,i)=>(
             <button
               key={ad.id}
               onClick={()=>{
-                const target = ADS.length * 2 + i
+                const target = ads.length * 2 + i
                 scrollToAd(target)
               }}
               className={`${realActiveAd===i?'w-2.5 bg-[#0967ff]':'w-2.5 bg-white'} h-2.5 rounded-full transition-all`}
@@ -350,10 +366,10 @@ export default function HomePage() {
 
         <SectionTitle title="Categories" onClick={()=>navigate('categories')} compact />
         <div className="grid grid-cols-4 gap-2.5 max-[360px]:gap-2">
-          {HOME_CATS.map(c=>(
-            <button key={c.id} onClick={()=>c.id==='more'?navigate('categories'):navigate('category-services',{id:c.id,label:c.label})} className="h-[94px] max-[360px]:h-[86px] bg-white rounded-[18px] shadow-sm flex flex-col items-center justify-center gap-1.5 max-[360px]:gap-1 px-1 active:scale-95 transition overflow-hidden">
+          {mobileCategories.map(c=>(
+            <button key={c.id} onClick={()=>navigate('category-services',{categoryId:c.id,label:c.label})} className="h-[94px] max-[360px]:h-[86px] bg-white rounded-[18px] shadow-sm flex flex-col items-center justify-center gap-1.5 max-[360px]:gap-1 px-1 active:scale-95 transition overflow-hidden">
               <div className="w-[92px] h-[68px] max-[360px]:w-[72px] max-[360px]:h-[56px] flex items-center justify-center overflow-hidden">
-                <img src={c.img} className={`h-full w-full object-contain ${c.id === 'car' ? 'scale-[1.13]' : ''}`}/>
+                {c.img ? <img src={c.img} className="h-full w-full object-contain"/> : <span className="text-lg font-black text-[#0967ff]">{c.label.slice(0, 1)}</span>}
               </div>
               <p className="text-[12px] max-[360px]:text-[11px] leading-[14px] max-[360px]:leading-[12px] font-bold text-center text-[#111827] line-clamp-2">{c.label}</p>
             </button>
@@ -366,14 +382,14 @@ export default function HomePage() {
 
         <SectionTitle title="Deals for you" onClick={()=>navigate('deals')} />
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-          {DEALS.map(deal=>(
-            <button key={deal.title} onClick={()=>navigate('service-detail',deal.service)} className="relative h-[118px] w-[142px] shrink-0 overflow-hidden rounded-[18px] bg-white text-left shadow-sm active:scale-[0.99] transition">
+          {liveFeatured.slice(0, 6).map(deal=>(
+            <button key={deal.name} onClick={()=>navigate('service-detail',mobileServiceParams(deal.service))} className="relative h-[118px] w-[142px] shrink-0 overflow-hidden rounded-[18px] bg-white text-left shadow-sm active:scale-[0.99] transition">
               <img src={deal.img} className="absolute left-0 top-0 h-[62px] w-full object-cover"/>
               <div className="absolute inset-x-0 top-0 h-[72px] bg-gradient-to-b from-white/0 via-white/15 to-white"/>
-              <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-[#dfff2d] px-1.5 py-0.5 text-[9px] font-black text-[#1d2b00] shadow-sm">{deal.offer}</span>
+              <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-[#dfff2d] px-1.5 py-0.5 text-[9px] font-black text-[#1d2b00] shadow-sm">FEATURED</span>
               <div className="absolute inset-x-0 bottom-0 px-2.5 pb-2.5">
-                <p className="truncate text-[12px] font-black text-[#10152f]">{deal.title}</p>
-                <p className="text-[10px] text-[#65708a]">from <span className="font-black text-[#0967ff]">{deal.price}</span></p>
+                <p className="truncate text-[12px] font-black text-[#10152f]">{deal.name}</p>
+                <p className="text-[10px] text-[#65708a]">from <span className="font-black text-[#0967ff]">{deal.from}</span></p>
                 <p className="mt-0.5 text-[10px] font-bold text-[#65708a]"><Star size={10} className="inline fill-yellow-400 text-yellow-400"/> {deal.rating}</p>
               </div>
             </button>
@@ -382,15 +398,15 @@ export default function HomePage() {
 
         <SectionTitle title="Offers & Events" onClick={()=>navigate('offers-events')} />
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-          {OFFER_EVENTS.map(item=>(
-            <button key={item.title} onClick={()=>navigate('service-detail',item.service)} className="relative h-[116px] w-[252px] shrink-0 overflow-hidden rounded-[20px] bg-white text-left shadow-sm active:scale-[0.99] transition">
+          {liveFeatured.slice(0, 3).map(item=>(
+            <button key={item.name} onClick={()=>navigate('service-detail',mobileServiceParams(item.service))} className="relative h-[116px] w-[252px] shrink-0 overflow-hidden rounded-[20px] bg-white text-left shadow-sm active:scale-[0.99] transition">
               <img src={item.img} className="absolute inset-0 h-full w-full object-cover"/>
               <div className="absolute inset-0 bg-gradient-to-r from-white via-white/88 to-white/16"/>
               <div className="relative h-full p-3.5">
                 <div className="max-w-[160px]">
-                  <p className="inline-flex rounded-full bg-[#dfff2d] px-2 py-0.5 text-[9px] font-black text-[#1d2b00]">{item.kicker}</p>
-                  <p className="mt-2 text-[16px] leading-[18px] font-black text-[#07133d]">{item.title}</p>
-                  <p className="mt-1 text-[10px] leading-[13px] font-black text-[#3f4a63]">{item.desc}</p>
+                  <p className="inline-flex rounded-full bg-[#dfff2d] px-2 py-0.5 text-[9px] font-black text-[#1d2b00]">{item.tag}</p>
+                  <p className="mt-2 text-[16px] leading-[18px] font-black text-[#07133d]">{item.name}</p>
+                  <p className="mt-1 text-[10px] leading-[13px] font-black text-[#3f4a63]">{item.service.description || `Explore ${item.service.name}`}</p>
                 </div>
               </div>
             </button>
@@ -399,10 +415,10 @@ export default function HomePage() {
 
         <SectionTitle title="Popular providers" onClick={()=>navigate('providers')} />
         <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
-          {POPULAR_PROVIDERS.map(p=>(
-            <button key={p.name} onClick={()=>navigate('service-detail',p.service)} className="w-[88px] shrink-0 rounded-[18px] bg-white p-2 text-center shadow-sm active:scale-95 transition">
+          {livePopular.map(p=>(
+            <button key={p.name} onClick={()=>navigate('service-detail',mobileServiceParams(p.service))} className="w-[88px] shrink-0 rounded-[18px] bg-white p-2 text-center shadow-sm active:scale-95 transition">
               <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#f4faff]">
-                <img src={p.img} className="h-full w-full object-contain"/>
+                {p.img ? <img src={p.img} className="h-full w-full object-contain"/> : <span className="text-xs font-black text-[#0967ff]">{p.name.slice(0,2).toUpperCase()}</span>}
               </div>
               <p className="mt-1.5 truncate text-[11px] font-black text-[#10152f]">{p.name}</p>
               <p className="text-[10px] font-bold text-[#65708a]"><Star size={10} className="inline fill-yellow-400 text-yellow-400"/> {p.rating}</p>
@@ -478,9 +494,9 @@ export default function HomePage() {
 
         <div className="space-y-3 mt-1">
           {visibleFeatured.map(f=>(
-            <button key={f.name} onClick={()=>navigate('service-detail',f.service)} className="w-full bg-white rounded-[20px] shadow-sm p-2 flex items-center text-left active:scale-[0.99] transition">
+            <button key={f.name} onClick={()=>navigate('service-detail',mobileServiceParams(f.service))} className="w-full bg-white rounded-[20px] shadow-sm p-2 flex items-center text-left active:scale-[0.99] transition">
               <div className={`relative w-[116px] h-[88px] max-[360px]:w-[102px] max-[360px]:h-[78px] rounded-[16px] shrink-0 ${f.bg} flex items-center justify-center overflow-hidden`}>
-                <img src={f.img} className={`w-full h-full ${f.imgFit}`}/>
+                {f.img ? <img src={f.img} className={`w-full h-full ${f.imgFit}`}/> : <span className="text-sm font-black text-[#0967ff]">{f.name.slice(0,2).toUpperCase()}</span>}
                 <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-sm">
                   <Bookmark size={15}/>
                 </span>
