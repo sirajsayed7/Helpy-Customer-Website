@@ -1366,16 +1366,26 @@ export function LiveDesktopCheckout({
         </aside>
       </div>
       {tapUrl && (
-        <div className="fixed inset-0 z-[100] grid place-items-center bg-[#071331]/70 p-4">
-          <div className="flex h-[min(760px,calc(100dvh-32px))] w-full max-w-[560px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl">
-            <div className="flex items-center justify-between border-b border-slate-100 px-4 py-3">
-              <p className="text-sm font-black text-[#102044]">
-                Secure payment
-              </p>
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-slate-100/85 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tap secure payment"
+        >
+          <div className="flex h-[min(760px,calc(100dvh-32px))] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-[#102044] shadow-[0_24px_80px_rgba(15,35,70,.18)] [color-scheme:light]">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+              <div>
+                <p className="text-sm font-black text-[#102044]">
+                  Secure payment
+                </p>
+                <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                  Complete your payment with Tap
+                </p>
+              </div>
               <button
                 type="button"
                 onClick={() => setTapUrl("")}
-                className="rounded-lg px-3 py-1 text-sm font-bold text-slate-500 hover:bg-slate-100"
+                className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-200"
               >
                 Close
               </button>
@@ -1383,7 +1393,7 @@ export function LiveDesktopCheckout({
             <iframe
               title="TAP secure payment"
               src={tapUrl}
-              className="min-h-0 flex-1 border-0"
+              className="min-h-0 flex-1 border-0 bg-white"
               allow="payment *"
             />
           </div>
