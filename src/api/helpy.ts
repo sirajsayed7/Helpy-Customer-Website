@@ -5,6 +5,7 @@ const FIREBASE_CUSTOM_TOKEN_KEY = 'helpy_firebase_custom_token'
 
 type RequestMethod = 'GET' | 'POST'
 type QueryValue = string | number | boolean | null | undefined
+type FormValue = QueryValue | FormValue[] | { [key: string]: FormValue }
 
 export type HelpyEnvelope<T> = {
   status: boolean
@@ -104,6 +105,72 @@ export type HelpyAddressInput = {
   notes?: string
 }
 
+export type HelpyBookingPreflight = {
+  wallet_balance: string
+  final_price: string
+  wallet_cover_amount: string
+  shortage_amount: string
+  can_wallet_fully_cover: number
+  can_proceed: number
+  payment_type: string
+  next_step: string
+}
+
+export type HelpyBookingInput = {
+  service_vendor_mapp_id: number
+  user_id: number
+  provider_id: number
+  booking_type: number
+  booking_date_time: string
+  booking_end_datetime: string
+  total_price: string
+  payment_type: 'online' | 'tap'
+  promo_code_id?: number
+  promo_code_discount_percentage?: string
+  discount_amount?: string
+  wallet_balance?: string
+  wallet_amount?: string
+  payment_gateway_amount: string
+  final_price: string
+  location: string
+  requirements?: string
+  booking_address: string
+  booking_address_id: string | number
+  payment_status?: string
+  services: Array<{
+    user_id: number
+    service_id: number
+    provider_id: number
+    service_type_id: number
+    category_id: number
+    service_vendor_mapp_id: number
+    category_name: string
+    name: string
+    user_name: string
+    service_name: string
+    service_type_name: string
+    provider_name: string
+    total_price: string
+    discount_price: string
+    final_price: string
+  }>
+}
+
+export type HelpyTapCheckout = {
+  returnCode: string
+  hasError: boolean
+  gateway: string
+  mode?: 'test' | 'live'
+  paymentReference: string
+  resultObj?: {
+    id?: string
+    status?: string
+    payUrl?: string
+    amount?: string
+    currency?: string
+  }
+}
+
 export class HelpyApiError extends Error {
   constructor(
     message: string,
@@ -164,6 +231,25 @@ function toSearchParams(values: Record<string, QueryValue>) {
   return params
 }
 
+function appendFormValue(params: URLSearchParams, key: string, value: FormValue) {
+  if (value === null || value === undefined) return
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => appendFormValue(params, `${key}[${index}]`, item))
+    return
+  }
+  if (typeof value === 'object') {
+    Object.entries(value).forEach(([childKey, item]) => appendFormValue(params, `${key}[${childKey}]`, item))
+    return
+  }
+  params.append(key, String(value))
+}
+
+function toFormParams(values: Record<string, FormValue>) {
+  const params = new URLSearchParams()
+  Object.entries(values).forEach(([key, value]) => appendFormValue(params, key, value))
+  return params
+}
+
 class HelpyApiClient {
   // Keep every local request same-origin so Vite can proxy it to the API without
   // the browser applying the production site's CORS policy to localhost.
@@ -175,7 +261,7 @@ class HelpyApiClient {
     options: {
       method?: RequestMethod
       query?: Record<string, QueryValue>
-      form?: Record<string, QueryValue>
+      form?: Record<string, FormValue>
       multipart?: Record<string, QueryValue>
       authenticated?: boolean
       coordinates?: { latitude: number; longitude: number }
@@ -200,7 +286,7 @@ class HelpyApiClient {
 
     let body: BodyInit | undefined
     if (form) {
-      body = toSearchParams(form)
+      body = toFormParams(form)
       headers.set('Content-Type', 'application/x-www-form-urlencoded')
     }
     if (multipart) {
@@ -387,6 +473,34 @@ class HelpyApiClient {
   async getBookingDetails(bookingId: string | number) {
     return (await this.request<Record<string, unknown>[]>('get-booking-details', {
       query: { booking_id: bookingId, serviceSetupImageSize: '375_240', userImageSize: '100_100' },
+    })).data
+  }
+
+  async bookingPreflight(serviceVendorMapId: number, paymentType: 'online' | 'tap' = 'online') {
+    return (await this.request<HelpyBookingPreflight>('booking-preflight', {
+      method: 'POST',
+      form: { service_vendor_mapp_id: serviceVendorMapId, payment_type: paymentType },
+    })).data
+  }
+
+  async createBooking(input: HelpyBookingInput) {
+    return (await this.request<Record<string, unknown>>('add-booking', {
+      method: 'POST',
+      form: input,
+    })).data
+  }
+
+  async createTapPayment(input: { bookingId: string | number; firstName?: string; lastName?: string; email?: string; phone?: string }) {
+    return (await this.request<HelpyTapCheckout>('tap/create', {
+      method: 'POST',
+      form: {
+        booking_id: input.bookingId,
+        firstName: input.firstName,
+        lastName: input.lastName,
+        email: input.email,
+        phone: input.phone,
+        use_sdk_payment: 0,
+      },
     })).data
   }
 

@@ -1,256 +1,2474 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
-import { ArrowRight, CalendarDays, Check, CheckCheck, ChevronLeft, ChevronRight, LayoutGrid, LoaderCircle, MapPin, MessageCircle, PackageCheck, Paperclip, RefreshCw, Search, Send, Star, UserRound, X } from 'lucide-react'
-import type { Screen } from '../context/NavContext'
-import { useNav } from '../context/NavContext'
-import { helpyApi, hasHelpyUserSession, type HelpyAvailabilitySlot } from '../api/helpy'
-import { helpyChat, type ChatMessage, type ChatUser } from '../api/chat'
-import { mapBooking, mapService, useHelpyData, type LiveAddress, type LiveBooking, type LiveBusiness, type LiveService } from '../context/HelpyDataContext'
-import DesktopBannerCarousel from './DesktopBannerCarousel'
+import { useEffect, useMemo, useRef, useState } from "react";
+import {
+  ArrowRight,
+  CalendarDays,
+  Check,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  LayoutGrid,
+  LoaderCircle,
+  MapPin,
+  MessageCircle,
+  PackageCheck,
+  Paperclip,
+  RefreshCw,
+  Search,
+  Send,
+  ShieldCheck,
+  Star,
+  UserRound,
+  X,
+} from "lucide-react";
+import type { Screen } from "../context/NavContext";
+import { useNav } from "../context/NavContext";
+import {
+  helpyApi,
+  hasHelpyUserSession,
+  type HelpyAvailabilitySlot,
+} from "../api/helpy";
+import { helpyChat, type ChatMessage, type ChatUser } from "../api/chat";
+import {
+  mapBooking,
+  mapService,
+  useHelpyData,
+  type LiveAddress,
+  type LiveBooking,
+  type LiveBusiness,
+  type LiveService,
+} from "../context/HelpyDataContext";
+import DesktopBannerCarousel from "./DesktopBannerCarousel";
 
-type Navigate = (screen: Screen, params?: any) => void
-type BookingDraft = { service: LiveService; date: string; slot: string; address?: LiveAddress }
+type Navigate = (screen: Screen, params?: any) => void;
+type BookingDraft = {
+  service: LiveService;
+  date: string;
+  slot: string;
+  address?: LiveAddress;
+};
 
-const initials = (name: string) => name.split(/\s+/).filter(Boolean).map(word => word[0]).join('').slice(0, 2).toUpperCase() || 'H'
-const money = (value: number) => `QAR ${value.toFixed(2)}`
-const readableDate = (value: string) => { if (!value) return 'Not selected'; const parsed = new Date(/^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value); return Number.isNaN(parsed.getTime()) ? value : new Intl.DateTimeFormat('en-QA', { weekday: 'short', day: 'numeric', month: 'short' }).format(parsed) }
-const nextDates = Array.from({ length: 7 }, (_, index) => { const date = new Date(); date.setDate(date.getDate() + index); return date.toISOString().slice(0, 10) })
+const initials = (name: string) =>
+  name
+    .split(/\s+/)
+    .filter(Boolean)
+    .map((word) => word[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase() || "H";
+const money = (value: number) => `QAR ${value.toFixed(2)}`;
+const readableDate = (value: string) => {
+  if (!value) return "Not selected";
+  const parsed = new Date(
+    /^\d{4}-\d{2}-\d{2}$/.test(value) ? `${value}T12:00:00` : value,
+  );
+  return Number.isNaN(parsed.getTime())
+    ? value
+    : new Intl.DateTimeFormat("en-QA", {
+        weekday: "short",
+        day: "numeric",
+        month: "short",
+      }).format(parsed);
+};
+const nextDates = Array.from({ length: 7 }, (_, index) => {
+  const date = new Date();
+  date.setDate(date.getDate() + index);
+  return date.toISOString().slice(0, 10);
+});
 
-function Heading({ title }: { eyebrow?: string; title: string; copy?: string }) {
-  return <h1 className="text-3xl font-black tracking-[-.045em] text-[#102044] sm:text-4xl">{title}</h1>
+function Heading({
+  title,
+}: {
+  eyebrow?: string;
+  title: string;
+  copy?: string;
+}) {
+  return (
+    <h1 className="text-3xl font-black tracking-[-.045em] text-[#102044] sm:text-4xl">
+      {title}
+    </h1>
+  );
 }
 
-function State({ loading, error, empty, retry }: { loading?: boolean; error?: string; empty?: string; retry?: () => void }) {
-  return <div className="rounded-[24px] border border-blue-100 bg-white px-6 py-14 text-center"><div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-[#0967ff]">{loading ? <LoaderCircle className="animate-spin"/> : <PackageCheck/>}</div><p className="mt-4 font-black">{loading ? 'Loading from Helpy…' : error || empty}</p>{error && retry && <button onClick={retry} className="mt-4 rounded-xl bg-[#0967ff] px-5 py-2.5 text-sm font-black text-white">Try again</button>}</div>
+function State({
+  loading,
+  error,
+  empty,
+  retry,
+}: {
+  loading?: boolean;
+  error?: string;
+  empty?: string;
+  retry?: () => void;
+}) {
+  return (
+    <div className="rounded-[24px] border border-blue-100 bg-white px-6 py-14 text-center">
+      <div className="mx-auto grid h-12 w-12 place-items-center rounded-2xl bg-blue-50 text-[#0967ff]">
+        {loading ? <LoaderCircle className="animate-spin" /> : <PackageCheck />}
+      </div>
+      <p className="mt-4 font-black">
+        {loading ? "Loading from Helpy…" : error || empty}
+      </p>
+      {error && retry && (
+        <button
+          onClick={retry}
+          className="mt-4 rounded-xl bg-[#0967ff] px-5 py-2.5 text-sm font-black text-white"
+        >
+          Try again
+        </button>
+      )}
+    </div>
+  );
 }
 
-function ServiceCard({ service, navigate }: { service: LiveService; navigate: Navigate }) {
-  return <button onClick={() => navigate('service-detail', { service })} className="overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm"><div className="h-44 overflow-hidden bg-blue-50">{service.image ? <img src={service.image} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-2xl font-black text-blue-300">{initials(service.name)}</div>}</div><div className="p-5"><p className="text-xs font-black text-[#0967ff]">{service.provider}</p><h2 className="mt-1 truncate text-lg font-black">{service.name}</h2><p className="mt-2 line-clamp-2 min-h-10 text-xs font-semibold leading-5 text-[#75839d]">{service.description || service.category}</p><div className="mt-4 flex items-end justify-between"><div><p className="text-[10px] font-bold text-[#93a0b5]">from</p><p className="text-lg font-black">{money(service.price)}</p></div><span className="text-xs font-black text-[#66758f]"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{service.rating || 'New'}</span></div></div></button>
-}
-
-function BusinessCard({ business, navigate }: { business: LiveBusiness; navigate: Navigate }) {
-  const cover = business.services.find(item => item.image)?.image
-  const categories = Array.from(new Set(business.services.map(item => item.category).filter(Boolean))).slice(0, 2).join(' · ')
-  return <button onClick={() => navigate('service-detail', { business })} className="overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm"><div className="relative h-36 overflow-hidden bg-blue-50 sm:h-40">{cover ? <img src={cover} alt="" className="h-full w-full object-cover"/> : <div className="grid h-full place-items-center text-4xl font-black text-blue-200">{initials(business.name)}</div>}{business.image && <img src={business.image} alt="" className="absolute bottom-3 left-3 h-12 w-12 rounded-2xl border-2 border-white bg-white object-cover shadow"/>}</div><div className="p-5"><h2 className="truncate text-lg font-black text-[#102044]">{business.name}</h2><div className="mt-2 flex min-w-0 items-center gap-2 text-xs font-bold text-[#64738e]">{business.rating > 0 && <span className="shrink-0"><Star size={14} className="mr-1 inline fill-amber-400 text-amber-400"/>{business.rating}</span>}{categories && <span className="truncate rounded-full bg-[#f1f6ff] px-2.5 py-1 text-[#42618f]">{categories}</span>}</div></div></button>
-}
-
-function CategoryFilterCarousel({ categories, categoryId, onSelect }: { categories: Array<{ id: number; name: string; image: string }>; categoryId: number | null; onSelect: (id: number | null) => void }) {
-  const rail = useRef<HTMLDivElement>(null)
-  useEffect(() => { rail.current?.scrollTo({ left: 0 }) }, [])
-  const move = (direction: number) => {
-    const element = rail.current
-    const item = element?.querySelector<HTMLElement>('[data-category-item]')
-    if (!element || !item) return
-    const gap = Number.parseFloat(getComputedStyle(element).gap) || 0
-    element.scrollBy({ left: direction * 4 * (item.getBoundingClientRect().width + gap), behavior: 'smooth' })
-  }
-  const items = [{ id: null, name: 'All', image: '' }, ...categories]
-  return <section className="-mx-4 pb-0 pt-2 sm:-mx-8 sm:pt-2 xl:-mx-10">
-    <div className="relative mx-auto max-w-[1440px]">
-      <div className="mx-[76px] overflow-hidden sm:mx-[92px]">
-        <div ref={rail} className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory [scrollbar-width:none] sm:gap-5 xl:justify-center [&::-webkit-scrollbar]:hidden">
-          {items.map(item => {
-            const active = item.id === categoryId
-            return <button key={item.id ?? 'all'} data-category-item onClick={() => onSelect(item.id)} aria-pressed={active} className="group flex w-[calc((100vw-216px)/5)] min-w-[78px] max-w-[112px] shrink-0 snap-start flex-col items-center gap-3 text-center sm:w-[calc((100vw-264px)/5)] sm:min-w-[86px] sm:max-w-[116px] xl:w-[104px] xl:min-w-0 xl:max-w-none">
-              <span className={`grid h-[76px] w-[76px] place-items-center rounded-full transition sm:h-[88px] sm:w-[88px] ${active ? 'bg-[#0967ff] text-white shadow-[0_12px_24px_rgba(9,103,255,.32)]' : 'bg-[#f7faff] text-[#64738e] shadow-sm ring-1 ring-[#e2eaf5] group-hover:ring-2 group-hover:ring-blue-200'}`}>
-                {item.id === null ? <LayoutGrid size={27}/> : item.image ? <img src={item.image} alt="" className="h-full w-full rounded-full object-contain"/> : <span className="text-sm font-black text-blue-300">{initials(item.name)}</span>}
-              </span>
-              <span className={`line-clamp-2 min-h-8 text-xs font-black leading-4 sm:text-sm ${active ? 'text-[#0967ff]' : 'text-[#253656]'}`}>{item.name}</span>
-            </button>
-          })}
+function ServiceCard({
+  service,
+  navigate,
+}: {
+  service: LiveService;
+  navigate: Navigate;
+}) {
+  return (
+    <button
+      onClick={() => navigate("service-detail", { service })}
+      className="overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm"
+    >
+      <div className="h-44 overflow-hidden bg-blue-50">
+        {service.image ? (
+          <img
+            src={service.image}
+            alt=""
+            className="h-full w-full object-cover"
+          />
+        ) : (
+          <div className="grid h-full place-items-center text-2xl font-black text-blue-300">
+            {initials(service.name)}
+          </div>
+        )}
+      </div>
+      <div className="p-5">
+        <p className="text-xs font-black text-[#0967ff]">{service.provider}</p>
+        <h2 className="mt-1 truncate text-lg font-black">{service.name}</h2>
+        <p className="mt-2 line-clamp-2 min-h-10 text-xs font-semibold leading-5 text-[#75839d]">
+          {service.description || service.category}
+        </p>
+        <div className="mt-4 flex items-end justify-between">
+          <div>
+            <p className="text-[10px] font-bold text-[#93a0b5]">from</p>
+            <p className="text-lg font-black">{money(service.price)}</p>
+          </div>
+          <span className="text-xs font-black text-[#66758f]">
+            <Star
+              size={14}
+              className="mr-1 inline fill-amber-400 text-amber-400"
+            />
+            {service.rating || "New"}
+          </span>
         </div>
       </div>
-      <button onClick={() => move(-1)} className="absolute left-3 top-4 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] sm:left-5 sm:top-5" aria-label="Show previous categories"><ChevronLeft size={24}/></button>
-      <button onClick={() => move(1)} className="absolute right-3 top-4 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] sm:right-5 sm:top-5" aria-label="Show more categories"><ChevronRight size={24}/></button>
-    </div>
-  </section>
+    </button>
+  );
+}
+
+function BusinessCard({
+  business,
+  navigate,
+}: {
+  business: LiveBusiness;
+  navigate: Navigate;
+}) {
+  const cover = business.services.find((item) => item.image)?.image;
+  const categories = Array.from(
+    new Set(business.services.map((item) => item.category).filter(Boolean)),
+  )
+    .slice(0, 2)
+    .join(" · ");
+  return (
+    <button
+      onClick={() => navigate("service-detail", { business })}
+      className="overflow-hidden rounded-[24px] border border-blue-100 bg-white text-left shadow-sm"
+    >
+      <div className="relative h-36 overflow-hidden bg-blue-50 sm:h-40">
+        {cover ? (
+          <img src={cover} alt="" className="h-full w-full object-cover" />
+        ) : (
+          <div className="grid h-full place-items-center text-4xl font-black text-blue-200">
+            {initials(business.name)}
+          </div>
+        )}
+        {business.image && (
+          <img
+            src={business.image}
+            alt=""
+            className="absolute bottom-3 left-3 h-12 w-12 rounded-2xl border-2 border-white bg-white object-cover shadow"
+          />
+        )}
+      </div>
+      <div className="p-5">
+        <h2 className="truncate text-lg font-black text-[#102044]">
+          {business.name}
+        </h2>
+        <div className="mt-2 flex min-w-0 items-center gap-2 text-xs font-bold text-[#64738e]">
+          {business.rating > 0 && (
+            <span className="shrink-0">
+              <Star
+                size={14}
+                className="mr-1 inline fill-amber-400 text-amber-400"
+              />
+              {business.rating}
+            </span>
+          )}
+          {categories && (
+            <span className="truncate rounded-full bg-[#f1f6ff] px-2.5 py-1 text-[#42618f]">
+              {categories}
+            </span>
+          )}
+        </div>
+      </div>
+    </button>
+  );
+}
+
+function CategoryFilterCarousel({
+  categories,
+  categoryId,
+  onSelect,
+}: {
+  categories: Array<{ id: number; name: string; image: string }>;
+  categoryId: number | null;
+  onSelect: (id: number | null) => void;
+}) {
+  const rail = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    rail.current?.scrollTo({ left: 0 });
+  }, []);
+  const move = (direction: number) => {
+    const element = rail.current;
+    const item = element?.querySelector<HTMLElement>("[data-category-item]");
+    if (!element || !item) return;
+    const gap = Number.parseFloat(getComputedStyle(element).gap) || 0;
+    element.scrollBy({
+      left: direction * 4 * (item.getBoundingClientRect().width + gap),
+      behavior: "smooth",
+    });
+  };
+  const items = [{ id: null, name: "All", image: "" }, ...categories];
+  return (
+    <section className="-mx-4 pb-0 pt-2 sm:-mx-8 sm:pt-2 xl:-mx-10">
+      <div className="relative mx-auto max-w-[1440px]">
+        <div className="mx-[76px] overflow-hidden sm:mx-[92px]">
+          <div
+            ref={rail}
+            className="flex gap-4 overflow-x-auto scroll-smooth snap-x snap-mandatory [scrollbar-width:none] sm:gap-5 xl:justify-center [&::-webkit-scrollbar]:hidden"
+          >
+            {items.map((item) => {
+              const active = item.id === categoryId;
+              return (
+                <button
+                  key={item.id ?? "all"}
+                  data-category-item
+                  onClick={() => onSelect(item.id)}
+                  aria-pressed={active}
+                  className="group flex w-[calc((100vw-216px)/5)] min-w-[78px] max-w-[112px] shrink-0 snap-start flex-col items-center gap-3 text-center sm:w-[calc((100vw-264px)/5)] sm:min-w-[86px] sm:max-w-[116px] xl:w-[104px] xl:min-w-0 xl:max-w-none"
+                >
+                  <span
+                    className={`grid h-[76px] w-[76px] place-items-center rounded-full transition sm:h-[88px] sm:w-[88px] ${active ? "bg-[#0967ff] text-white shadow-[0_12px_24px_rgba(9,103,255,.32)]" : "bg-[#f7faff] text-[#64738e] shadow-sm ring-1 ring-[#e2eaf5] group-hover:ring-2 group-hover:ring-blue-200"}`}
+                  >
+                    {item.id === null ? (
+                      <LayoutGrid size={27} />
+                    ) : item.image ? (
+                      <img
+                        src={item.image}
+                        alt=""
+                        className="h-full w-full rounded-full object-contain"
+                      />
+                    ) : (
+                      <span className="text-sm font-black text-blue-300">
+                        {initials(item.name)}
+                      </span>
+                    )}
+                  </span>
+                  <span
+                    className={`line-clamp-2 min-h-8 text-xs font-black leading-4 sm:text-sm ${active ? "text-[#0967ff]" : "text-[#253656]"}`}
+                  >
+                    {item.name}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <button
+          onClick={() => move(-1)}
+          className="absolute left-3 top-4 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] sm:left-5 sm:top-5"
+          aria-label="Show previous categories"
+        >
+          <ChevronLeft size={24} />
+        </button>
+        <button
+          onClick={() => move(1)}
+          className="absolute right-3 top-4 z-10 grid h-12 w-12 place-items-center rounded-full bg-white text-[#253656] shadow-[0_10px_28px_rgba(35,53,85,.14)] sm:right-5 sm:top-5"
+          aria-label="Show more categories"
+        >
+          <ChevronRight size={24} />
+        </button>
+      </div>
+    </section>
+  );
 }
 
 export function LiveDesktopHome({ navigate }: { navigate: Navigate }) {
-  const data = useHelpyData()
-  const picks = data.businesses.slice(0, 6)
-  const next = data.bookings.find(item => item.status !== 'Completed')
-  return <div className="space-y-5 lg:space-y-6"><DesktopBannerCarousel navigate={navigate}/><section><div className="mb-1 flex items-center justify-between"><h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">Browse categories</h2><button onClick={() => navigate('categories')} className="shrink-0 text-sm font-black text-[#0967ff]">View all <ArrowRight size={14} className="inline"/></button></div>{data.loading ? <State loading/> : data.error ? <State error={data.error} retry={data.refreshCatalog}/> : data.categories.length ? <CategoryFilterCarousel categories={data.categories} categoryId={null} onSelect={id => { if (id === null) navigate('all-services'); else { const category = data.categories.find(item => item.id === id); navigate('category-services', { categoryId: id, label: category?.name }) } }}/> : <State empty="No categories are currently published."/>}</section><section className="grid items-start gap-5 xl:grid-cols-[1.5fr_.82fr]"><div><div className="mb-3 flex items-center justify-between"><h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">Popular businesses</h2><button onClick={() => navigate('providers')} className="shrink-0 text-sm font-black text-[#0967ff]">See all <ArrowRight size={14} className="inline"/></button></div>{picks.length ? <div className="grid gap-5 md:grid-cols-2">{picks.slice(0,4).map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : !data.loading && <State empty="No businesses are currently available."/>}</div><aside className="h-fit rounded-[26px] bg-white p-6 shadow-sm ring-1 ring-[#e5edf8]"><p className="text-xs font-black uppercase tracking-[.14em] text-[#0967ff]">Your next booking</p>{data.accountLoading ? <p className="mt-4 text-sm font-bold text-[#71809a]">Loading…</p> : next ? <><h2 className="mt-2 text-xl font-black">{readableDate(next.date)} · {next.time}</h2><div className="mt-5 rounded-2xl bg-[#f5f9ff] p-4"><p className="text-sm font-black">{next.provider}</p><p className="mt-1 text-xs font-bold text-[#71809a]">{next.service}</p><button onClick={() => navigate('order-detail', { booking: next })} className="mt-4 text-xs font-black text-[#0967ff]">View booking <ArrowRight size={13} className="inline"/></button></div></> : <><p className="mt-3 text-sm font-semibold leading-6 text-[#71809a]">{hasHelpyUserSession() ? 'You have no upcoming bookings.' : 'Sign in to see your upcoming bookings.'}</p><button onClick={() => navigate(hasHelpyUserSession() ? 'providers' : 'login')} className="mt-5 w-full rounded-xl border border-[#dbe8fb] py-3 text-sm font-black text-[#0967ff]">{hasHelpyUserSession() ? 'Browse businesses' : 'Sign in'}</button></>}</aside></section></div>
-}
-
-export function LiveDesktopExplore({ screen, params, navigate }: { screen: Screen; params: any; navigate: Navigate }) {
-  const data = useHelpyData(); const [query, setQuery] = useState(params?.query || ''); const [categoryId, setCategoryId] = useState<number | null>(params?.categoryId ?? null)
-  const shown = useMemo(() => data.businesses.filter(business => business.services.some(item => (!categoryId || item.categoryId === categoryId) && `${business.name} ${item.name} ${item.category}`.toLowerCase().includes(query.toLowerCase()))), [data.businesses, categoryId, query])
-  if (screen === 'categories') return <div><Heading eyebrow="LIVE CATALOG" title="Browse every category" copy="Categories currently published by the Helpy backend."/>{data.loading ? <div className="mt-8"><State loading/></div> : <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">{data.categories.map(category => <button key={category.id} onClick={() => navigate('category-services', { categoryId: category.id, label: category.name })} className="rounded-[24px] border border-blue-100 bg-white p-6 text-left shadow-sm transition"><div className="h-28">{category.image && <img src={category.image} alt="" className="h-full w-full object-contain"/>}</div><h2 className="mt-4 text-xl font-black">{category.name}</h2><p className="mt-2 text-sm font-bold text-[#0967ff]">View services <ArrowRight size={14} className="inline"/></p></button>)}</div>}</div>
-  return <div><CategoryFilterCarousel categories={data.categories} categoryId={categoryId} onSelect={setCategoryId}/>{data.loading ? <div className="mt-6"><State loading/></div> : data.error ? <div className="mt-6"><State error={data.error} retry={data.refreshCatalog}/></div> : shown.length ? <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">{shown.map(business => <BusinessCard key={business.id} business={business} navigate={navigate}/>)}</div> : <div className="mt-6"><State empty="No businesses match this view."/></div>}</div>
-}
-
-export function LiveDesktopService({ params, navigate }: { params: any; navigate: Navigate }) {
-  const data = useHelpyData()
-  const initialBusiness = params?.business as LiveBusiness | undefined
-  const initial = (params?.service as LiveService | undefined) || initialBusiness?.services[0]
-  const [service, setService] = useState<LiveService | undefined>(initial)
-  const [preview, setPreview] = useState<LiveService | null>(null)
-  const [date, setDate] = useState(nextDates[0])
-  const [slots, setSlots] = useState<HelpyAvailabilitySlot[]>([])
-  const [slot, setSlot] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
-
-  useEffect(() => { setService(initial); setSlot(''); setPreview(null) }, [initial?.id, initialBusiness?.id])
-  useEffect(() => {
-    if (service || !params?.serviceVendorMapId) return
-    let current = true
-    void helpyApi.getVendorDetails(Number(params.serviceVendorMapId))
-      .then(row => { if (current) setService(mapService(row, data.categories)) })
-      .catch(cause => { if (current) setError(cause.message) })
-    return () => { current = false }
-  }, [service, params?.serviceVendorMapId, data.categories])
-  useEffect(() => {
-    if (!service) return
-    let current = true
-    const vendorId = service.vendorId || Number(service.raw.created_by)
-    setSlot(''); setSlots([]); setError('')
-    if (!vendorId) { setLoading(false); setError('Booking is unavailable for this service.'); return }
-    setLoading(true)
-    void data.getAvailability(vendorId, date)
-      .then(values => { if (current) setSlots(values) })
-      .catch(cause => { if (current) setError(cause.message) })
-      .finally(() => { if (current) setLoading(false) })
-    return () => { current = false }
-  }, [service, date, data.getAvailability])
-  if (!service) return <State loading={!error} error={error}/>
-  const business = initialBusiness || data.businesses.find(item => item.id === service.vendorId) || { id: service.vendorId, name: service.provider, image: '', rating: service.rating, about: '', services: [service], raw: {} }
-  const available = slots.filter(value => Boolean(value.isAvailable))
-  const cover = business.services.find(item => item.image)?.image || business.image
-  const category = Array.from(new Set(business.services.map(item => item.category).filter(Boolean))).join(' · ')
-  const chooseService = (item: LiveService) => { setSlot(''); setService(item) }
-
-  return <div data-service-detail className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]">
-    <div className="min-w-0 space-y-6">
-      <section aria-label={business.name} className="relative overflow-hidden rounded-[28px] bg-[#102044]">
-        {cover && <img src={cover} alt="" className="absolute inset-0 h-full w-full bg-white object-contain" />}
-        <div className="absolute inset-0 bg-gradient-to-r from-[#071b52]/95 via-[#071b52]/70 to-[#071b52]/15" />
-        <div className="relative flex min-h-[260px] flex-col justify-end p-7 text-white xl:min-h-[300px] xl:p-8">
-          {category && <span className="w-fit max-w-full rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold [overflow-wrap:anywhere]">{category}</span>}
-          <div className="mt-4 flex min-w-0 items-center gap-4">
-            {business.image && <img src={business.image} alt="" className="h-16 w-16 shrink-0 rounded-full border-4 border-white bg-white object-contain" />}
-            <h1 className="min-w-0 text-[32px] font-black leading-tight tracking-[-.04em] [overflow-wrap:anywhere] xl:text-4xl">{business.name}</h1>
-          </div>
-          {business.about && <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-blue-50">{business.about}</p>}
-          {business.rating > 0 && <p className="mt-4 flex items-center gap-1.5 text-sm font-bold"><Star size={16} className="fill-amber-400 text-amber-400" />{business.rating}</p>}
+  const data = useHelpyData();
+  const picks = data.businesses.slice(0, 6);
+  const next = data.bookings.find((item) => item.status !== "Completed");
+  return (
+    <div className="space-y-5 lg:space-y-6">
+      <DesktopBannerCarousel navigate={navigate} />
+      <section>
+        <div className="mb-1 flex items-center justify-between">
+          <h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">
+            Browse categories
+          </h2>
+          <button
+            onClick={() => navigate("categories")}
+            className="shrink-0 text-sm font-black text-[#0967ff]"
+          >
+            View all <ArrowRight size={14} className="inline" />
+          </button>
         </div>
+        {data.loading ? (
+          <State loading />
+        ) : data.error ? (
+          <State error={data.error} retry={data.refreshCatalog} />
+        ) : data.categories.length ? (
+          <CategoryFilterCarousel
+            categories={data.categories}
+            categoryId={null}
+            onSelect={(id) => {
+              if (id === null) navigate("all-services");
+              else {
+                const category = data.categories.find((item) => item.id === id);
+                navigate("category-services", {
+                  categoryId: id,
+                  label: category?.name,
+                });
+              }
+            }}
+          />
+        ) : (
+          <State empty="No categories are currently published." />
+        )}
       </section>
-
-      <section aria-labelledby="service-options-title" className="rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm xl:p-6">
-        <h2 id="service-options-title" className="text-xl font-black text-[#102044]">Select a service</h2>
-        <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-3">
-          {business.services.map(item => {
-            const selected = service.id === item.id
-            return <article key={item.id} className={`min-w-0 overflow-hidden rounded-2xl border ${selected ? 'border-[#0967ff] bg-blue-50/60' : 'border-[#e5edf7] bg-white'}`}>
-              <button onClick={() => chooseService(item)} aria-label={`Select ${item.name}`} aria-pressed={selected} className="w-full p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0967ff]">
-                <div className="flex items-center gap-3">
-                  {item.image && <img src={item.image} alt="" className="h-14 w-14 shrink-0 rounded-xl bg-white object-contain" />}
-                  <h3 className="min-w-0 flex-1 text-sm font-black leading-5 text-[#102044] [overflow-wrap:anywhere]">{item.name}</h3>
-                  <span aria-hidden="true" className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${selected ? 'border-[#0967ff] bg-[#0967ff] text-white' : 'border-slate-300 bg-white'}`}>{selected && <Check size={13} />}</span>
-                </div>
-                {item.description && <p className="mt-3 line-clamp-2 min-h-10 text-xs font-medium leading-5 text-[#73819a]">{item.description}</p>}
-                <p className="mt-3 text-sm font-black text-[#0967ff]">{money(item.price)}</p>
-              </button>
-              {item.description && <button onClick={() => setPreview(item)} aria-label={`View details for ${item.name}`} className="w-full border-t border-blue-100/60 px-4 py-2.5 text-left text-xs font-bold text-[#0967ff]">View details <ArrowRight size={12} className="ml-1 inline" /></button>}
-            </article>
-          })}
+      <section className="grid items-start gap-5 xl:grid-cols-[1.5fr_.82fr]">
+        <div>
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">
+              Popular businesses
+            </h2>
+            <button
+              onClick={() => navigate("providers")}
+              className="shrink-0 text-sm font-black text-[#0967ff]"
+            >
+              See all <ArrowRight size={14} className="inline" />
+            </button>
+          </div>
+          {picks.length ? (
+            <div className="grid gap-5 md:grid-cols-2">
+              {picks.slice(0, 4).map((business) => (
+                <BusinessCard
+                  key={business.id}
+                  business={business}
+                  navigate={navigate}
+                />
+              ))}
+            </div>
+          ) : (
+            !data.loading && (
+              <State empty="No businesses are currently available." />
+            )
+          )}
         </div>
+        <aside className="h-fit rounded-[26px] bg-white p-6 shadow-sm ring-1 ring-[#e5edf8]">
+          <p className="text-xs font-black uppercase tracking-[.14em] text-[#0967ff]">
+            Your next booking
+          </p>
+          {data.accountLoading ? (
+            <p className="mt-4 text-sm font-bold text-[#71809a]">Loading…</p>
+          ) : next ? (
+            <>
+              <h2 className="mt-2 text-xl font-black">
+                {readableDate(next.date)} · {next.time}
+              </h2>
+              <div className="mt-5 rounded-2xl bg-[#f5f9ff] p-4">
+                <p className="text-sm font-black">{next.provider}</p>
+                <p className="mt-1 text-xs font-bold text-[#71809a]">
+                  {next.service}
+                </p>
+                <button
+                  onClick={() => navigate("order-detail", { booking: next })}
+                  className="mt-4 text-xs font-black text-[#0967ff]"
+                >
+                  View booking <ArrowRight size={13} className="inline" />
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              <p className="mt-3 text-sm font-semibold leading-6 text-[#71809a]">
+                {hasHelpyUserSession()
+                  ? "You have no upcoming bookings."
+                  : "Sign in to see your upcoming bookings."}
+              </p>
+              <button
+                onClick={() =>
+                  navigate(hasHelpyUserSession() ? "providers" : "login")
+                }
+                className="mt-5 w-full rounded-xl border border-[#dbe8fb] py-3 text-sm font-black text-[#0967ff]"
+              >
+                {hasHelpyUserSession() ? "Browse businesses" : "Sign in"}
+              </button>
+            </>
+          )}
+        </aside>
       </section>
     </div>
+  );
+}
 
-    <aside aria-label="Booking options" className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm lg:sticky lg:top-28 xl:p-6">
-      <h2 className="text-xl font-black text-[#102044]">Book a time</h2>
-      <div className="mt-4 flex min-w-0 items-start justify-between gap-3 border-b border-blue-50 pb-5" aria-live="polite"><p className="min-w-0 text-sm font-bold text-[#64738e] [overflow-wrap:anywhere]">{service.name}</p><p className="shrink-0 text-sm font-black text-[#0967ff]">{money(service.price)}</p></div>
-      <h3 className="mt-5 text-sm font-bold">Day</h3>
-      <div className="mt-3 grid grid-cols-4 gap-2">
-        {nextDates.map(value => { const parsed = new Date(`${value}T12:00:00`); return <button key={value} aria-label={readableDate(value)} aria-pressed={date === value} onClick={() => { setSlot(''); setDate(value) }} className={`min-w-0 rounded-xl px-1 py-3 text-center ${date === value ? 'bg-[#0967ff] text-white' : 'bg-[#f4f8fe] text-[#60708c]'}`}><span className="block text-[11px] font-semibold">{new Intl.DateTimeFormat('en-QA', { weekday: 'short' }).format(parsed)}</span><span className="mt-1 block text-xs font-black">{new Intl.DateTimeFormat('en-QA', { day: 'numeric', month: 'short' }).format(parsed)}</span></button> })}
+export function LiveDesktopExplore({
+  screen,
+  params,
+  navigate,
+}: {
+  screen: Screen;
+  params: any;
+  navigate: Navigate;
+}) {
+  const data = useHelpyData();
+  const [query, setQuery] = useState(params?.query || "");
+  const [categoryId, setCategoryId] = useState<number | null>(
+    params?.categoryId ?? null,
+  );
+  const shown = useMemo(
+    () =>
+      data.businesses.filter((business) =>
+        business.services.some(
+          (item) =>
+            (!categoryId || item.categoryId === categoryId) &&
+            `${business.name} ${item.name} ${item.category}`
+              .toLowerCase()
+              .includes(query.toLowerCase()),
+        ),
+      ),
+    [data.businesses, categoryId, query],
+  );
+  if (screen === "categories")
+    return (
+      <div>
+        <Heading
+          eyebrow="LIVE CATALOG"
+          title="Browse every category"
+          copy="Categories currently published by the Helpy backend."
+        />
+        {data.loading ? (
+          <div className="mt-8">
+            <State loading />
+          </div>
+        ) : (
+          <div className="mt-8 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {data.categories.map((category) => (
+              <button
+                key={category.id}
+                onClick={() =>
+                  navigate("category-services", {
+                    categoryId: category.id,
+                    label: category.name,
+                  })
+                }
+                className="rounded-[24px] border border-blue-100 bg-white p-6 text-left shadow-sm transition"
+              >
+                <div className="h-28">
+                  {category.image && (
+                    <img
+                      src={category.image}
+                      alt=""
+                      className="h-full w-full object-contain"
+                    />
+                  )}
+                </div>
+                <h2 className="mt-4 text-xl font-black">{category.name}</h2>
+                <p className="mt-2 text-sm font-bold text-[#0967ff]">
+                  View services <ArrowRight size={14} className="inline" />
+                </p>
+              </button>
+            ))}
+          </div>
+        )}
       </div>
-      <h3 className="mt-5 text-sm font-bold">Available times</h3>
-      {loading ? <p role="status" className="py-6 text-center text-sm font-medium text-[#73819a]">Loading times…</p> : <div className="mt-3 grid grid-cols-2 gap-2">{available.map(value => <button key={`${value.date}-${value.slot}`} aria-pressed={slot === value.slot} onClick={() => setSlot(value.slot)} className={`min-w-0 rounded-xl border px-2 py-3 text-xs font-bold [overflow-wrap:anywhere] ${slot === value.slot ? 'border-[#0967ff] bg-blue-50 text-[#0967ff]' : 'border-[#e2eaf5] text-[#60708c]'}`}>{value.slot}</button>)}</div>}
-      {!loading && !error && !available.length && <p className="mt-3 rounded-xl bg-[#f4f8fe] p-3 text-sm font-medium leading-5 text-[#73819a]">No times available on this date. Try another day.</p>}
-      {error && <p role="alert" className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600">{error}</p>}
-      <button disabled={!slot || loading} onClick={() => navigate('booking-checkout', { booking: { service, date, slot } satisfies BookingDraft })} className="mt-6 w-full rounded-xl bg-[#0967ff] px-3 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40">Continue to booking <ArrowRight size={15} className="ml-1 inline" /></button>
-    </aside>
-    {preview && <ServiceDetailsDialog service={preview} onClose={() => setPreview(null)} onSelect={() => { chooseService(preview); setPreview(null) }} />}
-  </div>
+    );
+  return (
+    <div>
+      <CategoryFilterCarousel
+        categories={data.categories}
+        categoryId={categoryId}
+        onSelect={setCategoryId}
+      />
+      {data.loading ? (
+        <div className="mt-6">
+          <State loading />
+        </div>
+      ) : data.error ? (
+        <div className="mt-6">
+          <State error={data.error} retry={data.refreshCatalog} />
+        </div>
+      ) : shown.length ? (
+        <div className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {shown.map((business) => (
+            <BusinessCard
+              key={business.id}
+              business={business}
+              navigate={navigate}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="mt-6">
+          <State empty="No businesses match this view." />
+        </div>
+      )}
+    </div>
+  );
 }
 
-function ServiceDetailsDialog({ service, onClose, onSelect }: { service: LiveService; onClose: () => void; onSelect: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null)
-  useEffect(() => { const element = dialog.current; element?.showModal(); return () => element?.close() }, [])
-  return <dialog ref={dialog} aria-labelledby="service-preview-title" onCancel={event => { event.preventDefault(); onClose() }} onClick={event => { if (event.target === event.currentTarget) onClose() }} className="fixed max-h-[85dvh] w-[calc(100%-48px)] max-w-[600px] overflow-y-auto rounded-[24px] border-0 bg-white p-6 text-[#102044] shadow-2xl backdrop:bg-[#071b52]/45">
-    <div className="flex items-start justify-between gap-4"><h2 id="service-preview-title" className="min-w-0 text-2xl font-black [overflow-wrap:anywhere]">{service.name}</h2><button autoFocus onClick={onClose} aria-label="Close service details" className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f4f8fe] text-[#64738e]"><X size={19} /></button></div>
-    {service.image && <img src={service.image} alt="" className="mt-5 h-44 w-full rounded-2xl bg-[#f4f8fe] object-contain" />}
-    <p className="mt-5 whitespace-pre-line text-sm font-medium leading-7 text-[#64738e] [overflow-wrap:anywhere]">{service.description}</p>
-    <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-blue-100 pt-5"><p className="text-xl font-black text-[#0967ff]">{money(service.price)}</p><button onClick={onSelect} className="rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-bold text-white">Select service</button></div>
-  </dialog>
-}
+export function LiveDesktopService({
+  params,
+  navigate,
+}: {
+  params: any;
+  navigate: Navigate;
+}) {
+  const data = useHelpyData();
+  const initialBusiness = params?.business as LiveBusiness | undefined;
+  const initial =
+    (params?.service as LiveService | undefined) ||
+    initialBusiness?.services[0];
+  const [service, setService] = useState<LiveService | undefined>(initial);
+  const [preview, setPreview] = useState<LiveService | null>(null);
+  const [date, setDate] = useState(nextDates[0]);
+  const [slots, setSlots] = useState<HelpyAvailabilitySlot[]>([]);
+  const [slot, setSlot] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
 
-export function LiveDesktopCheckout({ params, navigate }: { params: any; navigate: Navigate }) {
-  const data = useHelpyData(); const draft = (params?.booking || params) as BookingDraft; const [selected, setSelected] = useState<LiveAddress | undefined>(params?.address || draft?.address || data.addresses.find(item => Boolean(item.raw.is_default)) || data.addresses[0]); const [notes, setNotes] = useState('')
-  useEffect(() => { if (!selected && data.addresses.length) setSelected(data.addresses[0]) }, [data.addresses, selected])
-  if (!draft?.service) return <State empty="The booking draft is missing. Return to services and choose an available slot."/>
-  if (!hasHelpyUserSession()) return <div><Heading eyebrow="SIGN IN REQUIRED" title="Keep your booking details safe" copy="Sign in to load your saved addresses and continue to the final review."/><button onClick={() => navigate('login')} className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white">Sign in to continue</button></div>
-  return <div><Heading eyebrow="BOOKING REVIEW" title="Review every detail" copy="Nothing is submitted or charged on this screen."/><div className="mt-8 grid gap-7 xl:grid-cols-[1fr_420px]"><section className="space-y-6"><div className="rounded-[26px] bg-white p-6 ring-1 ring-blue-100"><h2 className="text-lg font-black">Service and availability</h2><div className="mt-5 grid gap-3 sm:grid-cols-3"><Review label="Service" value={draft.service.name}/><Review label="Date" value={readableDate(draft.date)}/><Review label="Time" value={draft.slot}/></div></div><div className="rounded-[26px] bg-white p-6 ring-1 ring-blue-100"><div className="flex items-center justify-between"><h2 className="text-lg font-black">Service address</h2><button onClick={() => navigate('addresses')} className="text-sm font-black text-[#0967ff]">Manage addresses</button></div>{data.accountLoading ? <p className="mt-4">Loading addresses…</p> : data.addresses.length ? <div className="mt-4 grid gap-3">{data.addresses.map(address => <button key={address.id} onClick={() => setSelected(address)} className={`flex items-center gap-3 rounded-2xl border p-4 text-left ${selected?.id === address.id ? 'border-[#0967ff] bg-blue-50' : 'border-[#e4ebf5]'}`}><MapPin className="text-[#0967ff]"/><span className="flex-1"><span className="block text-sm font-black">{address.title}</span><span className="mt-1 block text-xs font-semibold text-[#73819a]">{address.address}</span></span>{selected?.id === address.id && <Check size={18} className="text-[#0967ff]"/>}</button>)}</div> : <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-bold text-amber-700">No saved address was returned by the backend. Add one in Saved locations before continuing.</div>}<label className="mt-5 block text-sm font-black">Notes for the provider<textarea value={notes} onChange={event => setNotes(event.target.value)} className="mt-2 h-24 w-full resize-none rounded-xl bg-[#f5f8fd] p-4 text-sm font-semibold outline-none" placeholder="Optional access or arrival instructions"/></label></div></section><aside className="h-fit rounded-[28px] bg-[#071b52] p-7 text-white"><p className="text-xs font-black uppercase tracking-[.15em] text-blue-200">Final summary</p><h2 className="mt-3 text-2xl font-black">{draft.service.name}</h2><p className="mt-1 text-sm font-bold text-blue-100">{draft.service.provider}</p><div className="my-6 border-t border-white/15"/><div className="space-y-3 text-sm"><div className="flex justify-between"><span className="text-blue-100">Service price</span><strong>{money(draft.service.price)}</strong></div><div className="flex justify-between"><span className="text-blue-100">Date</span><strong>{readableDate(draft.date)}</strong></div><div className="flex justify-between"><span className="text-blue-100">Time</span><strong>{draft.slot}</strong></div><div className="flex justify-between"><span className="text-blue-100">Address</span><strong className="max-w-[210px] text-right">{selected?.title || 'Required'}</strong></div></div><div className="mt-6 rounded-2xl bg-white/10 p-4 text-sm leading-6 text-blue-100">The production booking and payment endpoints are intentionally not called. This is the complete pre-finalisation state.</div><button disabled className="mt-5 w-full cursor-not-allowed rounded-xl bg-white/20 py-4 text-sm font-black text-white">Finalise booking (not enabled)</button></aside></div></div>
-}
-
-export function LiveDesktopBookings({ params, navigate }: { params: any; navigate: Navigate }) {
-  const data = useHelpyData(); const initialSelected = (params?.booking || (params?.id && data.bookings.find(item => item.id === params.id))) as LiveBooking | undefined; const [selected, setSelected] = useState<LiveBooking | undefined>(initialSelected); const [detailLoading, setDetailLoading] = useState(false); const bookingId = String(params?.id || initialSelected?.id || '')
-  useEffect(() => { if (!bookingId || !hasHelpyUserSession()) return; setDetailLoading(true); void helpyApi.getBookingDetails(bookingId).then(rows => setSelected(rows[0] ? mapBooking(rows[0], initialSelected?.status || 'Booking') : initialSelected)).catch(() => { if (!initialSelected) setSelected(undefined) }).finally(() => setDetailLoading(false)) }, [bookingId])
-  if (!hasHelpyUserSession()) return <SignInState navigate={navigate} title="Sign in to see your bookings"/>
-  if (detailLoading && !selected) return <State loading/>
-  if (selected) return <div><Heading eyebrow="BOOKING DETAILS" title={selected.service} copy={`${selected.provider} · ${selected.status}`}/><div className="mt-8 rounded-[28px] bg-white p-7 ring-1 ring-blue-100"><div className="grid gap-4 sm:grid-cols-4"><Review label="Date" value={readableDate(selected.date)}/><Review label="Time" value={selected.time || 'Not provided'}/><Review label="Location" value={selected.address || 'Not provided'}/><Review label="Total" value={money(selected.price)}/></div></div></div>
-  return <div><Heading eyebrow="MY BOOKINGS" title="Every booking, easy to follow" copy="Live booking history from your Helpy account."/>{data.accountLoading ? <div className="mt-8"><State loading/></div> : data.bookings.length ? <div className="mt-8 grid gap-4 lg:grid-cols-2">{data.bookings.map(item => <button key={item.id} onClick={() => navigate('order-detail', { id: item.id })} className="rounded-[24px] border border-blue-100 bg-white p-5 text-left"><div className="flex items-center gap-4">{item.image ? <img src={item.image} alt="" className="h-14 w-14 rounded-2xl object-cover"/> : <span className="grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-sm font-black text-[#0967ff]">{initials(item.provider)}</span>}<div className="min-w-0 flex-1"><p className="truncate text-xs font-black text-[#0967ff]">{item.provider}</p><h2 className="mt-1 truncate text-lg font-black">{item.service}</h2></div><span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-[#0967ff]">{item.status}</span></div><p className="mt-5 border-t border-blue-50 pt-4 text-xs font-bold text-[#75839d]">{readableDate(item.date)} · {item.time || 'Time unavailable'}</p></button>)}</div> : <div className="mt-8"><State empty="No bookings were returned for this account."/></div>}</div>
-}
-
-export function LiveDesktopAccount({ screen, navigate }: { screen: Screen; navigate: Navigate }) {
-  const data = useHelpyData(); const profile = data.profile; const [editing, setEditing] = useState(false); const [saving, setSaving] = useState(false); const [message, setMessage] = useState(''); const [form, setForm] = useState({ name: '', email: '', phoneNumber: '', aboutMe: '' })
-  useEffect(() => { if (profile) setForm({ name: profile.name, email: profile.email, phoneNumber: profile.phone, aboutMe: profile.about }) }, [profile])
-  if (!hasHelpyUserSession()) return <SignInState navigate={navigate} title="Sign in to manage your account"/>
-  if (data.accountLoading && !profile) return <State loading/>
-  if (screen === 'wallet') return <div><Heading eyebrow="HELPY WALLET" title="Pay your way" copy="Balance and transactions returned by your Helpy account."/><div className="mt-8 rounded-[28px] bg-gradient-to-r from-[#0750bf] to-[#3199ff] p-8 text-white"><p className="text-sm font-bold">Available balance</p><p className="mt-3 text-5xl font-black">{money(profile?.wallet || 0)}</p></div><RawList values={data.walletHistory} empty="No wallet activity was returned."/></div>
-  if (screen === 'favorites') return <div><Heading eyebrow="SAVED" title="Saved services" copy="Your favourites returned by Helpy."/><RawList values={data.favorites} empty="You have no saved services."/></div>
-  if (screen === 'notifications') return <div><Heading eyebrow="UPDATES" title="Notifications" copy="Account and booking updates from Helpy."/><RawList values={data.notifications} empty="You have no notifications."/></div>
-  if (screen === 'addresses') return <LiveAddresses navigate={navigate}/>
-  return <div><Heading eyebrow="ACCOUNT" title="Your profile" copy="Your account details, loaded directly from Helpy."/><div className="mt-8 grid gap-6 xl:grid-cols-[360px_1fr]"><aside className="rounded-[28px] bg-[#0967ff] p-7 text-white">{profile?.image ? <img src={profile.image} alt="" className="h-20 w-20 rounded-2xl object-cover"/> : <div className="grid h-20 w-20 place-items-center rounded-2xl bg-white/15 text-2xl font-black">{initials(profile?.name || '')}</div>}<h2 className="mt-5 text-2xl font-black">{profile?.name || 'Name unavailable'}</h2><p className="mt-1 text-sm font-bold text-blue-100">{profile?.email || 'Email unavailable'}</p>{profile?.memberSince && <p className="mt-7 border-t border-white/15 pt-5 text-xs font-bold">Member since {profile.memberSince}</p>}</aside><section className="rounded-[28px] bg-white p-7 ring-1 ring-blue-100"><div className="flex items-center justify-between"><h2 className="text-xl font-black">Personal details</h2><button onClick={() => setEditing(value => !value)} className="text-sm font-black text-[#0967ff]">{editing ? 'Cancel' : 'Edit profile'}</button></div><div className="mt-5 grid gap-4 sm:grid-cols-2"><Field label="Name" value={form.name} editing={editing} onChange={value => setForm(current => ({ ...current, name: value }))}/><Field label="Email" value={form.email} editing={editing} onChange={value => setForm(current => ({ ...current, email: value }))}/><Field label="Phone" value={form.phoneNumber} editing={editing} onChange={value => setForm(current => ({ ...current, phoneNumber: value }))}/><Field label="About" value={form.aboutMe} editing={editing} onChange={value => setForm(current => ({ ...current, aboutMe: value }))}/></div>{message && <p className="mt-4 text-sm font-bold text-[#0967ff]">{message}</p>}{editing && <button disabled={saving} onClick={async () => { setSaving(true); setMessage(''); try { await data.updateProfile(form); setEditing(false); setMessage('Profile updated.') } catch (cause) { setMessage(cause instanceof Error ? cause.message : 'Unable to update profile.') } finally { setSaving(false) } }} className="mt-6 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white">{saving ? 'Saving…' : 'Save changes'}</button>}</section></div></div>
-}
-
-export function LiveBackendView({ screen, params, navigate }: { screen: Screen; params: any; navigate: Navigate }) {
-  const [values, setValues] = useState<unknown[]>([]); const [loading, setLoading] = useState(false); const [error, setError] = useState('')
-  const service = params?.service as LiveService | undefined
   useEffect(() => {
-    if (screen !== 'reviews' || !service?.serviceVendorMapId) return
-    setLoading(true); setError('')
-    void helpyApi.getReviews(service.serviceVendorMapId).then(setValues).catch(cause => setError(cause.message)).finally(() => setLoading(false))
-  }, [screen, service?.serviceVendorMapId])
-  if (screen === 'reviews') return <div><Heading eyebrow="CUSTOMER REVIEWS" title={service ? `Reviews for ${service.name}` : 'Customer reviews'} copy="Only verified review records returned by Helpy are shown."/>{loading ? <div className="mt-7"><State loading/></div> : error ? <div className="mt-7"><State error={error}/></div> : <RawList values={values} empty="No reviews were returned for this service."/>}</div>
-  if (screen === 'booking-success') return <div><Heading eyebrow="NOT SUBMITTED" title="This booking has not been finalised" copy="The website intentionally stops at the final review. No order or payment has been created."/><button onClick={() => navigate('all-services')} className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white">Return to services</button></div>
-  return <div><Heading eyebrow={screen === 'chat' || screen === 'chat-thread' ? 'MESSAGES' : 'HELPY'} title={screen === 'chat' || screen === 'chat-thread' ? 'Your conversations' : 'Information'} copy="No fabricated records are displayed. This view will populate when its authenticated backend contract is available."/><div className="mt-7"><State empty="No backend records are available for this view."/></div></div>
+    setService(initial);
+    setSlot("");
+    setPreview(null);
+  }, [initial?.id, initialBusiness?.id]);
+  useEffect(() => {
+    if (service || !params?.serviceVendorMapId) return;
+    let current = true;
+    void helpyApi
+      .getVendorDetails(Number(params.serviceVendorMapId))
+      .then((row) => {
+        if (current) setService(mapService(row, data.categories));
+      })
+      .catch((cause) => {
+        if (current) setError(cause.message);
+      });
+    return () => {
+      current = false;
+    };
+  }, [service, params?.serviceVendorMapId, data.categories]);
+  useEffect(() => {
+    if (!service) return;
+    let current = true;
+    const vendorId = service.vendorId || Number(service.raw.created_by);
+    setSlot("");
+    setSlots([]);
+    setError("");
+    if (!vendorId) {
+      setLoading(false);
+      setError("Booking is unavailable for this service.");
+      return;
+    }
+    setLoading(true);
+    void data
+      .getAvailability(vendorId, date)
+      .then((values) => {
+        if (current) setSlots(values);
+      })
+      .catch((cause) => {
+        if (current) setError(cause.message);
+      })
+      .finally(() => {
+        if (current) setLoading(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [service, date, data.getAvailability]);
+  if (!service) return <State loading={!error} error={error} />;
+  const business = initialBusiness ||
+    data.businesses.find((item) => item.id === service.vendorId) || {
+      id: service.vendorId,
+      name: service.provider,
+      image: "",
+      rating: service.rating,
+      about: "",
+      services: [service],
+      raw: {},
+    };
+  const available = slots.filter((value) => Boolean(value.isAvailable));
+  const cover =
+    business.services.find((item) => item.image)?.image || business.image;
+  const category = Array.from(
+    new Set(business.services.map((item) => item.category).filter(Boolean)),
+  ).join(" · ");
+  const chooseService = (item: LiveService) => {
+    setSlot("");
+    setService(item);
+  };
+
+  return (
+    <div
+      data-service-detail
+      className="grid min-w-0 items-start gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
+    >
+      <div className="min-w-0 space-y-6">
+        <section
+          aria-label={business.name}
+          className="relative overflow-hidden rounded-[28px] bg-[#102044]"
+        >
+          {cover && (
+            <img
+              src={cover}
+              alt=""
+              className="absolute inset-0 h-full w-full bg-white object-contain"
+            />
+          )}
+          <div className="absolute inset-0 bg-gradient-to-r from-[#071b52]/95 via-[#071b52]/70 to-[#071b52]/15" />
+          <div className="relative flex min-h-[260px] flex-col justify-end p-7 text-white xl:min-h-[300px] xl:p-8">
+            {category && (
+              <span className="w-fit max-w-full rounded-full bg-white/15 px-3 py-1.5 text-xs font-bold [overflow-wrap:anywhere]">
+                {category}
+              </span>
+            )}
+            <div className="mt-4 flex min-w-0 items-center gap-4">
+              {business.image && (
+                <img
+                  src={business.image}
+                  alt=""
+                  className="h-16 w-16 shrink-0 rounded-full border-4 border-white bg-white object-contain"
+                />
+              )}
+              <h1 className="min-w-0 text-[32px] font-black leading-tight tracking-[-.04em] [overflow-wrap:anywhere] xl:text-4xl">
+                {business.name}
+              </h1>
+            </div>
+            {business.about && (
+              <p className="mt-4 max-w-2xl text-sm font-medium leading-6 text-blue-50">
+                {business.about}
+              </p>
+            )}
+            {business.rating > 0 && (
+              <p className="mt-4 flex items-center gap-1.5 text-sm font-bold">
+                <Star size={16} className="fill-amber-400 text-amber-400" />
+                {business.rating}
+              </p>
+            )}
+          </div>
+        </section>
+
+        <section
+          aria-labelledby="service-options-title"
+          className="rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm xl:p-6"
+        >
+          <h2
+            id="service-options-title"
+            className="text-xl font-black text-[#102044]"
+          >
+            Select a service
+          </h2>
+          <div className="mt-5 grid grid-cols-[repeat(auto-fit,minmax(min(100%,260px),1fr))] gap-3">
+            {business.services.map((item) => {
+              const selected = service.id === item.id;
+              return (
+                <article
+                  key={item.id}
+                  className={`min-w-0 overflow-hidden rounded-2xl border ${selected ? "border-[#0967ff] bg-blue-50/60" : "border-[#e5edf7] bg-white"}`}
+                >
+                  <button
+                    onClick={() => chooseService(item)}
+                    aria-label={`Select ${item.name}`}
+                    aria-pressed={selected}
+                    className="w-full p-4 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0967ff]"
+                  >
+                    <div className="flex items-center gap-3">
+                      {item.image && (
+                        <img
+                          src={item.image}
+                          alt=""
+                          className="h-14 w-14 shrink-0 rounded-xl bg-white object-contain"
+                        />
+                      )}
+                      <h3 className="min-w-0 flex-1 text-sm font-black leading-5 text-[#102044] [overflow-wrap:anywhere]">
+                        {item.name}
+                      </h3>
+                      <span
+                        aria-hidden="true"
+                        className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border ${selected ? "border-[#0967ff] bg-[#0967ff] text-white" : "border-slate-300 bg-white"}`}
+                      >
+                        {selected && <Check size={13} />}
+                      </span>
+                    </div>
+                    {item.description && (
+                      <p className="mt-3 line-clamp-2 min-h-10 text-xs font-medium leading-5 text-[#73819a]">
+                        {item.description}
+                      </p>
+                    )}
+                    <p className="mt-3 text-sm font-black text-[#0967ff]">
+                      {money(item.price)}
+                    </p>
+                  </button>
+                  {item.description && (
+                    <button
+                      onClick={() => setPreview(item)}
+                      aria-label={`View details for ${item.name}`}
+                      className="w-full border-t border-blue-100/60 px-4 py-2.5 text-left text-xs font-bold text-[#0967ff]"
+                    >
+                      View details{" "}
+                      <ArrowRight size={12} className="ml-1 inline" />
+                    </button>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
+      <aside
+        aria-label="Booking options"
+        className="min-w-0 rounded-[24px] border border-blue-100 bg-white p-5 shadow-sm lg:sticky lg:top-28 xl:p-6"
+      >
+        <h2 className="text-xl font-black text-[#102044]">Book a time</h2>
+        <div
+          className="mt-4 flex min-w-0 items-start justify-between gap-3 border-b border-blue-50 pb-5"
+          aria-live="polite"
+        >
+          <p className="min-w-0 text-sm font-bold text-[#64738e] [overflow-wrap:anywhere]">
+            {service.name}
+          </p>
+          <p className="shrink-0 text-sm font-black text-[#0967ff]">
+            {money(service.price)}
+          </p>
+        </div>
+        <h3 className="mt-5 text-sm font-bold">Day</h3>
+        <div className="mt-3 grid grid-cols-4 gap-2">
+          {nextDates.map((value) => {
+            const parsed = new Date(`${value}T12:00:00`);
+            return (
+              <button
+                key={value}
+                aria-label={readableDate(value)}
+                aria-pressed={date === value}
+                onClick={() => {
+                  setSlot("");
+                  setDate(value);
+                }}
+                className={`min-w-0 rounded-xl px-1 py-3 text-center ${date === value ? "bg-[#0967ff] text-white" : "bg-[#f4f8fe] text-[#60708c]"}`}
+              >
+                <span className="block text-[11px] font-semibold">
+                  {new Intl.DateTimeFormat("en-QA", {
+                    weekday: "short",
+                  }).format(parsed)}
+                </span>
+                <span className="mt-1 block text-xs font-black">
+                  {new Intl.DateTimeFormat("en-QA", {
+                    day: "numeric",
+                    month: "short",
+                  }).format(parsed)}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+        <h3 className="mt-5 text-sm font-bold">Available times</h3>
+        {loading ? (
+          <p
+            role="status"
+            className="py-6 text-center text-sm font-medium text-[#73819a]"
+          >
+            Loading times…
+          </p>
+        ) : (
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            {available.map((value) => (
+              <button
+                key={`${value.date}-${value.slot}`}
+                aria-pressed={slot === value.slot}
+                onClick={() => setSlot(value.slot)}
+                className={`min-w-0 rounded-xl border px-2 py-3 text-xs font-bold [overflow-wrap:anywhere] ${slot === value.slot ? "border-[#0967ff] bg-blue-50 text-[#0967ff]" : "border-[#e2eaf5] text-[#60708c]"}`}
+              >
+                {value.slot}
+              </button>
+            ))}
+          </div>
+        )}
+        {!loading && !error && !available.length && (
+          <p className="mt-3 rounded-xl bg-[#f4f8fe] p-3 text-sm font-medium leading-5 text-[#73819a]">
+            No times available on this date. Try another day.
+          </p>
+        )}
+        {error && (
+          <p
+            role="alert"
+            className="mt-3 rounded-xl bg-red-50 p-3 text-sm font-bold text-red-600"
+          >
+            {error}
+          </p>
+        )}
+        <button
+          disabled={!slot || loading}
+          onClick={() =>
+            navigate("booking-checkout", {
+              booking: {
+                service,
+                date:
+                  available.find((value) => value.slot === slot)?.date || date,
+                slot,
+              } satisfies BookingDraft,
+            })
+          }
+          className="mt-6 w-full rounded-xl bg-[#0967ff] px-3 py-3.5 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-40"
+        >
+          Continue to booking <ArrowRight size={15} className="ml-1 inline" />
+        </button>
+      </aside>
+      {preview && (
+        <ServiceDetailsDialog
+          service={preview}
+          onClose={() => setPreview(null)}
+          onSelect={() => {
+            chooseService(preview);
+            setPreview(null);
+          }}
+        />
+      )}
+    </div>
+  );
 }
 
-export function LiveMessages({ params, navigate }: { params: any; navigate: Navigate }) {
-  const [users, setUsers] = useState<ChatUser[]>([]); const [activeId, setActiveId] = useState(String(params?.peerId || '')); const [messages, setMessages] = useState<ChatMessage[]>([]); const [ownId, setOwnId] = useState(''); const [query, setQuery] = useState(''); const [draft, setDraft] = useState(''); const [loading, setLoading] = useState(true); const [refreshing, setRefreshing] = useState(false); const [error, setError] = useState(''); const [lastUpdated, setLastUpdated] = useState<Date | null>(null); const [attachment, setAttachment] = useState<File | null>(null); const fileInput = useRef<HTMLInputElement>(null)
-  const loadUsers = async () => { const [rows, id] = await Promise.all([helpyChat.getUsers(), helpyChat.currentUserId()]); setUsers(rows); setOwnId(id); setActiveId(current => current || rows[0]?.id || '') }
-  const refreshMessages = async (peerId = activeId) => { if (!peerId || !helpyChat.configured) return; const rows = await helpyChat.getMessages(peerId); setMessages(rows); setError(''); setLastUpdated(new Date()) }
-  useEffect(() => { if (!hasHelpyUserSession() || !helpyChat.configured) { setLoading(false); return } void loadUsers().catch(cause => setError(cause.message)).finally(() => setLoading(false)) }, [])
-  useEffect(() => { if (!activeId || !helpyChat.configured) return; let live = true; const refresh = () => void refreshMessages(activeId).catch(cause => { if (live) setError(cause.message) }); refresh(); const timer = window.setInterval(refresh, 5000); return () => { live = false; window.clearInterval(timer) } }, [activeId])
-  const refreshNow = async () => { setRefreshing(true); try { await loadUsers(); await refreshMessages() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to refresh messages.') } finally { setRefreshing(false) } }
-  const send = async () => { const body = draft.trim(); if (!activeId) return; if (attachment) { setError('File sharing needs a Helpy upload endpoint and Firebase Storage rules before attachments can be sent. The selected file has not been uploaded.'); return } if (!body) return; setDraft(''); try { await helpyChat.sendMessage(activeId, body); await refreshMessages() } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to send message.') } }
-  const shown = users.filter(user => `${user.name} ${user.email}`.toLowerCase().includes(query.toLowerCase())); const active = users.find(user => user.id === activeId)
-  const updatedText = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString('en-QA', { hour: 'numeric', minute: '2-digit' })}` : 'Refresh messages'
-  if (!hasHelpyUserSession()) return <SignInState navigate={navigate} title="Sign in to open your messages"/>
-  return <div><div className="flex flex-wrap items-end justify-between gap-4"><div><h1 className="text-3xl font-black tracking-[-.045em] text-[#102044] sm:text-4xl">Messages</h1><p className="mt-2 text-sm font-semibold text-[#71809a]">Private conversations with providers and Helpy support.</p></div><button onClick={() => void refreshNow()} disabled={refreshing || !helpyChat.configured} className="inline-flex items-center gap-2 text-sm font-black text-[#63718b] transition hover:text-[#0967ff] disabled:opacity-50"><RefreshCw size={17} className={refreshing ? 'animate-spin' : ''}/>{updatedText}</button></div><div className="mt-7 grid min-h-[620px] overflow-hidden rounded-[28px] border border-blue-100 bg-white shadow-sm lg:grid-cols-[minmax(300px,34%)_minmax(0,1fr)]"><section className="flex min-h-[580px] flex-col border-b border-[#e8eef7] lg:border-b-0 lg:border-r"><div className="p-4"><div className="relative"><Search size={17} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8290a9]"/><input value={query} onChange={event => setQuery(event.target.value)} placeholder="Search conversations" className="h-12 w-full rounded-xl bg-[#f5f8fd] pl-10 pr-3 text-sm font-semibold outline-none transition focus:ring-4 focus:ring-blue-100"/></div></div><div className="border-t border-[#edf1f7]">{shown.map(user => <button key={user.id} onClick={() => setActiveId(user.id)} className={`flex w-full gap-3 border-b border-[#edf1f7] p-4 text-left transition ${activeId === user.id ? 'bg-blue-50' : 'hover:bg-blue-50/50'}`}>{user.image ? <img src={user.image} alt="" className="h-12 w-12 rounded-2xl object-cover"/> : <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#0967ff] text-xs font-black text-white">{initials(user.name)}</span>}<span className="min-w-0 flex-1"><span className="flex items-center justify-between gap-2"><span className="truncate text-sm font-black text-[#0b1637]">{user.name}</span>{user.online && <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400"/>}</span><span className="mt-1 block truncate text-xs font-semibold text-[#75839d]">{user.about || user.email || 'Helpy business'}</span></span></button>)}{loading && <p className="p-6 text-sm font-bold text-[#75839d]">Connecting to messages…</p>}{!loading && !shown.length && <div className="p-6 text-center"><MessageCircle className="mx-auto text-blue-300" size={28}/><p className="mt-3 text-sm font-black text-[#52617d]">Your provider conversations will appear here after booking.</p></div>}</div><div className="mt-auto border-t border-[#edf1f7] px-5 py-4 text-xs font-semibold leading-5 text-[#7a88a0]">Only authenticated Helpy conversations are shown here.</div></section><section className="flex min-h-[580px] flex-col bg-[#fbfcff]">{active ? <><header className="flex flex-wrap items-center gap-3 border-b border-[#e8eef7] bg-white px-5 py-4">{active.image ? <img src={active.image} alt="" className="h-11 w-11 rounded-xl object-cover"/> : <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0967ff] text-xs font-black text-white">{initials(active.name)}</span>}<div className="min-w-0 flex-1"><p className="truncate text-sm font-black text-[#0b1637]">{active.name}</p><p className="text-xs font-bold text-[#75839d]">{active.online ? 'Online' : 'Helpy business'}</p></div><button onClick={() => navigate('orders')} className="text-xs font-black text-[#0967ff]">View bookings</button></header><div className="mx-5 mt-4 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-xs font-bold text-[#60718e]"><CalendarDays size={17} className="shrink-0 text-[#0967ff]"/><span className="min-w-0 flex-1 truncate">Need help with a booking? Open your bookings to see the latest status.</span><button onClick={() => navigate('orders')} className="shrink-0 font-black text-[#0967ff]">View</button></div><div className="flex-1 space-y-4 overflow-auto px-5 py-5">{messages.length ? messages.map(message => { const mine = message.fromId === ownId; const sent = message.sent ? new Date(Number(message.sent) || message.sent) : null; const time = sent && !Number.isNaN(sent.getTime()) ? sent.toLocaleTimeString('en-QA', { hour: 'numeric', minute: '2-digit' }) : ''; return <div key={message.id} className={`flex ${mine ? 'justify-end' : 'justify-start'}`}><div className={`max-w-[78%] ${mine ? 'items-end' : 'items-start'} flex flex-col`}><div className={`rounded-2xl px-4 py-3 text-sm font-semibold leading-6 ${mine ? 'rounded-br-md bg-[#0967ff] text-white' : 'rounded-bl-md bg-white text-[#465573] shadow-sm ring-1 ring-[#e7edf7]'}`}><p>{message.body}</p></div><p className={`mt-1 flex items-center gap-1 text-[10px] font-bold ${mine ? 'text-[#71809a]' : 'text-[#98a5b8]'}`}>{time}{mine && message.read && <><span>·</span><CheckCheck size={13} className="text-[#0967ff]"/><span>Read</span></>}</p></div></div> }) : <div className="grid h-full place-items-center"><div className="max-w-xs text-center"><MessageCircle className="mx-auto text-blue-300" size={34}/><p className="mt-3 text-sm font-black text-[#0b1637]">Start the conversation</p><p className="mt-1 text-sm font-medium leading-6 text-[#75839d]">Send a message to {active.name} and it will appear here.</p></div></div>}</div><div className="border-t border-[#e8eef7] bg-white p-4">{attachment && <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800"><span className="truncate">{attachment.name} selected — uploads are not enabled yet.</span><button onClick={() => { setAttachment(null); if (fileInput.current) fileInput.current.value = '' }} aria-label="Remove selected attachment"><X size={15}/></button></div>}<div className="flex gap-2 rounded-2xl border border-[#e1e9f5] bg-[#f7faff] p-2 focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50"><input ref={fileInput} type="file" className="sr-only" onChange={event => { const file = event.target.files?.[0] || null; setAttachment(file); if (file) setError('') }}/><button onClick={() => fileInput.current?.click()} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[#61718b] transition hover:bg-white hover:text-[#0967ff]" aria-label="Choose attachment" title="Attachments need a Helpy upload endpoint before they can be sent"><Paperclip size={18}/></button><input value={draft} onChange={event => setDraft(event.target.value)} onKeyDown={event => event.key === 'Enter' && void send()} placeholder="Write a message…" className="h-10 min-w-0 flex-1 bg-transparent px-1 text-sm font-semibold outline-none"/><button onClick={() => void send()} className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0967ff] text-white shadow-sm transition hover:bg-[#0759df]" aria-label="Send message"><Send size={16}/></button></div></div></> : <div className="m-auto max-w-xs text-center"><MessageCircle className="mx-auto text-blue-300" size={34}/><p className="mt-3 font-black text-[#0b1637]">Choose a conversation</p><p className="mt-1 text-sm font-medium leading-6 text-[#75839d]">Select a provider or Helpy support from the conversation list.</p></div>}</section></div>{!helpyChat.configured && <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-bold text-amber-700">Messaging requires a backend-issued Firebase custom token. The APK’s embedded admin key was not copied into the website; configure <code>VITE_HELPY_CHAT_TOKEN_ENDPOINT</code> after moving token issuance to a secure server.</p>}{error && <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-600">{error}</p>}</div>
+function ServiceDetailsDialog({
+  service,
+  onClose,
+  onSelect,
+}: {
+  service: LiveService;
+  onClose: () => void;
+  onSelect: () => void;
+}) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  useEffect(() => {
+    const element = dialog.current;
+    element?.showModal();
+    return () => element?.close();
+  }, []);
+  return (
+    <dialog
+      ref={dialog}
+      aria-labelledby="service-preview-title"
+      onCancel={(event) => {
+        event.preventDefault();
+        onClose();
+      }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+      className="fixed max-h-[85dvh] w-[calc(100%-48px)] max-w-[600px] overflow-y-auto rounded-[24px] border-0 bg-white p-6 text-[#102044] shadow-2xl backdrop:bg-[#071b52]/45"
+    >
+      <div className="flex items-start justify-between gap-4">
+        <h2
+          id="service-preview-title"
+          className="min-w-0 text-2xl font-black [overflow-wrap:anywhere]"
+        >
+          {service.name}
+        </h2>
+        <button
+          autoFocus
+          onClick={onClose}
+          aria-label="Close service details"
+          className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#f4f8fe] text-[#64738e]"
+        >
+          <X size={19} />
+        </button>
+      </div>
+      {service.image && (
+        <img
+          src={service.image}
+          alt=""
+          className="mt-5 h-44 w-full rounded-2xl bg-[#f4f8fe] object-contain"
+        />
+      )}
+      <p className="mt-5 whitespace-pre-line text-sm font-medium leading-7 text-[#64738e] [overflow-wrap:anywhere]">
+        {service.description}
+      </p>
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-blue-100 pt-5">
+        <p className="text-xl font-black text-[#0967ff]">
+          {money(service.price)}
+        </p>
+        <button
+          onClick={onSelect}
+          className="rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-bold text-white"
+        >
+          Select service
+        </button>
+      </div>
+    </dialog>
+  );
+}
+
+export function LiveDesktopCheckout({
+  params,
+  navigate,
+}: {
+  params: any;
+  navigate: Navigate;
+}) {
+  const data = useHelpyData();
+  const draft = (params?.booking || params) as BookingDraft;
+  const [selected, setSelected] = useState<LiveAddress | undefined>(
+    params?.address ||
+      draft?.address ||
+      data.addresses.find((item) => Boolean(item.raw.is_default)) ||
+      data.addresses[0],
+  );
+  const [notes, setNotes] = useState("");
+  const [quotedPrice, setQuotedPrice] = useState<number | null>(null);
+  const [quoteLoading, setQuoteLoading] = useState(false);
+  const [processing, setProcessing] = useState(false);
+  const [phase, setPhase] = useState("");
+  const [error, setError] = useState("");
+  const [createdBookingId, setCreatedBookingId] = useState<
+    string | number | null
+  >(null);
+  const [tapUrl, setTapUrl] = useState("");
+  useEffect(() => {
+    if (!selected && data.addresses.length) setSelected(data.addresses[0]);
+  }, [data.addresses, selected]);
+  useEffect(() => {
+    if (!draft?.service?.serviceVendorMapId || !hasHelpyUserSession()) return;
+    let current = true;
+    setQuoteLoading(true);
+    setError("");
+    void helpyApi
+      .bookingPreflight(draft.service.serviceVendorMapId, "online")
+      .then((quote) => {
+        if (current) setQuotedPrice(Number(quote.final_price));
+      })
+      .catch((cause) => {
+        if (current)
+          setError(
+            cause instanceof Error
+              ? cause.message
+              : "Unable to verify the booking price.",
+          );
+      })
+      .finally(() => {
+        if (current) setQuoteLoading(false);
+      });
+    return () => {
+      current = false;
+    };
+  }, [draft?.service?.serviceVendorMapId]);
+  if (!draft?.service)
+    return (
+      <State empty="The booking draft is missing. Return to services and choose an available slot." />
+    );
+  if (!hasHelpyUserSession())
+    return (
+      <div>
+        <Heading
+          eyebrow="SIGN IN REQUIRED"
+          title="Keep your booking details safe"
+          copy="Sign in to load your saved addresses and continue to the final review."
+        />
+        <button
+          onClick={() => navigate("login")}
+          className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white"
+        >
+          Sign in to continue
+        </button>
+      </div>
+    );
+
+  const amount = quotedPrice ?? draft.service.price;
+  const startTapPayment = async () => {
+    if (processing || quoteLoading) return;
+    const service = draft.service;
+    const profile = data.profile;
+    if (!selected) {
+      setError("Choose a service address before paying.");
+      return;
+    }
+    if (!profile) {
+      setError("Your profile is still loading. Please try again.");
+      return;
+    }
+    if (!service.serviceVendorMapId || !service.vendorId) {
+      setError(
+        "This service is missing the booking details required by the backend.",
+      );
+      return;
+    }
+
+    const raw = service.raw;
+    const objectValue = (value: unknown) =>
+      value && typeof value === "object"
+        ? (value as Record<string, unknown>)
+        : {};
+    const serviceRecord = objectValue(raw.service);
+    const bookingTypeRecord = objectValue(raw.booking_type);
+    // Older published services can have a null booking_type_id. The mobile
+    // booking flow treats those legacy records as the default On-Premise type.
+    const bookingType =
+      Number(raw.booking_type_id || bookingTypeRecord.booking_type_id) || 1;
+    const userId = Number(profile.raw.id || profile.raw.user_id);
+    if (!userId) {
+      setError(
+        "Your profile is missing its account ID. Sign out, sign in again, and retry.",
+      );
+      return;
+    }
+
+    const [startValue, endValue] = draft.slot
+      .split("-")
+      .map((value) => value.trim());
+    const timeWithSeconds = (value: string) =>
+      /^\d{2}:\d{2}$/.test(value) ? `${value}:00` : value;
+    if (!startValue || !endValue) {
+      setError(
+        "The selected time slot is not valid. Please choose another time.",
+      );
+      return;
+    }
+    const startDate = new Date(`${draft.date}T${timeWithSeconds(startValue)}`);
+    const endDate = new Date(`${draft.date}T${timeWithSeconds(endValue)}`);
+    if (Number.isNaN(startDate.getTime()) || Number.isNaN(endDate.getTime())) {
+      setError(
+        "The selected time slot is not valid. Please choose another time.",
+      );
+      return;
+    }
+    if (endDate <= startDate) endDate.setDate(endDate.getDate() + 1);
+    const localDateTime = (value: Date) =>
+      `${value.getFullYear()}-${String(value.getMonth() + 1).padStart(2, "0")}-${String(value.getDate()).padStart(2, "0")} ${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}:00`;
+
+    setProcessing(true);
+    setError("");
+    setPhase(
+      createdBookingId ? "Reopening Tap checkout…" : "Creating your booking…",
+    );
+    let bookingId = createdBookingId;
+    try {
+      if (!bookingId) {
+        const price = amount.toFixed(2);
+        const booking = await helpyApi.createBooking({
+          service_vendor_mapp_id: service.serviceVendorMapId,
+          user_id: userId,
+          provider_id: service.vendorId,
+          booking_type: bookingType,
+          booking_date_time: localDateTime(startDate),
+          booking_end_datetime: localDateTime(endDate),
+          total_price: price,
+          payment_type: "online",
+          discount_amount: "0.00",
+          wallet_balance: Number(profile.wallet || 0).toFixed(2),
+          wallet_amount: "0.00",
+          payment_gateway_amount: price,
+          final_price: price,
+          location: selected.address,
+          requirements: notes.trim(),
+          booking_address: selected.address,
+          booking_address_id: selected.id,
+          payment_status: "1",
+          services: [
+            {
+              user_id: userId,
+              service_id: service.serviceId,
+              provider_id: service.vendorId,
+              service_type_id: bookingType,
+              category_id: service.categoryId,
+              service_vendor_mapp_id: service.serviceVendorMapId,
+              category_name: service.category,
+              name: String(
+                serviceRecord.name_english ||
+                  serviceRecord.name ||
+                  service.name,
+              ),
+              user_name: profile.name,
+              service_name: service.name,
+              service_type_name: String(
+                bookingTypeRecord.name_english ||
+                  bookingTypeRecord.name ||
+                  "On-Premise",
+              ),
+              provider_name: service.provider,
+              total_price: price,
+              discount_price: "0.00",
+              final_price: price,
+            },
+          ],
+        });
+        bookingId = String(booking.booking_id || booking.id || "");
+        if (!bookingId)
+          throw new Error(
+            "The booking was created without a booking reference.",
+          );
+        setCreatedBookingId(bookingId);
+      }
+
+      setPhase("Opening Tap secure checkout…");
+      const nameParts = profile.name.trim().split(/\s+/);
+      const tap = await helpyApi.createTapPayment({
+        bookingId,
+        firstName: nameParts[0] || "Helpy",
+        lastName: nameParts.slice(1).join(" ") || "User",
+        email: profile.email,
+        phone: profile.phone,
+      });
+      const payUrl = tap.resultObj?.payUrl?.trim();
+      if (
+        tap.returnCode !== "200" ||
+        tap.gateway.toLowerCase() !== "tap" ||
+        !payUrl
+      )
+        throw new Error("Tap did not return a payment URL.");
+      const paymentUrl = new URL(payUrl);
+      if (paymentUrl.protocol !== "https:")
+        throw new Error("Tap returned an invalid payment URL.");
+      setTapUrl(paymentUrl.href);
+      setPhase(
+        "Complete the payment in the secure Tap window below. We’ll verify it here automatically.",
+      );
+
+      for (let attempt = 0; attempt < 120; attempt += 1) {
+        await new Promise((resolve) => window.setTimeout(resolve, 1000));
+        const rows = await helpyApi
+          .getBookingDetails(bookingId)
+          .catch(() => []);
+        const row = rows[0] || {};
+        const payment = objectValue(row.payment);
+        const bookingStatus = Number(row.booking_status);
+        const paymentStatus = String(
+          row.payment_status || payment.payment_status || "",
+        ).toLowerCase();
+        if (
+          [0, 1, 2].includes(bookingStatus) ||
+          ["success", "paid", "captured"].includes(paymentStatus)
+        ) {
+          setTapUrl("");
+          await data.refreshAccount();
+          navigate("booking-success", {
+            bookingId,
+            service: service.name,
+            provider: service.provider,
+            amount,
+            paymentMethod: "Tap",
+            tapMode: tap.mode,
+          });
+          return;
+        }
+        if (
+          [3, 4].includes(bookingStatus) ||
+          ["failed", "declined", "cancelled", "canceled"].includes(
+            paymentStatus,
+          )
+        ) {
+          setTapUrl("");
+          setCreatedBookingId(null);
+          throw new Error(
+            "Tap could not complete this payment. Please try again.",
+          );
+        }
+      }
+      setTapUrl("");
+      setError(
+        `Payment is still being confirmed. Your booking reference is ${bookingId}; check My bookings shortly.`,
+      );
+    } catch (cause) {
+      setTapUrl("");
+      setError(
+        cause instanceof Error
+          ? cause.message
+          : "Unable to start Tap payment. Please try again.",
+      );
+    } finally {
+      setProcessing(false);
+      setPhase("");
+    }
+  };
+
+  return (
+    <div>
+      <Heading
+        eyebrow="BOOKING REVIEW"
+        title="Review every detail"
+        copy="Your booking is created only when you continue to Tap's secure checkout."
+      />
+      <div className="mt-8 grid gap-7 xl:grid-cols-[1fr_420px]">
+        <section className="space-y-6">
+          <div className="rounded-[26px] bg-white p-6 ring-1 ring-blue-100">
+            <h2 className="text-lg font-black">Service and availability</h2>
+            <div className="mt-5 grid gap-3 sm:grid-cols-3">
+              <Review label="Service" value={draft.service.name} />
+              <Review label="Date" value={readableDate(draft.date)} />
+              <Review label="Time" value={draft.slot} />
+            </div>
+          </div>
+          <div className="rounded-[26px] bg-white p-6 ring-1 ring-blue-100">
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-black">Service address</h2>
+              <button
+                onClick={() => navigate("addresses")}
+                className="text-sm font-black text-[#0967ff]"
+              >
+                Manage addresses
+              </button>
+            </div>
+            {data.accountLoading ? (
+              <p className="mt-4">Loading addresses…</p>
+            ) : data.addresses.length ? (
+              <div className="mt-4 grid gap-3">
+                {data.addresses.map((address) => (
+                  <button
+                    key={address.id}
+                    disabled={processing}
+                    onClick={() => setSelected(address)}
+                    className={`flex items-center gap-3 rounded-2xl border p-4 text-left disabled:opacity-60 ${selected?.id === address.id ? "border-[#0967ff] bg-blue-50" : "border-[#e4ebf5]"}`}
+                  >
+                    <MapPin className="text-[#0967ff]" />
+                    <span className="flex-1">
+                      <span className="block text-sm font-black">
+                        {address.title}
+                      </span>
+                      <span className="mt-1 block text-xs font-semibold text-[#73819a]">
+                        {address.address}
+                      </span>
+                    </span>
+                    {selected?.id === address.id && (
+                      <Check size={18} className="text-[#0967ff]" />
+                    )}
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-bold text-amber-700">
+                No saved address was returned by the backend. Add one in Saved
+                locations before continuing.
+              </div>
+            )}
+            <label className="mt-5 block text-sm font-black">
+              Notes for the provider
+              <textarea
+                value={notes}
+                disabled={processing}
+                onChange={(event) => setNotes(event.target.value)}
+                className="mt-2 h-24 w-full resize-none rounded-xl bg-[#f5f8fd] p-4 text-sm font-semibold outline-none disabled:opacity-60"
+                placeholder="Optional access or arrival instructions"
+              />
+            </label>
+          </div>
+          <div className="flex items-center gap-3 rounded-[22px] border border-blue-100 bg-white p-5">
+            <span className="grid h-12 w-12 shrink-0 place-items-center rounded-2xl bg-blue-50 text-[#0967ff]">
+              <ShieldCheck size={23} />
+            </span>
+            <div>
+              <h2 className="text-sm font-black">Secure payment by Tap</h2>
+              <p className="mt-1 text-xs font-semibold leading-5 text-[#73819a]">
+                Card details are entered on Tap’s hosted checkout and are never
+                handled by Helpy.
+              </p>
+            </div>
+          </div>
+        </section>
+        <aside className="h-fit rounded-[28px] bg-[#071b52] p-7 text-white">
+          <p className="text-xs font-black uppercase tracking-[.15em] text-blue-200">
+            Final summary
+          </p>
+          <h2 className="mt-3 text-2xl font-black">{draft.service.name}</h2>
+          <p className="mt-1 text-sm font-bold text-blue-100">
+            {draft.service.provider}
+          </p>
+          <div className="my-6 border-t border-white/15" />
+          <div className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-blue-100">Service price</span>
+              <strong>{quoteLoading ? "Checking…" : money(amount)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-100">Date</span>
+              <strong>{readableDate(draft.date)}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-100">Time</span>
+              <strong>{draft.slot}</strong>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-blue-100">Address</span>
+              <strong className="max-w-[210px] text-right">
+                {selected?.title || "Required"}
+              </strong>
+            </div>
+          </div>
+          {error && (
+            <div
+              role="alert"
+              className="mt-6 rounded-2xl bg-red-400/15 p-4 text-sm font-bold leading-6 text-red-100"
+            >
+              {error}
+            </div>
+          )}
+          {phase && (
+            <div
+              role="status"
+              className="mt-6 rounded-2xl bg-white/10 p-4 text-sm font-bold leading-6 text-blue-100"
+            >
+              {phase}
+            </div>
+          )}
+          <button
+            onClick={startTapPayment}
+            disabled={
+              processing ||
+              quoteLoading ||
+              !selected ||
+              !data.profile ||
+              Boolean(error && quotedPrice === null)
+            }
+            className="mt-6 flex w-full items-center justify-center gap-2 rounded-xl bg-white py-4 text-sm font-black text-[#0967ff] transition hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {processing ? (
+              <>
+                <LoaderCircle size={17} className="animate-spin" /> Verifying
+                payment…
+              </>
+            ) : (
+              <>
+                <CreditCard size={17} /> Pay {money(amount)} with Tap
+              </>
+            )}
+          </button>
+          <p className="mt-3 text-center text-[11px] font-bold text-blue-200">
+            The booking is confirmed only after Tap verifies the charge.
+          </p>
+        </aside>
+      </div>
+      {tapUrl && (
+        <div
+          className="fixed inset-0 z-[100] grid place-items-center bg-slate-100/85 p-4 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Tap secure payment"
+        >
+          <div className="flex h-[min(760px,calc(100dvh-32px))] w-full max-w-[560px] flex-col overflow-hidden rounded-[24px] border border-slate-200 bg-white text-[#102044] shadow-[0_24px_80px_rgba(15,35,70,.18)] [color-scheme:light]">
+            <div className="flex items-center justify-between border-b border-slate-200 bg-white px-5 py-4">
+              <div>
+                <p className="text-sm font-black text-[#102044]">
+                  Secure payment
+                </p>
+                <p className="mt-0.5 text-[11px] font-semibold text-slate-500">
+                  Complete your payment with Tap
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setTapUrl("")}
+                className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-bold text-slate-600 transition hover:bg-slate-200"
+              >
+                Close
+              </button>
+            </div>
+            <iframe
+              title="TAP secure payment"
+              src={tapUrl}
+              className="min-h-0 flex-1 border-0 bg-white"
+              allow="payment *"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function LiveDesktopBookings({
+  params,
+  navigate,
+}: {
+  params: any;
+  navigate: Navigate;
+}) {
+  const data = useHelpyData();
+  const initialSelected = (params?.booking ||
+    (params?.id && data.bookings.find((item) => item.id === params.id))) as
+    LiveBooking | undefined;
+  const [selected, setSelected] = useState<LiveBooking | undefined>(
+    initialSelected,
+  );
+  const [detailLoading, setDetailLoading] = useState(false);
+  const bookingId = String(params?.id || initialSelected?.id || "");
+  useEffect(() => {
+    if (!bookingId || !hasHelpyUserSession()) return;
+    setDetailLoading(true);
+    void helpyApi
+      .getBookingDetails(bookingId)
+      .then((rows) =>
+        setSelected(
+          rows[0]
+            ? mapBooking(rows[0], initialSelected?.status || "Booking")
+            : initialSelected,
+        ),
+      )
+      .catch(() => {
+        if (!initialSelected) setSelected(undefined);
+      })
+      .finally(() => setDetailLoading(false));
+  }, [bookingId]);
+  if (!hasHelpyUserSession())
+    return (
+      <SignInState navigate={navigate} title="Sign in to see your bookings" />
+    );
+  if (detailLoading && !selected) return <State loading />;
+  if (selected)
+    return (
+      <div>
+        <Heading
+          eyebrow="BOOKING DETAILS"
+          title={selected.service}
+          copy={`${selected.provider} · ${selected.status}`}
+        />
+        <div className="mt-8 rounded-[28px] bg-white p-7 ring-1 ring-blue-100">
+          <div className="grid gap-4 sm:grid-cols-4">
+            <Review label="Date" value={readableDate(selected.date)} />
+            <Review label="Time" value={selected.time || "Not provided"} />
+            <Review
+              label="Location"
+              value={selected.address || "Not provided"}
+            />
+            <Review label="Total" value={money(selected.price)} />
+          </div>
+        </div>
+      </div>
+    );
+  return (
+    <div>
+      <Heading
+        eyebrow="MY BOOKINGS"
+        title="Every booking, easy to follow"
+        copy="Live booking history from your Helpy account."
+      />
+      {data.accountLoading ? (
+        <div className="mt-8">
+          <State loading />
+        </div>
+      ) : data.bookings.length ? (
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          {data.bookings.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => navigate("order-detail", { id: item.id })}
+              className="rounded-[24px] border border-blue-100 bg-white p-5 text-left"
+            >
+              <div className="flex items-center gap-4">
+                {item.image ? (
+                  <img
+                    src={item.image}
+                    alt=""
+                    className="h-14 w-14 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <span className="grid h-14 w-14 place-items-center rounded-2xl bg-blue-50 text-sm font-black text-[#0967ff]">
+                    {initials(item.provider)}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-xs font-black text-[#0967ff]">
+                    {item.provider}
+                  </p>
+                  <h2 className="mt-1 truncate text-lg font-black">
+                    {item.service}
+                  </h2>
+                </div>
+                <span className="rounded-full bg-blue-50 px-3 py-1 text-xs font-black text-[#0967ff]">
+                  {item.status}
+                </span>
+              </div>
+              <p className="mt-5 border-t border-blue-50 pt-4 text-xs font-bold text-[#75839d]">
+                {readableDate(item.date)} · {item.time || "Time unavailable"}
+              </p>
+            </button>
+          ))}
+        </div>
+      ) : (
+        <div className="mt-8">
+          <State empty="No bookings were returned for this account." />
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function LiveDesktopAccount({
+  screen,
+  navigate,
+}: {
+  screen: Screen;
+  navigate: Navigate;
+}) {
+  const data = useHelpyData();
+  const profile = data.profile;
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [form, setForm] = useState({
+    name: "",
+    email: "",
+    phoneNumber: "",
+    aboutMe: "",
+  });
+  useEffect(() => {
+    if (profile)
+      setForm({
+        name: profile.name,
+        email: profile.email,
+        phoneNumber: profile.phone,
+        aboutMe: profile.about,
+      });
+  }, [profile]);
+  if (!hasHelpyUserSession())
+    return (
+      <SignInState navigate={navigate} title="Sign in to manage your account" />
+    );
+  if (data.accountLoading && !profile) return <State loading />;
+  if (screen === "wallet")
+    return (
+      <div>
+        <Heading
+          eyebrow="HELPY WALLET"
+          title="Pay your way"
+          copy="Balance and transactions returned by your Helpy account."
+        />
+        <div className="mt-8 rounded-[28px] bg-gradient-to-r from-[#0750bf] to-[#3199ff] p-8 text-white">
+          <p className="text-sm font-bold">Available balance</p>
+          <p className="mt-3 text-5xl font-black">
+            {money(profile?.wallet || 0)}
+          </p>
+        </div>
+        <RawList
+          values={data.walletHistory}
+          empty="No wallet activity was returned."
+        />
+      </div>
+    );
+  if (screen === "favorites")
+    return (
+      <div>
+        <Heading
+          eyebrow="SAVED"
+          title="Saved services"
+          copy="Your favourites returned by Helpy."
+        />
+        <RawList values={data.favorites} empty="You have no saved services." />
+      </div>
+    );
+  if (screen === "notifications")
+    return (
+      <div>
+        <Heading
+          eyebrow="UPDATES"
+          title="Notifications"
+          copy="Account and booking updates from Helpy."
+        />
+        <RawList
+          values={data.notifications}
+          empty="You have no notifications."
+        />
+      </div>
+    );
+  if (screen === "addresses") return <LiveAddresses navigate={navigate} />;
+  return (
+    <div>
+      <Heading
+        eyebrow="ACCOUNT"
+        title="Your profile"
+        copy="Your account details, loaded directly from Helpy."
+      />
+      <div className="mt-8 grid gap-6 xl:grid-cols-[360px_1fr]">
+        <aside className="rounded-[28px] bg-[#0967ff] p-7 text-white">
+          {profile?.image ? (
+            <img
+              src={profile.image}
+              alt=""
+              className="h-20 w-20 rounded-2xl object-cover"
+            />
+          ) : (
+            <div className="grid h-20 w-20 place-items-center rounded-2xl bg-white/15 text-2xl font-black">
+              {initials(profile?.name || "")}
+            </div>
+          )}
+          <h2 className="mt-5 text-2xl font-black">
+            {profile?.name || "Name unavailable"}
+          </h2>
+          <p className="mt-1 text-sm font-bold text-blue-100">
+            {profile?.email || "Email unavailable"}
+          </p>
+          {profile?.memberSince && (
+            <p className="mt-7 border-t border-white/15 pt-5 text-xs font-bold">
+              Member since {profile.memberSince}
+            </p>
+          )}
+        </aside>
+        <section className="rounded-[28px] bg-white p-7 ring-1 ring-blue-100">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-black">Personal details</h2>
+            <button
+              onClick={() => setEditing((value) => !value)}
+              className="text-sm font-black text-[#0967ff]"
+            >
+              {editing ? "Cancel" : "Edit profile"}
+            </button>
+          </div>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Name"
+              value={form.name}
+              editing={editing}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, name: value }))
+              }
+            />
+            <Field
+              label="Email"
+              value={form.email}
+              editing={editing}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, email: value }))
+              }
+            />
+            <Field
+              label="Phone"
+              value={form.phoneNumber}
+              editing={editing}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, phoneNumber: value }))
+              }
+            />
+            <Field
+              label="About"
+              value={form.aboutMe}
+              editing={editing}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, aboutMe: value }))
+              }
+            />
+          </div>
+          {message && (
+            <p className="mt-4 text-sm font-bold text-[#0967ff]">{message}</p>
+          )}
+          {editing && (
+            <button
+              disabled={saving}
+              onClick={async () => {
+                setSaving(true);
+                setMessage("");
+                try {
+                  await data.updateProfile(form);
+                  setEditing(false);
+                  setMessage("Profile updated.");
+                } catch (cause) {
+                  setMessage(
+                    cause instanceof Error
+                      ? cause.message
+                      : "Unable to update profile.",
+                  );
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              className="mt-6 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white"
+            >
+              {saving ? "Saving…" : "Save changes"}
+            </button>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}
+
+export function LiveBackendView({
+  screen,
+  params,
+  navigate,
+}: {
+  screen: Screen;
+  params: any;
+  navigate: Navigate;
+}) {
+  const [values, setValues] = useState<unknown[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const service = params?.service as LiveService | undefined;
+  useEffect(() => {
+    if (screen !== "reviews" || !service?.serviceVendorMapId) return;
+    setLoading(true);
+    setError("");
+    void helpyApi
+      .getReviews(service.serviceVendorMapId)
+      .then(setValues)
+      .catch((cause) => setError(cause.message))
+      .finally(() => setLoading(false));
+  }, [screen, service?.serviceVendorMapId]);
+  if (screen === "reviews")
+    return (
+      <div>
+        <Heading
+          eyebrow="CUSTOMER REVIEWS"
+          title={service ? `Reviews for ${service.name}` : "Customer reviews"}
+          copy="Only verified review records returned by Helpy are shown."
+        />
+        {loading ? (
+          <div className="mt-7">
+            <State loading />
+          </div>
+        ) : error ? (
+          <div className="mt-7">
+            <State error={error} />
+          </div>
+        ) : (
+          <RawList
+            values={values}
+            empty="No reviews were returned for this service."
+          />
+        )}
+      </div>
+    );
+  if (screen === "booking-success")
+    return (
+      <div className="mx-auto max-w-2xl rounded-[30px] border border-blue-100 bg-white p-8 text-center shadow-sm sm:p-12">
+        <span className="mx-auto grid h-16 w-16 place-items-center rounded-full bg-emerald-50 text-emerald-600">
+          <CheckCheck size={31} />
+        </span>
+        <p className="mt-6 text-xs font-black uppercase tracking-[.15em] text-[#0967ff]">
+          {params?.tapMode === "test"
+            ? "Sandbox payment confirmed"
+            : "Payment confirmed"}
+        </p>
+        <h1 className="mt-2 text-3xl font-black tracking-[-.04em] text-[#102044]">
+          Your booking is confirmed
+        </h1>
+        <p className="mt-3 text-sm font-semibold leading-6 text-[#6c7b94]">
+          Tap securely confirmed your {params?.service || "service"} payment
+          {params?.bookingId ? ` for booking ${params.bookingId}` : ""}.
+        </p>
+        {params?.tapMode === "test" && (
+          <p className="mt-4 rounded-xl bg-amber-50 px-4 py-3 text-sm font-bold text-amber-700">
+            This was a Tap sandbox charge. No real money was collected.
+          </p>
+        )}
+        {Number.isFinite(Number(params?.amount)) && (
+          <p className="mt-6 text-2xl font-black text-[#0967ff]">
+            {money(Number(params.amount))}
+          </p>
+        )}
+        <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+          <button
+            onClick={() => navigate("order-detail", { id: params?.bookingId })}
+            className="rounded-xl bg-[#0967ff] px-6 py-3.5 text-sm font-black text-white"
+          >
+            View booking
+          </button>
+          <button
+            onClick={() => navigate("all-services")}
+            className="rounded-xl border border-blue-100 px-6 py-3.5 text-sm font-black text-[#0967ff]"
+          >
+            Browse more services
+          </button>
+        </div>
+      </div>
+    );
+  return (
+    <div>
+      <Heading
+        eyebrow={
+          screen === "chat" || screen === "chat-thread" ? "MESSAGES" : "HELPY"
+        }
+        title={
+          screen === "chat" || screen === "chat-thread"
+            ? "Your conversations"
+            : "Information"
+        }
+        copy="No fabricated records are displayed. This view will populate when its authenticated backend contract is available."
+      />
+      <div className="mt-7">
+        <State empty="No backend records are available for this view." />
+      </div>
+    </div>
+  );
+}
+
+export function LiveMessages({
+  params,
+  navigate,
+}: {
+  params: any;
+  navigate: Navigate;
+}) {
+  const [users, setUsers] = useState<ChatUser[]>([]);
+  const [activeId, setActiveId] = useState(String(params?.peerId || ""));
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [ownId, setOwnId] = useState("");
+  const [query, setQuery] = useState("");
+  const [draft, setDraft] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState("");
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [attachment, setAttachment] = useState<File | null>(null);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const loadUsers = async () => {
+    const [rows, id] = await Promise.all([
+      helpyChat.getUsers(),
+      helpyChat.currentUserId(),
+    ]);
+    setUsers(rows);
+    setOwnId(id);
+    setActiveId((current) => current || rows[0]?.id || "");
+  };
+  const refreshMessages = async (peerId = activeId) => {
+    if (!peerId || !helpyChat.configured) return;
+    const rows = await helpyChat.getMessages(peerId);
+    setMessages(rows);
+    setError("");
+    setLastUpdated(new Date());
+  };
+  useEffect(() => {
+    if (!hasHelpyUserSession() || !helpyChat.configured) {
+      setLoading(false);
+      return;
+    }
+    void loadUsers()
+      .catch((cause) => setError(cause.message))
+      .finally(() => setLoading(false));
+  }, []);
+  useEffect(() => {
+    if (!activeId || !helpyChat.configured) return;
+    let live = true;
+    const refresh = () =>
+      void refreshMessages(activeId).catch((cause) => {
+        if (live) setError(cause.message);
+      });
+    refresh();
+    const timer = window.setInterval(refresh, 5000);
+    return () => {
+      live = false;
+      window.clearInterval(timer);
+    };
+  }, [activeId]);
+  const refreshNow = async () => {
+    setRefreshing(true);
+    try {
+      await loadUsers();
+      await refreshMessages();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Unable to refresh messages.",
+      );
+    } finally {
+      setRefreshing(false);
+    }
+  };
+  const send = async () => {
+    const body = draft.trim();
+    if (!activeId) return;
+    if (attachment) {
+      setError(
+        "File sharing needs a Helpy upload endpoint and Firebase Storage rules before attachments can be sent. The selected file has not been uploaded.",
+      );
+      return;
+    }
+    if (!body) return;
+    setDraft("");
+    try {
+      await helpyChat.sendMessage(activeId, body);
+      await refreshMessages();
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "Unable to send message.",
+      );
+    }
+  };
+  const shown = users.filter((user) =>
+    `${user.name} ${user.email}`.toLowerCase().includes(query.toLowerCase()),
+  );
+  const active = users.find((user) => user.id === activeId);
+  const updatedText = lastUpdated
+    ? `Updated ${lastUpdated.toLocaleTimeString("en-QA", { hour: "numeric", minute: "2-digit" })}`
+    : "Refresh messages";
+  if (!hasHelpyUserSession())
+    return (
+      <SignInState navigate={navigate} title="Sign in to open your messages" />
+    );
+  return (
+    <div>
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-black tracking-[-.045em] text-[#102044] sm:text-4xl">
+            Messages
+          </h1>
+          <p className="mt-2 text-sm font-semibold text-[#71809a]">
+            Private conversations with providers and Helpy support.
+          </p>
+        </div>
+        <button
+          onClick={() => void refreshNow()}
+          disabled={refreshing || !helpyChat.configured}
+          className="inline-flex items-center gap-2 text-sm font-black text-[#63718b] transition hover:text-[#0967ff] disabled:opacity-50"
+        >
+          <RefreshCw size={17} className={refreshing ? "animate-spin" : ""} />
+          {updatedText}
+        </button>
+      </div>
+      <div className="mt-7 grid min-h-[620px] overflow-hidden rounded-[28px] border border-blue-100 bg-white shadow-sm lg:grid-cols-[minmax(300px,34%)_minmax(0,1fr)]">
+        <section className="flex min-h-[580px] flex-col border-b border-[#e8eef7] lg:border-b-0 lg:border-r">
+          <div className="p-4">
+            <div className="relative">
+              <Search
+                size={17}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[#8290a9]"
+              />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Search conversations"
+                className="h-12 w-full rounded-xl bg-[#f5f8fd] pl-10 pr-3 text-sm font-semibold outline-none transition focus:ring-4 focus:ring-blue-100"
+              />
+            </div>
+          </div>
+          <div className="border-t border-[#edf1f7]">
+            {shown.map((user) => (
+              <button
+                key={user.id}
+                onClick={() => setActiveId(user.id)}
+                className={`flex w-full gap-3 border-b border-[#edf1f7] p-4 text-left transition ${activeId === user.id ? "bg-blue-50" : "hover:bg-blue-50/50"}`}
+              >
+                {user.image ? (
+                  <img
+                    src={user.image}
+                    alt=""
+                    className="h-12 w-12 rounded-2xl object-cover"
+                  />
+                ) : (
+                  <span className="grid h-12 w-12 place-items-center rounded-2xl bg-[#0967ff] text-xs font-black text-white">
+                    {initials(user.name)}
+                  </span>
+                )}
+                <span className="min-w-0 flex-1">
+                  <span className="flex items-center justify-between gap-2">
+                    <span className="truncate text-sm font-black text-[#0b1637]">
+                      {user.name}
+                    </span>
+                    {user.online && (
+                      <span className="h-2 w-2 shrink-0 rounded-full bg-emerald-400" />
+                    )}
+                  </span>
+                  <span className="mt-1 block truncate text-xs font-semibold text-[#75839d]">
+                    {user.about || user.email || "Helpy business"}
+                  </span>
+                </span>
+              </button>
+            ))}
+            {loading && (
+              <p className="p-6 text-sm font-bold text-[#75839d]">
+                Connecting to messages…
+              </p>
+            )}
+            {!loading && !shown.length && (
+              <div className="p-6 text-center">
+                <MessageCircle className="mx-auto text-blue-300" size={28} />
+                <p className="mt-3 text-sm font-black text-[#52617d]">
+                  Your provider conversations will appear here after booking.
+                </p>
+              </div>
+            )}
+          </div>
+          <div className="mt-auto border-t border-[#edf1f7] px-5 py-4 text-xs font-semibold leading-5 text-[#7a88a0]">
+            Only authenticated Helpy conversations are shown here.
+          </div>
+        </section>
+        <section className="flex min-h-[580px] flex-col bg-[#fbfcff]">
+          {active ? (
+            <>
+              <header className="flex flex-wrap items-center gap-3 border-b border-[#e8eef7] bg-white px-5 py-4">
+                {active.image ? (
+                  <img
+                    src={active.image}
+                    alt=""
+                    className="h-11 w-11 rounded-xl object-cover"
+                  />
+                ) : (
+                  <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#0967ff] text-xs font-black text-white">
+                    {initials(active.name)}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-black text-[#0b1637]">
+                    {active.name}
+                  </p>
+                  <p className="text-xs font-bold text-[#75839d]">
+                    {active.online ? "Online" : "Helpy business"}
+                  </p>
+                </div>
+                <button
+                  onClick={() => navigate("orders")}
+                  className="text-xs font-black text-[#0967ff]"
+                >
+                  View bookings
+                </button>
+              </header>
+              <div className="mx-5 mt-4 flex items-center gap-3 rounded-xl border border-blue-100 bg-blue-50/50 px-4 py-3 text-xs font-bold text-[#60718e]">
+                <CalendarDays size={17} className="shrink-0 text-[#0967ff]" />
+                <span className="min-w-0 flex-1 truncate">
+                  Need help with a booking? Open your bookings to see the latest
+                  status.
+                </span>
+                <button
+                  onClick={() => navigate("orders")}
+                  className="shrink-0 font-black text-[#0967ff]"
+                >
+                  View
+                </button>
+              </div>
+              <div className="flex-1 space-y-4 overflow-auto px-5 py-5">
+                {messages.length ? (
+                  messages.map((message) => {
+                    const mine = message.fromId === ownId;
+                    const sent = message.sent
+                      ? new Date(Number(message.sent) || message.sent)
+                      : null;
+                    const time =
+                      sent && !Number.isNaN(sent.getTime())
+                        ? sent.toLocaleTimeString("en-QA", {
+                            hour: "numeric",
+                            minute: "2-digit",
+                          })
+                        : "";
+                    return (
+                      <div
+                        key={message.id}
+                        className={`flex ${mine ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[78%] ${mine ? "items-end" : "items-start"} flex flex-col`}
+                        >
+                          <div
+                            className={`rounded-2xl px-4 py-3 text-sm font-semibold leading-6 ${mine ? "rounded-br-md bg-[#0967ff] text-white" : "rounded-bl-md bg-white text-[#465573] shadow-sm ring-1 ring-[#e7edf7]"}`}
+                          >
+                            <p>{message.body}</p>
+                          </div>
+                          <p
+                            className={`mt-1 flex items-center gap-1 text-[10px] font-bold ${mine ? "text-[#71809a]" : "text-[#98a5b8]"}`}
+                          >
+                            {time}
+                            {mine && message.read && (
+                              <>
+                                <span>·</span>
+                                <CheckCheck
+                                  size={13}
+                                  className="text-[#0967ff]"
+                                />
+                                <span>Read</span>
+                              </>
+                            )}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })
+                ) : (
+                  <div className="grid h-full place-items-center">
+                    <div className="max-w-xs text-center">
+                      <MessageCircle
+                        className="mx-auto text-blue-300"
+                        size={34}
+                      />
+                      <p className="mt-3 text-sm font-black text-[#0b1637]">
+                        Start the conversation
+                      </p>
+                      <p className="mt-1 text-sm font-medium leading-6 text-[#75839d]">
+                        Send a message to {active.name} and it will appear here.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="border-t border-[#e8eef7] bg-white p-4">
+                {attachment && (
+                  <div className="mb-3 flex items-center justify-between gap-3 rounded-xl border border-amber-200 bg-amber-50 px-3 py-2 text-xs font-bold text-amber-800">
+                    <span className="truncate">
+                      {attachment.name} selected — uploads are not enabled yet.
+                    </span>
+                    <button
+                      onClick={() => {
+                        setAttachment(null);
+                        if (fileInput.current) fileInput.current.value = "";
+                      }}
+                      aria-label="Remove selected attachment"
+                    >
+                      <X size={15} />
+                    </button>
+                  </div>
+                )}
+                <div className="flex gap-2 rounded-2xl border border-[#e1e9f5] bg-[#f7faff] p-2 focus-within:border-blue-200 focus-within:ring-4 focus-within:ring-blue-50">
+                  <input
+                    ref={fileInput}
+                    type="file"
+                    className="sr-only"
+                    onChange={(event) => {
+                      const file = event.target.files?.[0] || null;
+                      setAttachment(file);
+                      if (file) setError("");
+                    }}
+                  />
+                  <button
+                    onClick={() => fileInput.current?.click()}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl text-[#61718b] transition hover:bg-white hover:text-[#0967ff]"
+                    aria-label="Choose attachment"
+                    title="Attachments need a Helpy upload endpoint before they can be sent"
+                  >
+                    <Paperclip size={18} />
+                  </button>
+                  <input
+                    value={draft}
+                    onChange={(event) => setDraft(event.target.value)}
+                    onKeyDown={(event) => event.key === "Enter" && void send()}
+                    placeholder="Write a message…"
+                    className="h-10 min-w-0 flex-1 bg-transparent px-1 text-sm font-semibold outline-none"
+                  />
+                  <button
+                    onClick={() => void send()}
+                    className="grid h-10 w-10 shrink-0 place-items-center rounded-xl bg-[#0967ff] text-white shadow-sm transition hover:bg-[#0759df]"
+                    aria-label="Send message"
+                  >
+                    <Send size={16} />
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="m-auto max-w-xs text-center">
+              <MessageCircle className="mx-auto text-blue-300" size={34} />
+              <p className="mt-3 font-black text-[#0b1637]">
+                Choose a conversation
+              </p>
+              <p className="mt-1 text-sm font-medium leading-6 text-[#75839d]">
+                Select a provider or Helpy support from the conversation list.
+              </p>
+            </div>
+          )}
+        </section>
+      </div>
+      {!helpyChat.configured && (
+        <p className="mt-4 rounded-xl bg-amber-50 p-4 text-sm font-bold text-amber-700">
+          Messaging requires a backend-issued Firebase custom token. The APK’s
+          embedded admin key was not copied into the website; configure{" "}
+          <code>VITE_HELPY_CHAT_TOKEN_ENDPOINT</code> after moving token
+          issuance to a secure server.
+        </p>
+      )}
+      {error && (
+        <p className="mt-4 rounded-xl bg-red-50 p-4 text-sm font-bold text-red-600">
+          {error}
+        </p>
+      )}
+    </div>
+  );
 }
 
 function LiveAddresses({ navigate }: { navigate: Navigate }) {
-  const data = useHelpyData(); const [show, setShow] = useState(false); const [saving, setSaving] = useState(false); const [error, setError] = useState(''); const [states, setStates] = useState<Array<{ id: number; name: string }>>([]); const [cities, setCities] = useState<Array<{ id: number; name: string }>>([]); const [form, setForm] = useState({ title: '', address: '', stateId: 0, cityId: 0, notes: '' })
-  useEffect(() => { if (show && !states.length) void helpyApi.getStates().then(rows => setStates(rows.map(row => ({ id: row.id, name: row.name })))) }, [show, states.length])
-  useEffect(() => { if (form.stateId) void helpyApi.getCities(form.stateId).then(rows => setCities(rows.map(row => ({ id: row.id, name: row.name })))) }, [form.stateId])
-  return <div><Heading eyebrow="YOUR PLACES" title="Saved locations" copy="Addresses returned by your account and used during booking."/><button onClick={() => setShow(value => !value)} className="mt-6 rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-black text-white">{show ? 'Close form' : 'Add address'}</button>{show && <div className="mt-5 rounded-[26px] bg-white p-6 ring-1 ring-blue-100"><div className="grid gap-4 sm:grid-cols-2"><Input label="Label" value={form.title} onChange={value => setForm(current => ({ ...current, title: value }))}/><Input label="Full address" value={form.address} onChange={value => setForm(current => ({ ...current, address: value }))}/><label className="text-sm font-black">State<select value={form.stateId} onChange={event => setForm(current => ({ ...current, stateId: Number(event.target.value), cityId: 0 }))} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-3"><option value={0}>Select state</option>{states.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label><label className="text-sm font-black">City<select value={form.cityId} onChange={event => setForm(current => ({ ...current, cityId: Number(event.target.value) }))} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-3"><option value={0}>Select city</option>{cities.map(item => <option key={item.id} value={item.id}>{item.name}</option>)}</select></label></div>{error && <p className="mt-4 text-sm font-bold text-red-600">{error}</p>}<button disabled={saving || !form.title || !form.address || !form.stateId || !form.cityId} onClick={async () => { setSaving(true); setError(''); try { await data.addAddress(form); setShow(false) } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to save address.') } finally { setSaving(false) } }} className="mt-5 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white disabled:opacity-40">{saving ? 'Saving…' : 'Save address'}</button></div>}<div className="mt-7 grid gap-4 md:grid-cols-2">{data.addresses.map(address => <article key={address.id} className="rounded-[22px] border border-blue-100 bg-white p-5"><MapPin className="text-[#0967ff]"/><h2 className="mt-3 font-black">{address.title}</h2><p className="mt-1 text-sm font-semibold text-[#73819a]">{address.address}</p></article>)}</div>{!data.addresses.length && !show && <div className="mt-7"><State empty="No saved addresses were returned."/></div>}</div>
+  const data = useHelpyData();
+  const [show, setShow] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState("");
+  const [states, setStates] = useState<Array<{ id: number; name: string }>>([]);
+  const [cities, setCities] = useState<Array<{ id: number; name: string }>>([]);
+  const [form, setForm] = useState({
+    title: "",
+    address: "",
+    stateId: 0,
+    cityId: 0,
+    notes: "",
+  });
+  useEffect(() => {
+    if (show && !states.length)
+      void helpyApi
+        .getStates()
+        .then((rows) =>
+          setStates(rows.map((row) => ({ id: row.id, name: row.name }))),
+        );
+  }, [show, states.length]);
+  useEffect(() => {
+    if (form.stateId)
+      void helpyApi
+        .getCities(form.stateId)
+        .then((rows) =>
+          setCities(rows.map((row) => ({ id: row.id, name: row.name }))),
+        );
+  }, [form.stateId]);
+  return (
+    <div>
+      <Heading
+        eyebrow="YOUR PLACES"
+        title="Saved locations"
+        copy="Addresses returned by your account and used during booking."
+      />
+      <button
+        onClick={() => setShow((value) => !value)}
+        className="mt-6 rounded-xl bg-[#0967ff] px-5 py-3 text-sm font-black text-white"
+      >
+        {show ? "Close form" : "Add address"}
+      </button>
+      {show && (
+        <div className="mt-5 rounded-[26px] bg-white p-6 ring-1 ring-blue-100">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <Input
+              label="Label"
+              value={form.title}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, title: value }))
+              }
+            />
+            <Input
+              label="Full address"
+              value={form.address}
+              onChange={(value) =>
+                setForm((current) => ({ ...current, address: value }))
+              }
+            />
+            <label className="text-sm font-black">
+              State
+              <select
+                value={form.stateId}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    stateId: Number(event.target.value),
+                    cityId: 0,
+                  }))
+                }
+                className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-3"
+              >
+                <option value={0}>Select state</option>
+                {states.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="text-sm font-black">
+              City
+              <select
+                value={form.cityId}
+                onChange={(event) =>
+                  setForm((current) => ({
+                    ...current,
+                    cityId: Number(event.target.value),
+                  }))
+                }
+                className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-3"
+              >
+                <option value={0}>Select city</option>
+                {cities.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          {error && (
+            <p className="mt-4 text-sm font-bold text-red-600">{error}</p>
+          )}
+          <button
+            disabled={
+              saving ||
+              !form.title ||
+              !form.address ||
+              !form.stateId ||
+              !form.cityId
+            }
+            onClick={async () => {
+              setSaving(true);
+              setError("");
+              try {
+                await data.addAddress(form);
+                setShow(false);
+              } catch (cause) {
+                setError(
+                  cause instanceof Error
+                    ? cause.message
+                    : "Unable to save address.",
+                );
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="mt-5 rounded-xl bg-[#0967ff] px-6 py-3 text-sm font-black text-white disabled:opacity-40"
+          >
+            {saving ? "Saving…" : "Save address"}
+          </button>
+        </div>
+      )}
+      <div className="mt-7 grid gap-4 md:grid-cols-2">
+        {data.addresses.map((address) => (
+          <article
+            key={address.id}
+            className="rounded-[22px] border border-blue-100 bg-white p-5"
+          >
+            <MapPin className="text-[#0967ff]" />
+            <h2 className="mt-3 font-black">{address.title}</h2>
+            <p className="mt-1 text-sm font-semibold text-[#73819a]">
+              {address.address}
+            </p>
+          </article>
+        ))}
+      </div>
+      {!data.addresses.length && !show && (
+        <div className="mt-7">
+          <State empty="No saved addresses were returned." />
+        </div>
+      )}
+    </div>
+  );
 }
 
-function SignInState({ navigate, title }: { navigate: Navigate; title: string }) { return <div><Heading title={title}/><button onClick={() => navigate('login')} className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white">Sign in</button></div> }
-function Review({ label, value }: { label: string; value: string }) { return <div className="rounded-2xl bg-[#f5f8fd] p-4"><p className="text-[10px] font-black uppercase tracking-wide text-[#8a97ab]">{label}</p><p className="mt-2 text-sm font-black">{value}</p></div> }
-function Field({ label, value, editing, onChange }: { label: string; value: string; editing: boolean; onChange: (value: string) => void }) { return <label className="text-sm font-black">{label}<input value={value} disabled={!editing} onChange={event => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-4 text-sm font-semibold disabled:text-[#65738c]"/></label> }
-function Input({ label, value, onChange }: { label: string; value: string; onChange: (value: string) => void }) { return <label className="text-sm font-black">{label}<input value={value} onChange={event => onChange(event.target.value)} className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-4 text-sm font-semibold outline-none"/></label> }
-function RawList({ values, empty }: { values: unknown[]; empty: string }) { if (!values.length) return <div className="mt-7"><State empty={empty}/></div>; return <div className="mt-7 space-y-3">{values.map((value, index) => { const row = value && typeof value === 'object' ? value as Record<string, unknown> : {}; const title = String(row.title || row.name || row.service_name || row.type || `Item ${index + 1}`); const detail = String(row.message || row.description || row.amount || row.created_at_formatted || ''); return <div key={String(row.id || index)} className="rounded-2xl bg-white p-5 ring-1 ring-blue-100"><p className="font-black">{title}</p>{detail && <p className="mt-1 text-sm font-semibold text-[#73819a]">{detail}</p>}</div> })}</div> }
+function SignInState({
+  navigate,
+  title,
+}: {
+  navigate: Navigate;
+  title: string;
+}) {
+  return (
+    <div>
+      <Heading title={title} />
+      <button
+        onClick={() => navigate("login")}
+        className="mt-7 rounded-xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white"
+      >
+        Sign in
+      </button>
+    </div>
+  );
+}
+function Review({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-2xl bg-[#f5f8fd] p-4">
+      <p className="text-[10px] font-black uppercase tracking-wide text-[#8a97ab]">
+        {label}
+      </p>
+      <p className="mt-2 text-sm font-black">{value}</p>
+    </div>
+  );
+}
+function Field({
+  label,
+  value,
+  editing,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  editing: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="text-sm font-black">
+      {label}
+      <input
+        value={value}
+        disabled={!editing}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-4 text-sm font-semibold disabled:text-[#65738c]"
+      />
+    </label>
+  );
+}
+function Input({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="text-sm font-black">
+      {label}
+      <input
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="mt-2 h-12 w-full rounded-xl bg-[#f5f8fd] px-4 text-sm font-semibold outline-none"
+      />
+    </label>
+  );
+}
+function RawList({ values, empty }: { values: unknown[]; empty: string }) {
+  if (!values.length)
+    return (
+      <div className="mt-7">
+        <State empty={empty} />
+      </div>
+    );
+  return (
+    <div className="mt-7 space-y-3">
+      {values.map((value, index) => {
+        const row =
+          value && typeof value === "object"
+            ? (value as Record<string, unknown>)
+            : {};
+        const title = String(
+          row.title ||
+            row.name ||
+            row.service_name ||
+            row.type ||
+            `Item ${index + 1}`,
+        );
+        const detail = String(
+          row.message ||
+            row.description ||
+            row.amount ||
+            row.created_at_formatted ||
+            "",
+        );
+        return (
+          <div
+            key={String(row.id || index)}
+            className="rounded-2xl bg-white p-5 ring-1 ring-blue-100"
+          >
+            <p className="font-black">{title}</p>
+            {detail && (
+              <p className="mt-1 text-sm font-semibold text-[#73819a]">
+                {detail}
+              </p>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
