@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, ReactNode } from 'react
 import { hasHelpyUserSession } from '../api/helpy'
 
 export type Screen =
-  | 'splash' | 'login' | 'verify' | 'home' | 'orders' | 'chat' | 'profile'
+  | 'splash' | 'login' | 'signup' | 'verify' | 'home' | 'orders' | 'chat' | 'profile'
   | 'categories' | 'location' | 'service-detail' | 'booking-confirm' | 'booking-checkout'
   | 'booking-success' | 'glow-checkout' | 'chat-thread' | 'wallet' | 'favorites'
   | 'addresses' | 'contact-us' | 'terms' | 'privacy' | 'notifications'
@@ -39,7 +39,7 @@ export interface BookedService {
 const Ctx = createContext<NavCtx>(null as any)
 
 const SCREENS: Screen[] = [
-  'splash', 'login', 'verify', 'home', 'orders', 'chat', 'profile', 'categories',
+  'splash', 'login', 'signup', 'verify', 'home', 'orders', 'chat', 'profile', 'categories',
   'location', 'service-detail', 'booking-confirm', 'booking-checkout', 'booking-success',
   'glow-checkout', 'chat-thread', 'wallet', 'favorites', 'addresses', 'contact-us',
   'terms', 'privacy', 'notifications', 'order-detail', 'category-services', 'deals',

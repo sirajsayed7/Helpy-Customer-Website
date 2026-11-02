@@ -10,6 +10,7 @@ export default function VerifyPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const email = params?.email || ''
+  const signingUp = Boolean(params?.signup)
   const inputs = useRef<Array<HTMLInputElement | null>>([])
   const verify = async () => {
     const code = digits.join('')
@@ -71,7 +72,7 @@ export default function VerifyPage() {
           <div className="-mt-2"><HelpyLogo size="sm" /></div>
         </div>
         <div className="mt-10 rounded-[28px] bg-white/58 px-4 py-6 shadow-[0_18px_46px_rgba(15,23,42,0.12)] backdrop-blur-md">
-          <h1 className="text-[36px] leading-none font-black tracking-tight text-[#0c1230]">Verify Code</h1>
+          <h1 className="text-[36px] leading-none font-black tracking-tight text-[#0c1230]">{signingUp ? 'Confirm email' : 'Verify Code'}</h1>
           <p className="mt-4 text-[16px] leading-6 text-[#10152f] font-semibold">We've sent a verification code to<br/><span className="text-[#0059b8] font-black">{email || 'your email address'}</span>.</p>
         </div>
         <div className="mt-8 flex justify-between gap-2" aria-label="Six-digit verification code">
@@ -80,7 +81,7 @@ export default function VerifyPage() {
               className={`w-[46px] h-[56px] bg-white rounded-xl text-center text-[28px] font-black text-[#0059a9] outline-none shadow-[0_10px_20px_rgba(15,23,42,0.10)] ${error?'ring-2 ring-red-400':''}`}/>
           ))}
         </div>
-        <button onClick={verify} disabled={loading} className="mt-8 w-full h-[56px] rounded-xl bg-[#0057ac] text-white text-[20px] font-black shadow-lg disabled:cursor-wait disabled:opacity-70">{loading ? 'Verifying…' : 'Continue'}</button>
+        <button onClick={verify} disabled={loading} className="mt-8 w-full h-[56px] rounded-xl bg-[#0057ac] text-white text-[20px] font-black shadow-lg disabled:cursor-wait disabled:opacity-70">{loading ? 'Verifying…' : signingUp ? 'Create account' : 'Continue'}</button>
         {error && <p role="alert" className="mt-3 text-center text-red-500 font-bold">{error}</p>}
         <div className="mt-7 mx-auto max-w-[260px] rounded-2xl bg-white/88 px-5 py-3 text-center text-[16px] text-[#10152f] shadow-[0_12px_30px_rgba(15,23,42,0.14)] backdrop-blur">
           <p className="font-semibold">Didn't get a code?</p>

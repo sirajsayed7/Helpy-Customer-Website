@@ -3,6 +3,7 @@ import { NavProvider, useNav } from './context/NavContext'
 import { BottomNav } from './components/shared'
 
 import LoginPage          from './pages/LoginPage'
+import SignUpPage         from './pages/SignUpPage'
 import SplashPage         from './pages/SplashPage'
 import VerifyPage         from './pages/VerifyPage'
 import HomePage           from './pages/HomePage'
@@ -26,7 +27,7 @@ import ReviewsPage        from './subpages/ReviewsPage'
 import DesktopWebsite     from './desktop/DesktopWebsite'
 import { HelpyDataProvider } from './context/HelpyDataContext'
 
-const AUTH = ['splash','login','verify']
+const AUTH = ['splash','login','signup','verify']
 const FULLSCREEN = ['chat-thread','service-detail','booking-success','glow-checkout','booking-checkout','location','reviews']
 
 function AppShell() {
@@ -45,6 +46,7 @@ function AppShell() {
     switch (screen) {
       case 'splash':             return <SplashPage/>
       case 'login':              return <LoginPage/>
+      case 'signup':             return <SignUpPage/>
       case 'verify':             return <VerifyPage/>
       case 'home':               return <HomePage/>
       case 'orders':             return <OrdersPage/>

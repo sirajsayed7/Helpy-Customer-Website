@@ -2,7 +2,7 @@ import {
   ArrowLeft, ArrowRight, Bell, Bookmark, CalendarDays, Check, CheckCircle2,
   ChevronDown, ChevronRight, CircleHelp, Clock3, CreditCard, FileText, Heart,
   Home, Inbox, Landmark, LayoutGrid, Mail, MapPin, Menu, MessageCircle, MoreHorizontal,
-  PackageCheck, Plus, Search, Send, Settings, ShieldCheck, Sparkles, Star, LogOut,
+  PackageCheck, Phone, Plus, Search, Send, Settings, ShieldCheck, Sparkles, Star, LogOut,
   UserRound, Wallet, X, Zap, type LucideIcon,
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from 'react'
@@ -96,7 +96,7 @@ export default function DesktopWebsite() {
   }, [screen])
 
   if (screen === 'splash') return <WelcomeScreen navigate={navigate} />
-  if (screen === 'login' || screen === 'verify') return <DesktopAuthScreen screen={screen} params={params} navigate={navigate} goBack={goBack} login={login} />
+  if (screen === 'login' || screen === 'signup' || screen === 'verify') return <DesktopAuthScreen screen={screen} params={params} navigate={navigate} goBack={goBack} login={login} />
 
   return <div className="website-shell min-h-screen bg-[#f4f7fc] text-[#102044]">
     <DesktopTopBar screen={screen} navigate={navigate} />
@@ -204,7 +204,7 @@ function WelcomeScreen({ navigate }: { navigate: (screen: Screen, params?: any) 
     <div className="relative mx-auto flex min-h-screen max-w-[1540px] flex-col px-5 py-5 sm:px-8 lg:px-12 lg:py-8">
       <header className="flex h-[72px] items-center justify-between rounded-[26px] border border-white/80 bg-white/75 px-5 shadow-[0_14px_42px_rgba(50,103,173,.10)] backdrop-blur-xl sm:px-7">
         <img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="h-12 w-[86px] object-contain object-left" />
-        <div className="flex items-center gap-2 sm:gap-4"><span className="hidden items-center gap-2 text-sm font-bold text-[#52617d] sm:inline-flex"><MapPin size={18} className="text-[#0967ff]"/>Doha</span><button onClick={() => navigate('login')} className="rounded-xl bg-[#0967ff] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-[#0759df]">Sign in</button></div>
+        <div className="flex items-center gap-2 sm:gap-4"><span className="hidden items-center gap-2 text-sm font-bold text-[#52617d] sm:inline-flex"><MapPin size={18} className="text-[#0967ff]"/>Doha</span><button onClick={() => navigate('login')} className="hidden rounded-xl px-3 py-2.5 text-sm font-black text-[#0967ff] transition hover:bg-blue-50 sm:inline-flex">Sign in</button><button onClick={() => navigate('signup')} className="rounded-xl bg-[#0967ff] px-4 py-2.5 text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:-translate-y-0.5 hover:bg-[#0759df]">Create account</button></div>
       </header>
 
       <main className="mt-7 grid items-center gap-9 py-4 lg:grid-cols-[.93fr_1.07fr] lg:gap-14 xl:mt-9">
@@ -212,7 +212,7 @@ function WelcomeScreen({ navigate }: { navigate: (screen: Screen, params?: any) 
           <div className="inline-flex items-center gap-2 rounded-full border border-blue-200/80 bg-white/80 px-3.5 py-2 text-xs font-black text-[#3e5f9d] shadow-sm"><Sparkles size={15} className="text-[#0967ff]"/>Qatar’s everyday service platform</div>
           <h1 className="mt-7 text-5xl font-black leading-[.95] tracking-[-.065em] text-[#071b52] sm:text-6xl xl:text-7xl">Services at your <span className="block bg-gradient-to-r from-[#0967ff] via-[#177bff] to-[#55b8ef] bg-clip-text text-transparent">fingertips.</span></h1>
           <p className="mt-6 max-w-xl text-base font-medium leading-8 text-[#64738f] sm:text-lg">Discover verified local professionals, choose a time that suits you, and keep every booking beautifully simple.</p>
-          <div className="mt-8 flex flex-wrap gap-3"><button onClick={() => navigate('home')} className="inline-flex items-center gap-2 rounded-2xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white shadow-[0_14px_30px_rgba(9,103,255,.28)] transition hover:-translate-y-0.5 hover:bg-[#0759df]">Explore services <ArrowRight size={18}/></button><button onClick={() => navigate('login')} className="rounded-2xl border border-blue-200 bg-white/80 px-6 py-4 text-sm font-black text-[#0b1637] transition hover:border-blue-300 hover:bg-white">Sign in</button></div>
+          <div className="mt-8 flex flex-wrap gap-3"><button onClick={() => navigate('home')} className="inline-flex items-center gap-2 rounded-2xl bg-[#0967ff] px-6 py-4 text-sm font-black text-white shadow-[0_14px_30px_rgba(9,103,255,.28)] transition hover:-translate-y-0.5 hover:bg-[#0759df]">Explore services <ArrowRight size={18}/></button><button onClick={() => navigate('signup')} className="rounded-2xl border border-blue-200 bg-white/80 px-6 py-4 text-sm font-black text-[#0b1637] transition hover:border-blue-300 hover:bg-white">Create account</button></div>
           <div className="mt-8 grid max-w-[620px] gap-3 border-y border-blue-100/90 py-5 sm:grid-cols-3 sm:gap-0 sm:divide-x sm:divide-blue-100"><div className="flex items-center gap-2.5 sm:pr-4"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-emerald-50 text-emerald-600"><ShieldCheck size={19}/></span><span><strong className="block text-sm font-black">Verified pros</strong><small className="text-xs font-semibold text-[#71809a]">Trusted & reviewed</small></span></div><div className="flex items-center gap-2.5 sm:px-4"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-blue-50 text-[#0967ff]"><CalendarDays size={19}/></span><span><strong className="block text-sm font-black">Easy booking</strong><small className="text-xs font-semibold text-[#71809a]">In minutes</small></span></div><div className="flex items-center gap-2.5 sm:pl-4"><span className="grid h-10 w-10 place-items-center rounded-2xl bg-violet-50 text-violet-600"><Sparkles size={19}/></span><span><strong className="block text-sm font-black">Local to Doha</strong><small className="text-xs font-semibold text-[#71809a]">Services near you</small></span></div></div>
           <div className="mt-5 flex items-center gap-3"><div className="flex -space-x-2.5"><span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#d9e8ff] text-[10px] font-black text-[#1956a9]">SA</span><span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#f7dfd9] text-[10px] font-black text-[#a24a3d]">MA</span><span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#e7ddff] text-[10px] font-black text-[#7045ba]">RK</span><span className="grid h-9 w-9 place-items-center rounded-full border-2 border-white bg-[#d7f2e9] text-[10px] font-black text-[#16795f]">LN</span></div><div><div className="flex items-center gap-0.5 text-amber-400"><Star size={14} fill="currentColor"/><Star size={14} fill="currentColor"/><Star size={14} fill="currentColor"/><Star size={14} fill="currentColor"/><Star size={14} fill="currentColor"/></div><p className="mt-0.5 text-xs font-bold text-[#71809a]">4.8 from 3,200+ happy customers</p></div></div>
         </section>
@@ -245,23 +245,45 @@ function AuthScreen({ screen, navigate, goBack }: { screen: Screen; navigate: (s
 
 function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen: Screen; params: any; navigate: (screen: Screen, params?: any) => void; goBack: () => void; login: () => void }) {
   const [email, setEmail] = useState(params?.email || '')
+  const [firstName, setFirstName] = useState(params?.firstName || '')
+  const [lastName, setLastName] = useState(params?.lastName || '')
+  const [phoneNumber, setPhoneNumber] = useState(params?.phoneNumber || '')
+  const [accepted, setAccepted] = useState(false)
   const [code, setCode] = useState(Array(6).fill(''))
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const codeInputs = useRef<Array<HTMLInputElement | null>>([])
   const verifying = screen === 'verify'
+  const signingUp = screen === 'signup'
 
   const sendCode = async () => {
     const value = email.trim().toLowerCase()
+    if (signingUp && firstName.trim().length < 2) {
+      setError('Enter your first name.')
+      return
+    }
+    if (signingUp && lastName.trim().length < 2) {
+      setError('Enter your last name.')
+      return
+    }
+    const cleanPhone = phoneNumber.replace(/[^\d+]/g, '')
+    if (signingUp && !/^\+?\d{7,15}$/.test(cleanPhone)) {
+      setError('Enter a valid phone number.')
+      return
+    }
     if (!/^\S+@\S+\.\S+$/.test(value)) {
       setError('Enter a valid email address.')
+      return
+    }
+    if (signingUp && !accepted) {
+      setError('Please accept the terms to continue.')
       return
     }
     setLoading(true)
     setError('')
     try {
       await requestLoginOtp(value)
-      navigate('verify', { email: value })
+      navigate('verify', { email: value, firstName: signingUp ? firstName.trim() : undefined, lastName: signingUp ? lastName.trim() : undefined, fullName: signingUp ? `${firstName.trim()} ${lastName.trim()}` : undefined, phoneNumber: signingUp ? cleanPhone : undefined, signup: signingUp })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to send the verification code.')
     } finally {
@@ -322,36 +344,45 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
     if (event.key === 'ArrowRight' && index < 5) codeInputs.current[index + 1]?.focus()
   }
 
-  return <div className="grid min-h-screen bg-[#f4f7fc] lg:grid-cols-[1.05fr_.95fr]">
-    <div className="relative hidden overflow-hidden bg-[#0967ff] p-12 text-white lg:block">
-      <img src="/assets/doha-katara-crescent-hero.png" alt="" className="absolute inset-0 h-full w-full object-cover opacity-30"/>
-      <div className="absolute inset-0 bg-gradient-to-br from-[#042b77]/90 via-[#0967ff]/80 to-[#16b9b3]/70"/>
-      <div className="relative flex h-full max-w-lg flex-col">
-        <button onClick={() => navigate('splash')} className="w-fit text-3xl font-black">helpy<span className="text-[#bde7ff]">.</span></button>
-        <div className="my-auto"><div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/15 backdrop-blur"><ShieldCheck size={28} /></div><h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-.05em]">A more helpful way to get things done.</h1><p className="mt-5 text-lg leading-8 text-blue-100">Book the people and services your day needs—without the endless searching.</p></div>
-        <p className="text-sm font-bold text-blue-100">Verified providers. Simple booking. Total peace of mind.</p>
+  return <div className="grid min-h-screen overflow-hidden bg-[#eaf3ff] lg:grid-cols-2">
+    <div className="relative hidden min-h-screen overflow-hidden bg-[#0967ff] p-12 text-white lg:block xl:p-14">
+      <img src="/assets/doha-katara-crescent-hero.png" alt="" className="absolute inset-0 h-full w-full scale-105 object-cover opacity-50"/>
+      <div className="absolute inset-0 bg-[linear-gradient(145deg,rgba(7,54,151,.97),rgba(24,105,255,.82)_52%,rgba(10,176,197,.72))]"/>
+      <div className="absolute -right-32 -top-32 h-[31rem] w-[31rem] rounded-full border-[36px] border-white/15"/><div className="absolute -bottom-32 -left-32 h-[25rem] w-[25rem] rounded-full border-[30px] border-white/10"/>
+      <div className="absolute left-[18%] top-[29%] h-20 w-20 rounded-full bg-white/10 blur-2xl"/>
+      <div className="relative flex h-full max-w-[590px] flex-col lg:-translate-y-5">
+        <button onClick={() => navigate('splash')} className="grid h-24 w-[164px] place-items-center bg-transparent p-0 transition-transform duration-300 hover:scale-[1.03]" aria-label="Helpy home"><img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="h-[88px] w-[152px] object-contain brightness-0 invert"/></button>
+        <div className="my-auto max-w-[535px] rounded-[38px] border border-white/35 bg-white/[.13] p-9 shadow-[0_28px_70px_rgba(4,31,92,.28)] backdrop-blur-2xl xl:p-10"><div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-white/30 bg-white/[.16] shadow-lg shadow-blue-950/15"><ShieldCheck size={28} /></div><h1 className="mt-7 text-5xl font-black leading-[1.02] tracking-[-.06em] xl:text-[56px]">A more helpful way to get things done.</h1><p className="mt-5 max-w-[440px] text-lg leading-8 text-blue-50">Book the people and services your day needs—without the endless searching.</p><div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/25 pt-5 text-sm font-bold text-white/95"><span className="inline-flex items-center gap-2"><CheckCircle2 size={17}/>People you trust</span><span className="inline-flex items-center gap-2"><CheckCircle2 size={17}/>Easy booking</span></div></div>
+        <p className="mt-8 text-sm font-bold tracking-[.01em] text-blue-50">Verified providers. Simple booking. Total peace of mind.</p>
       </div>
     </div>
-    <div className="flex items-center justify-center px-5 py-12 sm:px-8">
-      <div className="w-full max-w-[440px]">
-        <button onClick={goBack} className="mb-10 inline-flex items-center gap-2 text-sm font-black text-[#64738f] transition hover:text-[#0967ff]"><ArrowLeft size={16}/> Back</button>
-        <p className="text-sm font-black uppercase tracking-[.14em] text-[#0967ff]">{verifying ? 'Almost there' : 'Welcome to Helpy'}</p>
-        <h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your email' : 'Let’s get you started'}</h2>
-        <p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 6-digit code to ${params?.email || email || 'your email address'}.` : 'Enter your email address to receive a secure sign-in code.'}</p>
+    <div className="relative flex min-h-screen items-center justify-center overflow-y-auto bg-[radial-gradient(circle_at_88%_5%,rgba(118,193,255,.62),transparent_32%),radial-gradient(circle_at_8%_95%,rgba(192,216,255,.72),transparent_29%),linear-gradient(145deg,#f9fcff,#edf4ff)] px-5 py-8 sm:px-8 lg:py-10">
+      <div className="pointer-events-none absolute -right-24 top-20 h-72 w-72 rounded-full border-[28px] border-white/45"/><div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full border-[28px] border-[#cde2ff]/55"/>
+      <div className="relative w-full max-w-[560px] overflow-hidden rounded-[38px] border border-white/90 bg-[linear-gradient(145deg,rgba(255,255,255,.74),rgba(245,250,255,.52))] p-7 shadow-[0_28px_80px_rgba(34,84,152,.20),inset_0_1px_0_rgba(255,255,255,.92)] backdrop-blur-2xl sm:p-9 lg:-translate-y-5">
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-white/95"/><div className="pointer-events-none absolute -right-20 top-16 h-52 w-52 rounded-full bg-[#74beff]/18 blur-3xl"/><div className="pointer-events-none absolute -left-16 bottom-10 h-44 w-44 rounded-full bg-[#d5e6ff]/60 blur-3xl"/>
+        <div className="relative">
+        <button onClick={goBack} className="mb-6 inline-flex items-center gap-2 text-sm font-black text-[#64738f] transition hover:text-[#0967ff]"><ArrowLeft size={16}/> Back</button>
+        <p className="text-sm font-black uppercase tracking-[.14em] text-[#0967ff]">{verifying ? 'Almost there' : signingUp ? 'Welcome to Helpy' : 'Welcome back'}</p>
+        <h2 className="mt-2 text-4xl font-black tracking-[-.045em]">{verifying ? 'Confirm your email' : signingUp ? 'Create your account' : 'Sign in to Helpy'}</h2>
+        <p className="mt-3 leading-7 text-[#63718b]">{verifying ? `We’ve sent a 6-digit code to ${params?.email || email || 'your email address'}.` : signingUp ? 'Create your free account to save bookings, places and providers you trust.' : 'Enter your email address to receive a secure sign-in code.'}</p>
         {verifying ? <>
           <div className="mt-8 flex justify-between gap-2 sm:gap-3" aria-label="Six-digit verification code">
-            {code.map((digit, index) => <input key={index} ref={element => { codeInputs.current[index] = element }} value={digit} onChange={event => updateCode(event.target.value, index)} onKeyDown={event => handleCodeKeyDown(event, index)} onFocus={event => event.currentTarget.select()} inputMode="numeric" autoComplete={index === 0 ? 'one-time-code' : 'off'} maxLength={6} aria-label={`Digit ${index + 1} of 6`} className="h-14 w-11 rounded-xl border border-[#dfe8f5] bg-white text-center text-xl font-black outline-none transition sm:h-16 sm:w-14 sm:text-2xl focus:border-[#0967ff] focus:ring-4 focus:ring-blue-100" />)}
+            {code.map((digit, index) => <input key={index} ref={element => { codeInputs.current[index] = element }} value={digit} onChange={event => updateCode(event.target.value, index)} onKeyDown={event => handleCodeKeyDown(event, index)} onFocus={event => event.currentTarget.select()} inputMode="numeric" autoComplete={index === 0 ? 'one-time-code' : 'off'} maxLength={6} aria-label={`Digit ${index + 1} of 6`} className="h-14 w-11 rounded-2xl border border-white/95 bg-white/55 text-center text-xl font-black shadow-[0_8px_18px_rgba(59,111,178,.10),inset_0_1px_0_rgba(255,255,255,.9)] outline-none backdrop-blur-md transition sm:h-16 sm:w-14 sm:text-2xl focus:border-[#0967ff] focus:bg-white/80 focus:ring-4 focus:ring-blue-100" />)}
           </div>
           {error && <p role="alert" className="mt-4 text-sm font-bold text-red-500">{error}</p>}
-          <button onClick={verifyCode} disabled={loading} className="mt-7 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df] disabled:cursor-wait disabled:opacity-70">{loading ? 'Verifying…' : 'Verify & continue'}</button>
+          <button onClick={verifyCode} disabled={loading} className="mt-7 h-14 w-full rounded-2xl bg-gradient-to-r from-[#0967ff] to-[#3d8dff] text-sm font-black text-white shadow-[0_14px_30px_rgba(9,103,255,.28)] transition hover:brightness-105 disabled:cursor-wait disabled:opacity-70">{loading ? 'Verifying…' : params?.signup ? 'Create account' : 'Verify & continue'}</button>
           <button onClick={resendCode} disabled={loading} className="mt-5 w-full text-sm font-black text-[#0967ff] disabled:opacity-60">Resend code</button>
         </> : <>
-          <label className="mt-8 block text-sm font-black">Email address</label>
-          <div className="mt-2 flex h-14 items-center rounded-2xl border border-[#dfe8f5] bg-white px-4 focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><Mail size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={email} onChange={event => setEmail(event.target.value)} onKeyDown={event => event.key === 'Enter' && sendCode()} type="email" autoComplete="email" placeholder="you@example.com" className="min-w-0 flex-1 text-base font-bold outline-none"/></div>
+          {signingUp && <><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="block text-sm font-black">First name<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><UserRound size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={firstName} onChange={event => setFirstName(event.target.value)} autoComplete="given-name" placeholder="First name" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label><label className="block text-sm font-black">Last name<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><input value={lastName} onChange={event => setLastName(event.target.value)} autoComplete="family-name" placeholder="Last name" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label></div><label className="mt-4 block text-sm font-black">Phone number<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><Phone size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={phoneNumber} onChange={event => setPhoneNumber(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="+974 55 000 000" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label></>}
+          <label className="mt-5 block text-sm font-black">Email address</label>
+          <div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><Mail size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={email} onChange={event => setEmail(event.target.value)} onKeyDown={event => event.key === 'Enter' && sendCode()} type="email" autoComplete="email" placeholder="you@example.com" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div>
           <p className="mt-3 text-sm font-semibold leading-6 text-[#73809a]">We’ll send a one-time verification code. No password is required.</p>
+          {signingUp && <label className="mt-4 flex cursor-pointer items-start gap-3 text-sm font-semibold leading-6 text-[#64738f]"><button type="button" onClick={() => setAccepted(value => !value)} className={`mt-0.5 grid h-5 w-5 shrink-0 place-items-center rounded-md border transition ${accepted ? 'border-[#0967ff] bg-[#0967ff] text-white' : 'border-[#c8d5e8] bg-white text-transparent'}`} aria-label="Accept terms"><Check size={14} strokeWidth={3}/></button><span>I agree to Helpy’s <button type="button" onClick={() => navigate('terms')} className="font-black text-[#0967ff]">Terms</button> and <button type="button" onClick={() => navigate('privacy')} className="font-black text-[#0967ff]">Privacy Policy</button>.</span></label>}
           {error && <p role="alert" className="mt-3 text-sm font-bold text-red-500">{error}</p>}
-          <button onClick={sendCode} disabled={loading} className="mt-5 h-14 w-full rounded-2xl bg-[#0967ff] text-sm font-black text-white shadow-lg shadow-blue-200 transition hover:bg-[#0759df] disabled:cursor-wait disabled:opacity-70">{loading ? 'Sending code…' : <>Continue <ArrowRight size={17} className="ml-1 inline" /></>}</button>
+          <button onClick={sendCode} disabled={loading} className="mt-4 h-12 w-full rounded-2xl bg-gradient-to-r from-[#0967ff] to-[#3d8dff] text-sm font-black text-white shadow-[0_14px_30px_rgba(9,103,255,.28)] transition hover:brightness-105 disabled:cursor-wait disabled:opacity-70">{loading ? 'Sending code…' : signingUp ? 'Create account' : <>Continue <ArrowRight size={17} className="ml-1 inline" /></>}</button>
+          <p className="mt-3 text-center text-sm font-semibold text-[#71809a]">{signingUp ? <>Already have an account? <button onClick={() => navigate('login')} className="font-black text-[#0967ff]">Sign in</button></> : <>New to Helpy? <button onClick={() => navigate('signup')} className="font-black text-[#0967ff]">Create an account</button></>}</p>
         </>}
+        </div>
       </div>
     </div>
   </div>
