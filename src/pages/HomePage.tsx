@@ -274,13 +274,14 @@ export default function HomePage() {
   }
 
   return (
-    <div className="relative flex flex-col flex-1 overflow-hidden bg-[#d8edff]">
+    <div className="relative flex flex-col flex-1 overflow-hidden bg-[#eaf5ff]">
       <img
         src="/assets/home-wave-background-extra-light-preview.png"
         alt=""
-        className="absolute inset-0 h-full w-full object-cover object-top"
+        className="absolute inset-0 h-full w-full object-cover object-top opacity-80"
         aria-hidden="true"
       />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_82%_8%,rgba(139,202,255,.35),transparent_26%),linear-gradient(180deg,rgba(255,255,255,.16),rgba(234,245,255,.28))]" aria-hidden="true" />
       <StatusBar />
       <div className="relative z-10 flex-1 overflow-y-auto px-4 pb-28">
         <div className="flex items-center justify-between gap-3">
@@ -293,14 +294,14 @@ export default function HomePage() {
               <h1 className="text-[23px] leading-6 font-black text-black truncate">Welcome to Helpy</h1>
             </div>
           </div>
-          <button onClick={()=>navigate('notifications')} className="relative w-10 h-10 rounded-[16px] bg-white shadow-md flex items-center justify-center shrink-0">
+          <button onClick={()=>navigate('notifications')} className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-white/90 bg-white/[.86] shadow-[0_8px_20px_rgba(44,92,151,.12)] backdrop-blur-xl">
             <Bell size={20}/>
             <span className="absolute right-2.5 top-2.5 w-2 h-2 bg-[#0967ff] rounded-full"/>
           </button>
         </div>
 
         <div className="mt-2.5 grid grid-cols-[minmax(0,1fr)_auto] gap-3 items-center">
-          <button onClick={()=>navigate('location')} className="min-w-0 h-[42px] rounded-[21px] bg-white shadow-sm flex items-center gap-2.5 px-3.5 text-left">
+          <button onClick={()=>navigate('location')} className="flex h-[42px] min-w-0 items-center gap-2.5 rounded-[21px] border border-white/90 bg-white/[.84] px-3.5 text-left shadow-[0_7px_18px_rgba(44,92,151,.10)] backdrop-blur-xl">
             <span className="relative w-7 h-7 rounded-full bg-[#fff3bf] flex items-center justify-center shrink-0 shadow-sm">
               <MapPin size={19} className="text-[#0967ff] fill-[#0967ff]"/>
               <span className="absolute top-[8px] left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#ffd43b] border border-white"/>
@@ -308,13 +309,13 @@ export default function HomePage() {
             <span className="flex-1 truncate text-[14px] font-semibold">Viva Bahriya 10, The Pearl-Qatar</span>
             <ChevronDown size={18} className="shrink-0"/>
           </button>
-          <button onClick={()=>navigate('wallet')} className="h-[42px] rounded-[21px] bg-white border border-[#8cbcff] text-[#0967ff] font-black text-[12px] flex items-center gap-2 px-3.5 whitespace-nowrap">
+          <button onClick={()=>navigate('wallet')} className="flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[21px] border border-white/90 bg-white/[.84] px-3.5 text-[12px] font-black text-[#0967ff] shadow-[0_7px_18px_rgba(44,92,151,.10)] backdrop-blur-xl">
             <Wallet size={17}/>Wallet
           </button>
         </div>
 
         <div className="mt-3">
-          <div className="h-[42px] rounded-[21px] bg-white shadow-sm flex items-center gap-2.5 px-4 min-w-0">
+          <div className="flex h-[42px] min-w-0 items-center gap-2.5 rounded-[21px] border border-white/90 bg-white/[.86] px-4 shadow-[0_8px_20px_rgba(44,92,151,.11)] backdrop-blur-xl">
             <Search size={21} className="shrink-0 text-[#111827]"/>
             <input className="bg-transparent outline-none flex-1 min-w-0 text-[14px] placeholder:text-[#73789b]" placeholder={searchPrompt ? `Search for ${searchPrompt}...` : 'Search for...'}/>
           </div>
@@ -334,7 +335,7 @@ export default function HomePage() {
           className="mt-3 overflow-x-auto snap-x snap-mandatory flex gap-3 no-scrollbar"
         >
           {loopAds.map((ad,index)=> (
-            <button key={`${ad.id}-${index}`} onClick={()=>navigate('service-detail', mobileServiceParams(ad.service))} className="relative shrink-0 snap-center w-full h-[166px] max-[360px]:h-[150px] rounded-[20px] overflow-hidden text-left shadow-sm bg-white">
+            <button key={`${ad.id}-${index}`} onClick={()=>navigate('service-detail', mobileServiceParams(ad.service))} className="relative h-[166px] w-full shrink-0 snap-center overflow-hidden rounded-[22px] border border-white/90 bg-white/[.84] text-left shadow-[0_10px_26px_rgba(35,76,135,.13)] max-[360px]:h-[150px]">
               <img
                 src={ad.img}
                 className="absolute inset-0 w-full h-full object-cover"
@@ -367,7 +368,7 @@ export default function HomePage() {
         <SectionTitle title="Categories" onClick={()=>navigate('categories')} compact />
         <div className="grid grid-cols-4 gap-2.5 max-[360px]:gap-2">
           {mobileCategories.map(c=>(
-            <button key={c.id} onClick={()=>navigate('category-services',{categoryId:c.id,label:c.label})} className="h-[94px] max-[360px]:h-[86px] bg-white rounded-[18px] shadow-sm flex flex-col items-center justify-center gap-1.5 max-[360px]:gap-1 px-1 active:scale-95 transition overflow-hidden">
+            <button key={c.id} onClick={()=>navigate('category-services',{categoryId:c.id,label:c.label})} className="flex h-[94px] flex-col items-center justify-center gap-1.5 overflow-hidden rounded-[20px] border border-white/90 bg-white/[.82] px-1 shadow-[0_8px_20px_rgba(44,92,151,.10)] backdrop-blur-xl transition active:scale-95 max-[360px]:h-[86px] max-[360px]:gap-1">
               <div className="w-[92px] h-[68px] max-[360px]:w-[72px] max-[360px]:h-[56px] flex items-center justify-center overflow-hidden">
                 {c.img ? <img src={c.img} className="h-full w-full object-contain"/> : <span className="text-lg font-black text-[#0967ff]">{c.label.slice(0, 1)}</span>}
               </div>
@@ -383,7 +384,7 @@ export default function HomePage() {
         <SectionTitle title="Deals for you" onClick={()=>navigate('deals')} />
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
           {liveFeatured.slice(0, 6).map(deal=>(
-            <button key={deal.name} onClick={()=>navigate('service-detail',mobileServiceParams(deal.service))} className="relative h-[118px] w-[142px] shrink-0 overflow-hidden rounded-[18px] bg-white text-left shadow-sm active:scale-[0.99] transition">
+            <button key={deal.name} onClick={()=>navigate('service-detail',mobileServiceParams(deal.service))} className="relative h-[118px] w-[142px] shrink-0 overflow-hidden rounded-[20px] border border-white/90 bg-white/[.86] text-left shadow-[0_8px_20px_rgba(44,92,151,.10)] transition active:scale-[0.99]">
               <img src={deal.img} className="absolute left-0 top-0 h-[62px] w-full object-cover"/>
               <div className="absolute inset-x-0 top-0 h-[72px] bg-gradient-to-b from-white/0 via-white/15 to-white"/>
               <span className="absolute left-2.5 top-2.5 z-10 rounded-md bg-[#dfff2d] px-1.5 py-0.5 text-[9px] font-black text-[#1d2b00] shadow-sm">FEATURED</span>
@@ -399,7 +400,7 @@ export default function HomePage() {
         <SectionTitle title="Offers & Events" onClick={()=>navigate('offers-events')} />
         <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
           {liveFeatured.slice(0, 3).map(item=>(
-            <button key={item.name} onClick={()=>navigate('service-detail',mobileServiceParams(item.service))} className="relative h-[116px] w-[252px] shrink-0 overflow-hidden rounded-[20px] bg-white text-left shadow-sm active:scale-[0.99] transition">
+            <button key={item.name} onClick={()=>navigate('service-detail',mobileServiceParams(item.service))} className="relative h-[116px] w-[252px] shrink-0 overflow-hidden rounded-[22px] border border-white/90 bg-white/[.86] text-left shadow-[0_8px_20px_rgba(44,92,151,.10)] transition active:scale-[0.99]">
               <img src={item.img} className="absolute inset-0 h-full w-full object-cover"/>
               <div className="absolute inset-0 bg-gradient-to-r from-white via-white/88 to-white/16"/>
               <div className="relative h-full p-3.5">
@@ -416,7 +417,7 @@ export default function HomePage() {
         <SectionTitle title="Popular providers" onClick={()=>navigate('providers')} />
         <div className="flex gap-2.5 overflow-x-auto pb-2 no-scrollbar">
           {livePopular.map(p=>(
-            <button key={p.name} onClick={()=>navigate('service-detail',mobileServiceParams(p.service))} className="w-[88px] shrink-0 rounded-[18px] bg-white p-2 text-center shadow-sm active:scale-95 transition">
+            <button key={p.name} onClick={()=>navigate('service-detail',mobileServiceParams(p.service))} className="w-[88px] shrink-0 rounded-[20px] border border-white/90 bg-white/[.84] p-2 text-center shadow-[0_8px_20px_rgba(44,92,151,.10)] backdrop-blur-xl transition active:scale-95">
               <div className="mx-auto flex h-12 w-12 items-center justify-center overflow-hidden rounded-2xl bg-[#f4faff]">
                 {p.img ? <img src={p.img} className="h-full w-full object-contain"/> : <span className="text-xs font-black text-[#0967ff]">{p.name.slice(0,2).toUpperCase()}</span>}
               </div>
@@ -494,7 +495,7 @@ export default function HomePage() {
 
         <div className="space-y-3 mt-1">
           {visibleFeatured.map(f=>(
-            <button key={f.name} onClick={()=>navigate('service-detail',mobileServiceParams(f.service))} className="w-full bg-white rounded-[20px] shadow-sm p-2 flex items-center text-left active:scale-[0.99] transition">
+            <button key={f.name} onClick={()=>navigate('service-detail',mobileServiceParams(f.service))} className="flex w-full items-center rounded-[22px] border border-white/90 bg-white/[.86] p-2 text-left shadow-[0_9px_22px_rgba(44,92,151,.11)] backdrop-blur-xl transition active:scale-[0.99]">
               <div className={`relative w-[116px] h-[88px] max-[360px]:w-[102px] max-[360px]:h-[78px] rounded-[16px] shrink-0 ${f.bg} flex items-center justify-center overflow-hidden`}>
                 {f.img ? <img src={f.img} className={`w-full h-full ${f.imgFit}`}/> : <span className="text-sm font-black text-[#0967ff]">{f.name.slice(0,2).toUpperCase()}</span>}
                 <span className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-white/95 shadow-sm">

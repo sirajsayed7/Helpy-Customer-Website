@@ -20,7 +20,6 @@ export default function SplashScreen() {
   return (
     <View style={styles.container} accessibilityLabel="Helpy Loading">
       <Image source={require('../../assets/helpy/splash-start.png')} style={styles.background} resizeMode="cover" />
-      <Image source={require('../../assets/helpy/splash-end.png')} style={styles.brand} resizeMode="cover" />
     </View>
   )
 }
@@ -28,5 +27,4 @@ export default function SplashScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff' },
   background: StyleSheet.absoluteFill,
-  brand: StyleSheet.absoluteFill,
 })

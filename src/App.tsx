@@ -72,8 +72,8 @@ function AppShell() {
   if (isWebsite) return <DesktopWebsite/>
 
   return (
-    <div className="min-h-screen flex items-start justify-center" style={{background:'#C7D8F5'}}>
-      <div className="relative w-full max-w-[430px] h-[100dvh] min-h-[100dvh] flex flex-col overflow-hidden shadow-2xl bg-white">
+    <div className="flex min-h-screen items-start justify-center bg-[radial-gradient(circle_at_50%_0%,#eaf5ff,#c7d8f5_68%)]">
+      <div className="relative flex h-[100dvh] min-h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(23,59,111,.24)]">
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
           <Page/>
         </div>

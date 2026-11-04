@@ -1,29 +1,11 @@
 import { Home, ShoppingBag, MessageCircle, User } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 
-export function StatusBar({ light = false, time = '9:41' }: { light?: boolean; time?: string }) {
-  const c = light ? 'text-white' : 'text-black'
-  const fill = light ? 'white' : '#0b1020'
-  return (
-    <div className="flex items-center justify-between px-6 pt-4 pb-2 shrink-0 z-20 relative">
-      <span className={`text-[17px] font-black tracking-tight ${c}`}>{time}</span>
-      <div className="flex items-center gap-1.5">
-        <svg width="24" height="16" viewBox="0 0 24 16" fill="none">
-          {[0,6,12,18].map((x,i)=><rect key={x} x={x} y={[9,6,3,0][i]} width="4" height={[7,10,13,16][i]} rx="1.5" fill={fill}/>) }
-        </svg>
-        <svg width="22" height="16" viewBox="0 0 22 16" fill="none">
-          <circle cx="11" cy="13" r="2" fill={fill}/>
-          <path d="M6.5,9.5 C8.1,8 9.6,7.2 11,7.2 C12.4,7.2 13.9,8 15.5,9.5" stroke={fill} strokeWidth="2" strokeLinecap="round" fill="none"/>
-          <path d="M2.5,5.7 C5,3.5 7.8,2.4 11,2.4 C14.2,2.4 17,3.5 19.5,5.7" stroke={fill} strokeWidth="2" strokeLinecap="round" fill="none"/>
-        </svg>
-        <svg width="31" height="16" viewBox="0 0 31 16" fill="none">
-          <rect x="1" y="2" width="25" height="12" rx="3" stroke={fill} strokeWidth="2"/>
-          <rect x="4" y="5" width="18" height="6" rx="1.5" fill={fill}/>
-          <path d="M28,6 L28,10" stroke={fill} strokeWidth="2" strokeLinecap="round"/>
-        </svg>
-      </div>
-    </div>
-  )
+// The browser app is content-first, not a device-frame mockup.  Individual
+// pages still render this shared slot so their layouts automatically begin at
+// the very top without each screen needing special-case spacing.
+export function StatusBar(_: { light?: boolean; time?: string }) {
+  return null
 }
 
 const TABS = [
@@ -38,7 +20,7 @@ export function BottomNav() {
   const unread = Math.max(3, bookedServices.length)
   return (
     <div className="absolute bottom-2 left-3 right-3 z-50 pointer-events-none" style={{paddingBottom:'env(safe-area-inset-bottom)'}}>
-      <div className="pointer-events-auto bg-white/96 backdrop-blur-xl rounded-[24px] shadow-[0_14px_36px_rgba(15,23,42,0.14)] border border-white/80 flex items-center justify-around px-2 max-[360px]:px-1 pt-2 pb-3 max-[360px]:pb-2">
+      <div className="pointer-events-auto flex items-center justify-around rounded-[24px] border border-white/95 bg-white/[.86] px-2 pb-3 pt-2 shadow-[0_14px_36px_rgba(25,66,121,.16),inset_0_1px_0_rgba(255,255,255,.95)] backdrop-blur-2xl max-[360px]:px-1 max-[360px]:pb-2">
         {TABS.map(({ id, label, Icon, badge }) => {
           const active = activeTab === id
           return (
