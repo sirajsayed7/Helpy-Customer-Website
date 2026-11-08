@@ -8,7 +8,7 @@ export type Screen =
   | 'addresses' | 'contact-us' | 'terms' | 'privacy' | 'notifications'
   | 'order-detail' | 'category-services' | 'deals' | 'offers-events'
   | 'providers' | 'all-services'
-  | 'reviews'
+  | 'reviews' | 'download-app'
 
 interface NavState { screen: Screen; params?: any; history: { screen: Screen; params?: any }[] }
 
@@ -43,7 +43,7 @@ const SCREENS: Screen[] = [
   'location', 'service-detail', 'booking-confirm', 'booking-checkout', 'booking-success',
   'glow-checkout', 'chat-thread', 'wallet', 'favorites', 'addresses', 'contact-us',
   'terms', 'privacy', 'notifications', 'order-detail', 'category-services', 'deals',
-  'offers-events', 'providers', 'all-services', 'reviews'
+  'offers-events', 'providers', 'all-services', 'reviews', 'download-app'
 ]
 
 const screenFromUrl = (): Screen => {

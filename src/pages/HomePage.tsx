@@ -84,11 +84,12 @@ const SEARCH_PROMPTS = ['Cleaning Services', 'Car Wash', 'Salon & Spa', 'Laundry
 export default function HomePage() {
   const { navigate, pendingReview, clearPendingReview } = useNav()
   const data = useHelpyData()
+  const profileName = data.profile?.name || 'Welcome to Helpy'
+  const savedAddress = data.addresses[0]?.address || 'Set your service location'
   const [activeDiscoveryFilters, setActiveDiscoveryFilters] = useState<string[]>([])
   const [ratingSort, setRatingSort] = useState<'none' | 'desc' | 'asc'>('none')
   const [priceSort, setPriceSort] = useState<'none' | 'desc' | 'asc'>('none')
   const [showDiscoverySort, setShowDiscoverySort] = useState(false)
-  const [showOverlayAd, setShowOverlayAd] = useState(false)
   const [activeAd, setActiveAd] = useState(0)
   const [searchPrompt, setSearchPrompt] = useState('')
   const [reviewRating, setReviewRating] = useState(0)
@@ -179,14 +180,7 @@ export default function HomePage() {
   }, [])
 
   useEffect(() => {
-    if (window.sessionStorage.getItem(HOME_AD_SESSION_KEY)) return
-    window.sessionStorage.setItem(HOME_AD_SESSION_KEY, 'true')
-    setShowOverlayAd(true)
-  }, [])
-
-  useEffect(() => {
     if (!pendingReview) return
-    setShowOverlayAd(false)
     setReviewRating(0)
     setReviewComment('')
     setReviewSubmitted(false)
@@ -290,13 +284,13 @@ export default function HomePage() {
               <User size={28} className="text-[#0967ff]" fill="#0967ff" />
             </div>
             <div className="min-w-0">
-              <p className="text-[13px] leading-4 font-bold text-[#6d7192]">Hi, Siraj Sayed</p>
+              <p className="text-[13px] leading-4 font-bold text-[#6d7192]">{data.profile?.name ? `Hi, ${profileName}` : profileName}</p>
               <h1 className="text-[23px] leading-6 font-black text-black truncate">Welcome to Helpy</h1>
             </div>
           </div>
           <button onClick={()=>navigate('notifications')} className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-[16px] border border-white/90 bg-white/[.86] shadow-[0_8px_20px_rgba(44,92,151,.12)] backdrop-blur-xl">
             <Bell size={20}/>
-            <span className="absolute right-2.5 top-2.5 w-2 h-2 bg-[#0967ff] rounded-full"/>
+            {data.notifications.length > 0 && <span className="absolute right-2.5 top-2.5 w-2 h-2 bg-[#0967ff] rounded-full"/>}
           </button>
         </div>
 
@@ -306,7 +300,7 @@ export default function HomePage() {
               <MapPin size={19} className="text-[#0967ff] fill-[#0967ff]"/>
               <span className="absolute top-[8px] left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-[#ffd43b] border border-white"/>
             </span>
-            <span className="flex-1 truncate text-[14px] font-semibold">Viva Bahriya 10, The Pearl-Qatar</span>
+            <span className="flex-1 truncate text-[14px] font-semibold">{savedAddress}</span>
             <ChevronDown size={18} className="shrink-0"/>
           </button>
           <button onClick={()=>navigate('wallet')} className="flex h-[42px] items-center gap-2 whitespace-nowrap rounded-[21px] border border-white/90 bg-white/[.84] px-3.5 text-[12px] font-black text-[#0967ff] shadow-[0_7px_18px_rgba(44,92,151,.10)] backdrop-blur-xl">
@@ -584,7 +578,7 @@ export default function HomePage() {
           </div>
         </div>
       )}
-      {showOverlayAd && (
+      {false && (
         <div className="absolute inset-0 z-50 flex items-center justify-center bg-slate-950/35 px-5 backdrop-blur-[2px]">
           <div
             role="button"
@@ -594,7 +588,7 @@ export default function HomePage() {
             className="relative w-full max-w-[360px] overflow-hidden rounded-[28px] bg-white text-left shadow-[0_24px_60px_rgba(15,23,42,0.30)] active:scale-[0.99] transition"
           >
             <button
-              onClick={(e)=>{e.stopPropagation(); setShowOverlayAd(false)}}
+              onClick={(e)=>{e.stopPropagation()}}
               className="absolute right-3 top-3 z-20 flex h-9 w-9 items-center justify-center rounded-full bg-white/95 text-slate-900 shadow-md"
               aria-label="Close ad"
             >

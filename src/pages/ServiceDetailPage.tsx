@@ -406,20 +406,23 @@ export const PROVIDERS: Record<string, ProviderConfig> = {
   },
 }
 
-export const DATES = [
-  {label:'Today', day:'May 30'},
-  {label:'Sun', day:'May 31'},
-  {label:'Mon', day:'Jun 1'},
-  {label:'Tue', day:'Jun 2'},
-  {label:'Wed', day:'Jun 3'},
-]
+export const DATES = Array.from({ length: 5 }, (_, index) => {
+  const value = new Date()
+  value.setHours(0, 0, 0, 0)
+  value.setDate(value.getDate() + index)
+  return {
+    label: index === 0 ? 'Today' : value.toLocaleDateString('en-QA', { weekday: 'short' }),
+    day: value.toLocaleDateString('en-QA', { month: 'short', day: 'numeric' }),
+    iso: value.toISOString().slice(0, 10),
+  }
+})
 
 const TIMES = ['08:00 AM','10:00 AM','12:00 PM','02:00 PM','04:00 PM','06:00 PM','08:00 PM','10:00 PM']
 
 export default function ServiceDetailPage() {
-  const { goBack, navigate, params, addBooking } = useNav()
+  const { goBack, navigate, params } = useNav()
   const liveService = params?.liveService as LiveService | undefined
-  const provider = liveService?.provider || params?.provider || 'Scrubs Cleaning'
+  const provider = liveService?.provider || params?.provider || 'Service provider'
   const cfg: ProviderConfig = liveService ? {
     label: liveService.provider,
     category: liveService.category || 'Services',
@@ -432,9 +435,21 @@ export default function ServiceDetailPage() {
     duration: liveService.duration || 'Duration confirmed by provider',
     services: [{ label: liveService.name, desc: liveService.description || 'Service details are confirmed before booking.', price: liveService.price, icon: Sparkles, image: liveService.image }],
     extras: [],
-  } : (PROVIDERS[provider] || PROVIDERS['Scrubs Cleaning'])
+  } : (PROVIDERS[provider] || {
+    label: provider,
+    category: params?.category || 'Services',
+    desc: 'Service details will be confirmed by the provider.',
+    heroImg: params?.heroImg || '',
+    providerImage: params?.providerImage || '',
+    rating: 'New',
+    reviews: '0',
+    distance: 'Available in Qatar',
+    duration: 'Duration confirmed by provider',
+    services: [{ label: params?.name || 'Service', desc: 'Service details will be confirmed before booking.', price: Number(params?.price || 0), icon: Sparkles }],
+    extras: [],
+  })
   const initialService = cfg.services.find(s => s.label === params?.name)?.label || ''
-  const isGlow = provider === 'Glow Salon & Spa'
+  const isGlow = false
   const useCheckoutFlow = true
 
   const [selSvc, setSelSvc] = useState(initialService)
@@ -452,7 +467,7 @@ export default function ServiceDetailPage() {
 
   const active = cfg.services.find(s => s.label === selSvc) || cfg.services[0]
   const extrasTotal = extras.reduce((s,e)=>s+(cfg.extras.find(x=>x.label===e)?.price||0),0)
-  const isScrubs = provider === 'Scrubs Cleaning'
+  const isScrubs = false
   const equipmentAdjustment = isScrubs && equipment === 'customer' ? -25 : 0
   const selectedGlowOptions = cfg.services.filter(s => selectedGlowServices.includes(s.label))
   const servicesTotal = useCheckoutFlow ? selectedGlowOptions.reduce((sum, s) => sum + s.price, 0) : active.price
@@ -488,20 +503,19 @@ export default function ServiceDetailPage() {
 
   const book = () => {
     if (!hasSelectedService) return
-    const booking = {
-      id: Date.now().toString(),
+    navigate('booking-checkout', {
       provider,
-      service: isGlow ? selectedGlowServices.join(', ') : isScrubs ? `${selSvc} - ${equipmentLabel}` : selSvc,
-      date: DATES[selDate].day + ', 2026',
-      time: selTime,
-      price: total.toFixed(2),
-      status: 'Confirmed' as const,
+      selectedServices: selectedGlowServices,
+      selectedDate: DATES[selDate].iso,
+      selDate,
+      selTime,
+      providerImage,
       providerBg: params?.providerBg || 'bg-blue-500',
       providerEmoji: params?.providerEmoji || cfg.label.slice(0, 2).toUpperCase(),
-      providerImage,
-    }
-    addBooking(booking)
-    navigate('booking-success', booking)
+      equipmentLabel: isScrubs ? equipmentLabel : '',
+      equipmentAdjustment: isScrubs ? equipmentAdjustment : 0,
+      liveService,
+    })
   }
 
   return (
@@ -780,6 +794,7 @@ export default function ServiceDetailPage() {
             <button onClick={()=>navigate('booking-checkout', {
               provider,
               selectedServices: selectedGlowServices,
+              selectedDate: DATES[selDate].iso,
               selDate,
               selTime,
               providerImage,
@@ -787,6 +802,7 @@ export default function ServiceDetailPage() {
               providerEmoji: params?.providerEmoji || cfg.label.slice(0, 2).toUpperCase(),
               equipmentLabel: isScrubs ? equipmentLabel : '',
               equipmentAdjustment: isScrubs ? equipmentAdjustment : 0,
+              liveService,
             })} className="mt-4 h-[52px] w-full rounded-[18px] bg-brand-500 text-white text-[16px] font-black shadow-lg shadow-blue-200">
               Checkout
             </button>

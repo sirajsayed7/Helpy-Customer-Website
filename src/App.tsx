@@ -24,6 +24,7 @@ import AllServicesPage    from './subpages/AllServicesPage'
 import LocationPickerPage from './subpages/LocationPickerPage'
 import HelperPages        from './subpages/HelperPages'
 import ReviewsPage        from './subpages/ReviewsPage'
+import AppDownloadPage    from './pages/AppDownloadPage'
 import DesktopWebsite     from './desktop/DesktopWebsite'
 import { HelpyDataProvider } from './context/HelpyDataContext'
 
@@ -55,20 +56,22 @@ function AppShell() {
       case 'service-detail':     return <ServiceDetailPage/>
       case 'booking-success':    return <BookingSuccessPage/>
       case 'booking-checkout':   return <BookingCheckoutPage/>
-      case 'glow-checkout':      return <GlowCheckoutPage/>
+      case 'glow-checkout':      return <BookingCheckoutPage/>
       case 'chat-thread':        return <ChatThreadPage/>
-      case 'categories':         return <CategoriesPage/>
+      case 'categories':         return <AllServicesPage/>
       case 'category-services':  return <CategoryServicesPage/>
-      case 'deals':              return <DealsPage/>
-      case 'offers-events':      return <OffersEventsPage/>
+      case 'deals':              return <AllServicesPage/>
+      case 'offers-events':      return <AllServicesPage/>
       case 'providers':          return <ProvidersPage/>
       case 'all-services':       return <AllServicesPage/>
       case 'location':           return <LocationPickerPage/>
       case 'reviews':            return <ReviewsPage/>
+      case 'download-app':       return <AppDownloadPage/>
       default:                   return <HelperPages screen={screen}/>
     }
   }
 
+  if (screen === 'download-app') return <AppDownloadPage/>
   if (isWebsite) return <DesktopWebsite/>
 
   return (
