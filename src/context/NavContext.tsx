@@ -48,7 +48,9 @@ const SCREENS: Screen[] = [
 
 const screenFromUrl = (): Screen => {
   if (typeof window === 'undefined') return 'splash'
-  const candidate = window.location.hash.replace('#', '') as Screen
+  const hash = window.location.hash.replace('#', '')
+  if (!hash) return 'download-app'
+  const candidate = hash as Screen
   return SCREENS.includes(candidate) ? candidate : 'splash'
 }
 
