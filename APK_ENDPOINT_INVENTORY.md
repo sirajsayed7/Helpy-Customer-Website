@@ -15,7 +15,7 @@ Verified contracts and response shapes are in [BACKEND_INTEGRATION_AUDIT.md](BAC
 | `/guest-user` | Implemented and verified |
 | `/get-otp-type` | Client wrapper present; unused by current login UI |
 | `/otp-send` | Implemented and verified for email login |
-| `/user-register` | Missing; static-only contract |
+| `/user-register` | Implemented from backend source; live account-creation test pending |
 | `/login` | Implemented and verified for six-digit email OTP |
 | `/forgot-password` | Missing; static-only contract |
 | `/change-password` | Missing; static-only contract |

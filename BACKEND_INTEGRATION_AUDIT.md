@@ -62,7 +62,7 @@ No captured bearer token, Firebase token, private key, OTP, or user record is st
 
 ## Static routes found but not transaction-tested
 
-- Authentication/account writes: `/user-register`, `/forgot-password`, `/change-password`, `/delete-account`, `/update-user-profile`.
+- Authentication/account writes: `/forgot-password`, `/change-password`, `/delete-account`, `/update-user-profile`.
 - Address write: `/store-address`.
 - Booking: `/add-booking`, `/booking-list`, `/get-booking-details`, `/get-booking-cancel-reason-list`, `/cancel-booking`, `/reschedule-booking`, `/mark-orders-as-viewed`, `/unseen-order-count`.
 - Payment/wallet: `/validate-promocode`, `/skipcash/create`, `/wallet-history`, `/wallet-topup-create`, `/wallet-topup-status`, `/payout-request`, `/sent-invoice`.
@@ -75,7 +75,7 @@ These routes should not be wired by guessing. The APK explicitly blocked checkou
 1. **Foundation (implemented):** typed client, guest-session bootstrap, email OTP login UI, multipart and form encoding, session restoration, common headers, error type, environment switch.
 2. **Read-only catalog:** replace page-local mock arrays behind adapters, screen by screen. Keep each current mock as loading/error fallback until the live response is visually verified.
 3. **Location:** use browser geolocation/map search for the selected point; use `/get-state` and `/get-city` for address forms. Require user login before loading or saving account addresses.
-4. **Authentication (partially implemented):** email OTP request, verification, token storage, and refresh restoration are connected. Add an explicit logout action and backend-supported `web` device type before production launch; the compatibility client currently uses the API's verified `android` value.
+4. **Authentication:** email OTP login and registration are connected. Registration sends `/otp-send` with `type=register`, then submits the verified code with name, email, and phone to `/user-register`; the user token is stored on success. Add a backend-supported `web` device type before production launch; the compatibility client currently uses the API's verified `android` value for login.
 5. **Booking:** provider offerings and availability reads are implemented in the client. Next map selected service/vendor ids, duration and adjacent-slot rules; add idempotency and retry protection before enabling `/add-booking`. The live flow also requires an authenticated saved address before it reaches booking summary or payment.
 6. **Payment:** integrate SkipCash only against its sandbox and backend-created payment sessions. Never place merchant credentials in Vite/browser code.
 7. **Account parity:** bookings, wallet, favourites, notifications, reviews, profile, and saved addresses after authenticated contracts are verified.

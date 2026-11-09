@@ -352,6 +352,36 @@ class HelpyApiClient {
     })).data
   }
 
+  async sendRegistrationOtp(input: { email: string; phoneNumber: string }) {
+    return (await this.request<unknown>('otp-send', {
+      method: 'POST',
+      multipart: {
+        phone_number: input.phoneNumber,
+        email: input.email,
+        user_type: 'user',
+        otp_type: 'email',
+        type: 'register',
+      },
+    })).data
+  }
+
+  async registerUser(input: { name: string; email: string; phoneNumber: string; code: string }) {
+    const response = await this.request<Record<string, unknown>>('user-register', {
+      method: 'POST',
+      form: {
+        name: input.name,
+        email: input.email,
+        phone_number: input.phoneNumber,
+        otp_code: input.code,
+        otp_type: 'email',
+      },
+    })
+    if (!response.token) throw new HelpyApiError('Registration response did not include a token', 200, response)
+    writeToken(response.token, 'user')
+    writeFirebaseCustomToken(response.data.firebaseToken)
+    return response.data
+  }
+
   async loginWithOtp(input: {
     email: string
     code: string

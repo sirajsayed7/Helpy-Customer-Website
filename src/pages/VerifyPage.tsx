@@ -2,7 +2,7 @@ import { useRef, useState, type KeyboardEvent } from 'react'
 import { ArrowLeft } from 'lucide-react'
 import { useNav } from '../context/NavContext'
 import { StatusBar, HelpyLogo } from '../components/shared'
-import { requestLoginOtp, verifyLoginOtp } from '../api/auth'
+import { completeRegistration, requestLoginOtp, requestRegistrationOtp, verifyLoginOtp } from '../api/auth'
 
 export default function VerifyPage() {
   const { goBack, login, params } = useNav()
@@ -21,7 +21,9 @@ export default function VerifyPage() {
     setLoading(true)
     setError('')
     try {
-      const verified = await verifyLoginOtp(email, code)
+      const verified = signingUp
+        ? await completeRegistration({ name: params?.fullName || '', email, phoneNumber: params?.phoneNumber || '', code })
+        : await verifyLoginOtp(email, code)
       if (verified) login()
       else setError('That verification code is not valid.')
     } catch (reason) {
@@ -34,7 +36,8 @@ export default function VerifyPage() {
     setDigits(Array(6).fill(''))
     setError('')
     try {
-      await requestLoginOtp(email)
+      if (signingUp) await requestRegistrationOtp(email, params?.phoneNumber || '')
+      else await requestLoginOtp(email)
       inputs.current[0]?.focus()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to resend the code.')

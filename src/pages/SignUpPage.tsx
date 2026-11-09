@@ -2,7 +2,7 @@ import { ArrowLeft, Check, ChevronDown, Globe2, Mail, Phone, Search, ShieldCheck
 import { useState } from 'react'
 import { useNav } from '../context/NavContext'
 import { HelpyLogo } from '../components/shared'
-import { requestLoginOtp } from '../api/auth'
+import { requestRegistrationOtp } from '../api/auth'
 
 type CountryCode = readonly [iso: string, name: string, dial: string]
 
@@ -85,7 +85,7 @@ export default function SignUpPage() {
     setLoading(true)
     setError('')
     try {
-      await requestLoginOtp(cleanEmail)
+      await requestRegistrationOtp(cleanEmail, cleanPhone)
       navigate('verify', { email: cleanEmail, firstName: cleanFirstName, lastName: cleanLastName, fullName: `${cleanFirstName} ${cleanLastName}`, phoneNumber: cleanPhone, signup: true })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to send the verification code.')

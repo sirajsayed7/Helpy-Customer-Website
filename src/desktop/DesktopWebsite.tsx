@@ -9,7 +9,7 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNod
 import { type Screen, useNav } from '../context/NavContext'
 import DesktopAccountViews from './DesktopAccountViews'
 import DesktopBannerCarousel from './DesktopBannerCarousel'
-import { requestLoginOtp, verifyLoginOtp } from '../api/auth'
+import { completeRegistration, requestLoginOtp, requestRegistrationOtp, verifyLoginOtp } from '../api/auth'
 import { hasHelpyUserSession, helpyApi } from '../api/helpy'
 import { useHelpyData } from '../context/HelpyDataContext'
 import { LiveBackendView, LiveDesktopAccount, LiveDesktopBookings, LiveDesktopCheckout, LiveDesktopExplore, LiveDesktopHome, LiveDesktopService, LiveMessages } from './DesktopLiveViews'
@@ -311,7 +311,8 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
     setLoading(true)
     setError('')
     try {
-      await requestLoginOtp(value)
+      if (signingUp) await requestRegistrationOtp(value, cleanPhone)
+      else await requestLoginOtp(value)
       navigate('verify', { email: value, firstName: signingUp ? firstName.trim() : undefined, lastName: signingUp ? lastName.trim() : undefined, fullName: signingUp ? `${firstName.trim()} ${lastName.trim()}` : undefined, phoneNumber: signingUp ? cleanPhone : undefined, signup: signingUp })
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to send the verification code.')
@@ -330,7 +331,9 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
     setLoading(true)
     setError('')
     try {
-      const verified = await verifyLoginOtp(targetEmail, value)
+      const verified = params?.signup
+        ? await completeRegistration({ name: params?.fullName || '', email: targetEmail, phoneNumber: params?.phoneNumber || '', code: value })
+        : await verifyLoginOtp(targetEmail, value)
       if (verified) login()
       else setError('That verification code is not valid.')
     } catch (reason) {
@@ -344,7 +347,9 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
     setCode(Array(6).fill(''))
     setError('')
     try {
-      await requestLoginOtp((params?.email || email).trim().toLowerCase())
+      const targetEmail = (params?.email || email).trim().toLowerCase()
+      if (params?.signup) await requestRegistrationOtp(targetEmail, params?.phoneNumber || '')
+      else await requestLoginOtp(targetEmail)
       codeInputs.current[0]?.focus()
     } catch (reason) {
       setError(reason instanceof Error ? reason.message : 'Unable to resend the code.')
