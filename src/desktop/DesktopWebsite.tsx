@@ -107,6 +107,36 @@ export default function DesktopWebsite() {
           <DesktopRoute screen={screen} params={params} navigate={navigate} />
         </div>
     </main>
+    {screen === 'home' && <GuestBookingPrompt navigate={navigate} />}
+  </div>
+}
+
+function GuestBookingPrompt({ navigate }: { navigate: (screen: Screen, params?: any) => void }) {
+  const [visible, setVisible] = useState(false)
+  const signedIn = hasHelpyUserSession()
+
+  useEffect(() => {
+    if (signedIn) return
+    const timer = window.setTimeout(() => setVisible(true), 420)
+    return () => window.clearTimeout(timer)
+  }, [signedIn])
+
+  if (signedIn || !visible) return null
+
+  return <div className="fixed inset-0 z-[100] grid place-items-center bg-[#071434]/30 p-5 backdrop-blur-md" role="dialog" aria-modal="true" aria-labelledby="guest-booking-title">
+    <button onClick={() => setVisible(false)} className="absolute inset-0 cursor-default" aria-label="Continue browsing without signing in" />
+    <section className="relative w-full max-w-[510px] overflow-hidden rounded-[32px] border border-white/75 bg-white/70 p-7 shadow-[0_28px_90px_rgba(8,27,70,.28)] backdrop-blur-2xl sm:p-9">
+      <div className="pointer-events-none absolute -right-24 -top-24 h-56 w-56 rounded-full bg-[#87c5ff]/35 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-32 -left-20 h-64 w-64 rounded-full bg-[#9ff0e8]/35 blur-3xl" />
+      <button onClick={() => setVisible(false)} className="absolute right-5 top-5 grid h-9 w-9 place-items-center rounded-full border border-white/90 bg-white/70 text-[#64738e] transition hover:bg-white" aria-label="Close"><X size={18} /></button>
+      <div className="relative"><span className="grid h-[52px] w-[52px] place-items-center rounded-[18px] border border-white/90 bg-white/75 text-[#0967ff] shadow-[0_8px_22px_rgba(9,103,255,.12)]"><ShieldCheck size={25} /></span>
+        <p className="mt-6 text-[11px] font-black uppercase tracking-[.16em] text-[#0967ff]">BOOK WITH CONFIDENCE</p>
+        <h2 id="guest-booking-title" className="mt-2 max-w-md text-[32px] font-black leading-[1.05] tracking-[-.045em] text-[#0b1a42]">Sign in to book your next service.</h2>
+        <p className="mt-4 max-w-md text-[15px] font-semibold leading-6 text-[#64738e]">Create an account to choose a time, save your location, track bookings and message your provider.</p>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2"><button onClick={() => navigate('signup')} className="flex h-[52px] items-center justify-center gap-2 rounded-[17px] bg-[#0967ff] px-5 text-sm font-black text-white shadow-[0_12px_24px_rgba(9,103,255,.25)] transition hover:bg-[#0759df]">Create account <ArrowRight size={17} /></button><button onClick={() => navigate('login')} className="h-[52px] rounded-[17px] border border-white/90 bg-white/75 px-5 text-sm font-black text-[#0b2a6d] shadow-sm transition hover:bg-white">Sign in</button></div>
+        <button onClick={() => setVisible(false)} className="mt-5 w-full text-center text-xs font-bold text-[#697995] transition hover:text-[#0967ff]">Continue browsing for now</button>
+      </div>
+    </section>
   </div>
 }
 
