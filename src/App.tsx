@@ -1,32 +1,29 @@
-import { useEffect, useState } from 'react'
+import { lazy, Suspense, useEffect, useState } from 'react'
 import { NavProvider, useNav } from './context/NavContext'
 import { BottomNav } from './components/shared'
 
-import LoginPage          from './pages/LoginPage'
-import SignUpPage         from './pages/SignUpPage'
-import SplashPage         from './pages/SplashPage'
-import VerifyPage         from './pages/VerifyPage'
-import HomePage           from './pages/HomePage'
-import OrdersPage         from './pages/OrdersPage'
-import ChatPage           from './pages/ChatPage'
-import ProfilePage        from './pages/ProfilePage'
-import ServiceDetailPage  from './pages/ServiceDetailPage'
-import BookingSuccessPage from './subpages/BookingSuccessPage'
-import GlowCheckoutPage   from './subpages/GlowCheckoutPage'
-import BookingCheckoutPage from './subpages/BookingCheckoutPage'
-import ChatThreadPage     from './subpages/ChatThreadPage'
-import CategoriesPage     from './subpages/CategoriesPage'
-import CategoryServicesPage from './subpages/CategoryServicesPage'
-import DealsPage          from './subpages/DealsPage'
-import OffersEventsPage   from './subpages/OffersEventsPage'
-import ProvidersPage      from './subpages/ProvidersPage'
-import AllServicesPage    from './subpages/AllServicesPage'
-import LocationPickerPage from './subpages/LocationPickerPage'
-import HelperPages        from './subpages/HelperPages'
-import ReviewsPage        from './subpages/ReviewsPage'
 import AppDownloadPage    from './pages/AppDownloadPage'
-import DesktopWebsite     from './desktop/DesktopWebsite'
 import { HelpyDataProvider } from './context/HelpyDataContext'
+
+const LoginPage = lazy(() => import('./pages/LoginPage'))
+const SignUpPage = lazy(() => import('./pages/SignUpPage'))
+const SplashPage = lazy(() => import('./pages/SplashPage'))
+const VerifyPage = lazy(() => import('./pages/VerifyPage'))
+const HomePage = lazy(() => import('./pages/HomePage'))
+const OrdersPage = lazy(() => import('./pages/OrdersPage'))
+const ChatPage = lazy(() => import('./pages/ChatPage'))
+const ProfilePage = lazy(() => import('./pages/ProfilePage'))
+const ServiceDetailPage = lazy(() => import('./pages/ServiceDetailPage'))
+const BookingSuccessPage = lazy(() => import('./subpages/BookingSuccessPage'))
+const BookingCheckoutPage = lazy(() => import('./subpages/BookingCheckoutPage'))
+const ChatThreadPage = lazy(() => import('./subpages/ChatThreadPage'))
+const CategoryServicesPage = lazy(() => import('./subpages/CategoryServicesPage'))
+const ProvidersPage = lazy(() => import('./subpages/ProvidersPage'))
+const AllServicesPage = lazy(() => import('./subpages/AllServicesPage'))
+const LocationPickerPage = lazy(() => import('./subpages/LocationPickerPage'))
+const HelperPages = lazy(() => import('./subpages/HelperPages'))
+const ReviewsPage = lazy(() => import('./subpages/ReviewsPage'))
+const DesktopWebsite = lazy(() => import('./desktop/DesktopWebsite'))
 
 const AUTH = ['splash','login','signup','verify']
 const FULLSCREEN = ['chat-thread','service-detail','booking-success','glow-checkout','booking-checkout','location','reviews']
@@ -72,20 +69,20 @@ function AppShell() {
   }
 
   if (screen === 'download-app' && !isWebsite) return <AppDownloadPage/>
-  if (isWebsite) return <DesktopWebsite/>
+  if (isWebsite) return <HelpyDataProvider><Suspense fallback={<div className="min-h-screen bg-[#f4f7fd]"/>}><DesktopWebsite/></Suspense></HelpyDataProvider>
 
   return (
-    <div className="flex min-h-screen items-start justify-center bg-[radial-gradient(circle_at_50%_0%,#eaf5ff,#c7d8f5_68%)]">
+    <HelpyDataProvider><div className="flex min-h-screen items-start justify-center bg-[radial-gradient(circle_at_50%_0%,#eaf5ff,#c7d8f5_68%)]">
       <div className="relative flex h-[100dvh] min-h-[100dvh] w-full max-w-[430px] flex-col overflow-hidden bg-white shadow-[0_24px_80px_rgba(23,59,111,.24)]">
         <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-          <Page/>
+          <Suspense fallback={<div className="flex-1 bg-white"/>}><Page/></Suspense>
         </div>
         {!hideBottomNav && <BottomNav/>}
       </div>
-    </div>
+    </div></HelpyDataProvider>
   )
 }
 
 export default function App() {
-  return <NavProvider><HelpyDataProvider><AppShell/></HelpyDataProvider></NavProvider>
+  return <NavProvider><AppShell/></NavProvider>
 }
