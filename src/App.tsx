@@ -71,7 +71,7 @@ function AppShell() {
     }
   }
 
-  if (screen === 'download-app') return <AppDownloadPage/>
+  if (screen === 'download-app' && !isWebsite) return <AppDownloadPage/>
   if (isWebsite) return <DesktopWebsite/>
 
   return (

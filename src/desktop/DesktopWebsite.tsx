@@ -88,7 +88,8 @@ const ACCOUNT_ITEMS: Array<{ screen: Screen; label: string; icon: typeof UserRou
 ]
 
 export default function DesktopWebsite() {
-  const { screen, params, navigate, goBack, canGoBack, login } = useNav()
+  const { screen: requestedScreen, params, navigate, goBack, canGoBack, login } = useNav()
+  const screen: Screen = requestedScreen === 'download-app' ? 'home' : requestedScreen
   const topLevelScreens: Screen[] = ['home', 'all-services', 'providers', 'deals', 'orders', 'chat', 'profile', 'notifications', 'wallet', 'favorites', 'addresses']
 
   useEffect(() => {

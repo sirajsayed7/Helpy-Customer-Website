@@ -49,7 +49,7 @@ const SCREENS: Screen[] = [
 const screenFromUrl = (): Screen => {
   if (typeof window === 'undefined') return 'splash'
   const hash = window.location.hash.replace('#', '')
-  if (!hash) return 'download-app'
+  if (!hash) return window.matchMedia('(max-width: 767px)').matches ? 'download-app' : 'home'
   const candidate = hash as Screen
   return SCREENS.includes(candidate) ? candidate : 'splash'
 }
