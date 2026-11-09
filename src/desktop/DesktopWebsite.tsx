@@ -12,6 +12,8 @@ import DesktopBannerCarousel from './DesktopBannerCarousel'
 import { completeRegistration, requestLoginOtp, requestRegistrationOtp, verifyLoginOtp } from '../api/auth'
 import { hasHelpyUserSession, helpyApi } from '../api/helpy'
 import { useHelpyData } from '../context/HelpyDataContext'
+import { PHONE_COUNTRIES } from '../pages/SignUpPage'
+import { formatNationalPhone, isValidNationalPhone, nationalPhonePlaceholder, toE164Phone } from '../lib/phone'
 import { LiveBackendView, LiveDesktopAccount, LiveDesktopBookings, LiveDesktopCheckout, LiveDesktopExplore, LiveDesktopHome, LiveDesktopService, LiveMessages } from './DesktopLiveViews'
 import {
   DesktopBookings,
@@ -277,6 +279,9 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
   const [firstName, setFirstName] = useState(params?.firstName || '')
   const [lastName, setLastName] = useState(params?.lastName || '')
   const [phoneNumber, setPhoneNumber] = useState(params?.phoneNumber || '')
+  const [countryIso, setCountryIso] = useState('QA')
+  const [countryOpen, setCountryOpen] = useState(false)
+  const [countryQuery, setCountryQuery] = useState('')
   const [accepted, setAccepted] = useState(false)
   const [code, setCode] = useState(Array(6).fill(''))
   const [loading, setLoading] = useState(false)
@@ -284,6 +289,11 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
   const codeInputs = useRef<Array<HTMLInputElement | null>>([])
   const verifying = screen === 'verify'
   const signingUp = screen === 'signup'
+  const selectedCountry = PHONE_COUNTRIES.find(country => country.iso === countryIso) || PHONE_COUNTRIES[0]
+  const visibleCountries = PHONE_COUNTRIES.filter(country => {
+    const query = countryQuery.trim().toLowerCase()
+    return !query || country.name.toLowerCase().includes(query) || country.dial.replace(/\s/g, '').includes(query.replace(/\s/g, ''))
+  })
 
   const sendCode = async () => {
     const value = email.trim().toLowerCase()
@@ -295,9 +305,9 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
       setError('Enter your last name.')
       return
     }
-    const cleanPhone = phoneNumber.replace(/[^\d+]/g, '')
-    if (signingUp && !/^\+?\d{7,15}$/.test(cleanPhone)) {
-      setError('Enter a valid phone number.')
+    const cleanPhone = toE164Phone(selectedCountry.iso, phoneNumber, selectedCountry.dial)
+    if (signingUp && !isValidNationalPhone(selectedCountry.iso, phoneNumber)) {
+      setError(`Enter a valid ${selectedCountry.name} phone number.`)
       return
     }
     if (!/^\S+@\S+\.\S+$/.test(value)) {
@@ -407,7 +417,7 @@ function DesktopAuthScreen({ screen, params, navigate, goBack, login }: { screen
           <button onClick={verifyCode} disabled={loading} className="mt-7 h-14 w-full rounded-2xl bg-gradient-to-r from-[#0967ff] to-[#3d8dff] text-sm font-black text-white shadow-[0_14px_30px_rgba(9,103,255,.28)] transition hover:brightness-105 disabled:cursor-wait disabled:opacity-70">{loading ? 'Verifying…' : params?.signup ? 'Create account' : 'Verify & continue'}</button>
           <button onClick={resendCode} disabled={loading} className="mt-5 w-full text-sm font-black text-[#0967ff] disabled:opacity-60">Resend code</button>
         </> : <>
-          {signingUp && <><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="block text-sm font-black">First name<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><UserRound size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={firstName} onChange={event => setFirstName(event.target.value)} autoComplete="given-name" placeholder="First name" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label><label className="block text-sm font-black">Last name<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><input value={lastName} onChange={event => setLastName(event.target.value)} autoComplete="family-name" placeholder="Last name" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label></div><label className="mt-4 block text-sm font-black">Phone number<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><Phone size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={phoneNumber} onChange={event => setPhoneNumber(event.target.value)} inputMode="tel" autoComplete="tel" placeholder="+974 55 000 000" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label></>}
+          {signingUp && <><div className="mt-5 grid gap-4 sm:grid-cols-2"><label className="block text-sm font-black">First name<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><UserRound size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={firstName} onChange={event => setFirstName(event.target.value)} autoComplete="given-name" placeholder="First name" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label><label className="block text-sm font-black">Last name<div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><input value={lastName} onChange={event => setLastName(event.target.value)} autoComplete="family-name" placeholder="Last name" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div></label></div><div className="relative mt-4"><label className="block text-sm font-black">Phone number</label><div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><button type="button" onClick={() => { setCountryOpen(value => !value); setCountryQuery('') }} className="flex h-full items-center gap-1.5 border-r border-[#dbe6f5] px-3 text-sm font-black text-[#334565]" aria-label="Select country code" aria-expanded={countryOpen}><span>{selectedCountry.dial}</span><ChevronDown size={15} className={`text-[#71809a] transition ${countryOpen ? 'rotate-180' : ''}`}/></button><Phone size={18} className="ml-3 mr-2 shrink-0 text-[#7e8da9]"/><input value={formatNationalPhone(selectedCountry.iso, phoneNumber)} onChange={event => setPhoneNumber(event.target.value.replace(/\D/g, ''))} inputMode="tel" autoComplete="tel-national" placeholder={nationalPhonePlaceholder(selectedCountry.iso)} className="min-w-0 flex-1 bg-transparent pr-4 text-base font-bold outline-none placeholder:font-medium placeholder:text-[#a0aec0]"/></div>{countryOpen && <><button type="button" onClick={() => setCountryOpen(false)} className="fixed inset-0 z-30 cursor-default" aria-label="Close country selector"/><div className="absolute left-0 right-0 top-[72px] z-40 max-h-[300px] overflow-y-auto rounded-[20px] border border-white/95 bg-white/95 p-2 shadow-[0_18px_45px_rgba(28,64,116,.22)] backdrop-blur-2xl [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"><label className="mb-1 flex h-10 items-center gap-2 rounded-xl bg-[#f3f7fd] px-3 text-[#7789a5]"><Search size={15}/><input value={countryQuery} onChange={event => setCountryQuery(event.target.value)} autoFocus placeholder="Search country or code" className="min-w-0 flex-1 bg-transparent text-[13px] font-semibold outline-none placeholder:font-medium"/></label>{visibleCountries.map(country => <button key={country.iso} type="button" onClick={() => { setCountryIso(country.iso); setPhoneNumber(''); setCountryOpen(false); setCountryQuery(''); setError('') }} className={`flex w-full items-center gap-3 rounded-[14px] px-3 py-3 text-left transition ${country.iso === countryIso ? 'bg-blue-50 text-[#0967ff]' : 'text-[#334565] hover:bg-[#f5f9ff]'}`}><span className="min-w-0 flex-1 truncate text-[13px] font-black">{country.name}</span><span className="text-[13px] font-black">{country.dial}</span>{country.iso === countryIso && <Check size={16} strokeWidth={3}/>}</button>)}</div></>}</div></>}
           <label className="mt-5 block text-sm font-black">Email address</label>
           <div className="mt-2 flex h-12 items-center rounded-2xl border border-white/90 bg-white/80 px-4 shadow-sm focus-within:border-[#0967ff] focus-within:ring-4 focus-within:ring-blue-100"><Mail size={18} className="mr-3 shrink-0 text-[#7e8da9]"/><input value={email} onChange={event => setEmail(event.target.value)} onKeyDown={event => event.key === 'Enter' && sendCode()} type="email" autoComplete="email" placeholder="you@example.com" className="min-w-0 flex-1 bg-transparent text-base font-bold outline-none"/></div>
           <p className="mt-3 text-sm font-semibold leading-6 text-[#73809a]">We’ll send a one-time verification code. No password is required.</p>
