@@ -323,18 +323,20 @@ export function LiveDesktopHome({ navigate }: { navigate: Navigate }) {
   const next = data.bookings.find((item) => item.status !== "Completed");
   return (
     <div className="space-y-5 lg:space-y-6">
+      <h1 className="sr-only">Book local services in Qatar with Helpy</h1>
       <DesktopBannerCarousel navigate={navigate} />
       <section>
         <div className="mb-1 flex items-center justify-between">
           <h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">
             Browse categories
           </h2>
-          <button
-            onClick={() => navigate("categories")}
+          <a
+            href="/categories/"
+            onClick={event => { event.preventDefault(); navigate("categories") }}
             className="shrink-0 text-sm font-black text-[#0967ff]"
           >
             View all <ArrowRight size={14} className="inline" />
-          </button>
+          </a>
         </div>
         {data.loading ? (
           <State loading />
@@ -365,12 +367,13 @@ export function LiveDesktopHome({ navigate }: { navigate: Navigate }) {
             <h2 className="text-2xl font-black tracking-[-.03em] text-[#102044]">
               Popular businesses
             </h2>
-            <button
-              onClick={() => navigate("providers")}
+            <a
+              href="/businesses/"
+              onClick={event => { event.preventDefault(); navigate("providers") }}
               className="shrink-0 text-sm font-black text-[#0967ff]"
             >
               See all <ArrowRight size={14} className="inline" />
-            </button>
+            </a>
           </div>
           {picks.length ? (
             <div className="grid gap-5 md:grid-cols-2">

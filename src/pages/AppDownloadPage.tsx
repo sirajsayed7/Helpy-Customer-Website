@@ -16,7 +16,7 @@ export default function AppDownloadPage() {
           <img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="relative h-16 w-24 object-contain object-left brightness-0 invert" />
           <div className="relative mt-28">
             <span className="inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-3 py-2 text-xs font-black"><Smartphone size={15} />THE HELPY APP</span>
-            <h1 className="mt-6 max-w-sm text-5xl font-black leading-[1.02] tracking-[-.06em]">Services, in your pocket.</h1>
+            <p className="mt-6 max-w-sm text-5xl font-black leading-[1.02] tracking-[-.06em]">Services, in your pocket.</p>
             <p className="mt-6 max-w-sm text-base font-semibold leading-7 text-blue-100">Book trusted local professionals, manage appointments and stay connected from the Helpy app.</p>
           </div>
           <div className="absolute bottom-11 left-11 right-11 flex gap-6 border-t border-white/20 pt-6 text-sm font-bold text-blue-100"><span className="inline-flex items-center gap-2"><CheckCircle2 size={17} />Verified pros</span><span className="inline-flex items-center gap-2"><CheckCircle2 size={17} />Easy booking</span></div>
@@ -26,7 +26,7 @@ export default function AppDownloadPage() {
           <header className="flex items-center justify-between px-4 py-3 sm:px-0"><img src="/assets/helpy-logo-transparent.png" alt="Helpy" className="h-12 w-20 object-contain object-left lg:hidden" /><span className="ml-auto inline-flex items-center gap-2 text-xs font-black text-[#687895]"><Globe2 size={16} />Available in Qatar</span></header>
           <div className="my-auto max-w-md px-4 py-12 sm:px-0">
             <span className="inline-flex items-center gap-2 rounded-full border border-blue-100 bg-blue-50 px-3 py-2 text-[11px] font-black tracking-[.09em] text-[#0967ff]"><Download size={14} />GET THE APP</span>
-            <h2 className="mt-5 text-[38px] font-black leading-[1.03] tracking-[-.055em] text-[#0c1a41] sm:text-5xl">A better Helpy experience, wherever you are.</h2>
+            <h1 className="mt-5 text-[38px] font-black leading-[1.03] tracking-[-.055em] text-[#0c1a41] sm:text-5xl">A better Helpy experience, wherever you are.</h1>
             <p className="mt-5 text-[15px] font-semibold leading-7 text-[#64738e]">Use the Helpy app to book services, receive updates, save places and manage everything in one place.</p>
             <button onClick={openStore} className="mt-8 flex h-14 w-full items-center justify-center gap-2 rounded-[18px] bg-[#0967ff] px-5 text-[15px] font-black text-white shadow-[0_14px_28px_rgba(9,103,255,.25)] transition hover:bg-[#0759df] active:scale-[.99]">Download Helpy <ArrowRight size={19} /></button>
             <a href={ONE_LINK_URL} className="mt-3 flex items-center justify-center gap-2 text-sm font-black text-[#0967ff] underline-offset-4 hover:underline">Open download link <ArrowRight size={15} /></a>

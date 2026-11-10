@@ -54,14 +54,28 @@ const screenFromUrl = (): Screen => {
   return SCREENS.includes(candidate) ? candidate : 'splash'
 }
 
-const updateUrl = (screen: Screen, replace = false) => {
+const paramsFromUrl = (screen: Screen) => {
+  if (screen !== 'service-detail' || typeof window === 'undefined') return undefined
+  const serviceVendorMapId = Number(new URLSearchParams(window.location.search).get('serviceVendorMapId'))
+  return Number.isInteger(serviceVendorMapId) && serviceVendorMapId > 0 ? { serviceVendorMapId } : undefined
+}
+
+const updateUrl = (screen: Screen, replace = false, params?: any) => {
   if (typeof window === 'undefined') return
-  const url = `${window.location.pathname}${window.location.search}#${screen}`
+  const search = new URLSearchParams(window.location.search)
+  const serviceVendorMapId = Number(params?.serviceVendorMapId || params?.service?.serviceVendorMapId || params?.liveService?.serviceVendorMapId)
+  if (screen === 'service-detail' && Number.isInteger(serviceVendorMapId) && serviceVendorMapId > 0) search.set('serviceVendorMapId', String(serviceVendorMapId))
+  else search.delete('serviceVendorMapId')
+  const query = search.toString()
+  const url = `${window.location.pathname}${query ? `?${query}` : ''}#${screen}`
   window.history[replace ? 'replaceState' : 'pushState']({ screen }, '', url)
 }
 
 export function NavProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<NavState>(() => ({ screen: screenFromUrl(), history: [] }))
+  const [state, setState] = useState<NavState>(() => {
+    const screen = screenFromUrl()
+    return { screen, params: paramsFromUrl(screen), history: [] }
+  })
   const [activeTab, setActiveTabState] = useState('home')
   const [isLoggedIn, setIsLoggedIn] = useState(() => hasHelpyUserSession())
   const [bookedServices, setBookedServices] = useState<BookedService[]>([])
@@ -70,7 +84,8 @@ export function NavProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const syncFromBrowser = () => {
       const screen = screenFromUrl()
-      setState(current => screen === current.screen ? current : { screen, params: undefined, history: [] })
+      const params = paramsFromUrl(screen)
+      setState(current => screen === current.screen && JSON.stringify(current.params ?? {}) === JSON.stringify(params ?? {}) ? current : { screen, params, history: [] })
     }
     window.addEventListener('popstate', syncFromBrowser)
     window.addEventListener('hashchange', syncFromBrowser)
@@ -82,14 +97,14 @@ export function NavProvider({ children }: { children: ReactNode }) {
 
   const navigate = (screen: Screen, params?: any) => {
     setState(s => ({ screen, params, history: [...s.history, { screen: s.screen, params: s.params }] }))
-    updateUrl(screen)
+    updateUrl(screen, false, params)
   }
 
   const goBack = () =>
     setState(s => {
       const history = [...s.history]
       const prev = history.pop()
-      if (prev) updateUrl(prev.screen, true)
+      if (prev) updateUrl(prev.screen, true, prev.params)
       return prev ? { screen: prev.screen, params: prev.params, history } : s
     })
 

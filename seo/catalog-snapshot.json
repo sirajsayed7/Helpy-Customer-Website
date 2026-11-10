@@ -1,0 +1,390 @@
+{
+  "categories": [
+    {
+      "id": 13,
+      "name": "Car Services",
+      "description": "",
+      "image": "/assets/cat-car-services-user-exact.png"
+    },
+    {
+      "id": 4,
+      "name": "Digital",
+      "description": "Digital services are any services provided electronically, often over the internet, and accessed through digital platforms like websites or mobile apps. They encompass a wide range of offerings, including online banking, e-commerce, streaming media, online education, and digital marketing. Essentially, if a service can be delivered digitally, it falls under the category of a digital service.",
+      "image": "/assets/cat-uniform-digital.png"
+    },
+    {
+      "id": 3,
+      "name": "Education",
+      "description": "Education services encompass a wide range of instruction, training, and learning opportunities provided by specialized establishments like schools, colleges, universities, and training centers. These services aim to enhance a student's educational environment, utilizing innovative methodologies and tools to cater to various learning needs, including distance education and online learning.",
+      "image": "/assets/ai-homecat-education.png"
+    },
+    {
+      "id": 2,
+      "name": "Health care",
+      "description": "Healthcare services encompass a wide range of activities aimed at promoting, maintaining, and restoring health. These services are provided by a network of professionals, organizations, and systems, and include preventative care, diagnosis, treatment, and rehabilitation. They are crucial for addressing a variety of health conditions, from common illnesses to complex diseases, and are delivered through various levels of care, including primary, secondary, and tertiary care.",
+      "image": "/assets/cat-uniform-health-wellness.png"
+    },
+    {
+      "id": 1,
+      "name": "Home Services",
+      "description": "Home services encompass a wide range of services provided directly to a customer's home, covering everything from cleaning and maintenance to repairs and even personal care. These services are designed to simplify daily life for homeowners and provide convenience and support for various tasks.",
+      "image": "/assets/ai-homecat-home_services.png"
+    },
+    {
+      "id": 11,
+      "name": "Mandoob",
+      "description": "Mandoob (Representative / PRO) A Mandoob is responsible for handling government transactions and official procedures on behalf of individuals or companies. Duties include processing documents, submitting applications, obtaining approvals, coordinating with government departments, and ensuring compliance with local regulations. The role requires strong communication skills, knowledge of government systems, and the ability to complete formalities efficiently and accurately.",
+      "image": "https://helpy-category-image.s3.me-central-1.amazonaws.com/categories/thumbnail/64_64/17753285007684.webp"
+    },
+    {
+      "id": 8,
+      "name": "Market Place",
+      "description": "A comprehensive marketplace bringing together a wide range of products from trusted sellers in one place. Enjoy a seamless shopping experience, diverse choices, and competitive prices — so you can find everything you need quickly and with confidence, anytime.",
+      "image": "/assets/cat-uniform-marketplace.png"
+    },
+    {
+      "id": 14,
+      "name": "Pet Services",
+      "description": "",
+      "image": "/assets/cat-pets-dog-cat-food.png"
+    }
+  ],
+  "businesses": [
+    {
+      "id": 519,
+      "name": "AlImtiaz Care Services",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17725447409310.webp",
+      "services": [
+        {
+          "id": 201,
+          "categoryId": 11,
+          "name": "Municipality",
+          "description": "Municipality The Municipality manages local public services such as building permits, business licenses, urban planning, sanitation, public health inspections, and community infrastructure. It ensures compliance with local regulations and city planning standards.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17714099035963.webp"
+        },
+        {
+          "id": 199,
+          "categoryId": 11,
+          "name": "Ministry of Justice",
+          "description": "The Ministry of Justice The Ministry of Justice oversees legal and judicial affairs, including courts, documentation services, notarization, legal certifications, and enforcement of laws. It ensures justice is administered fairly and efficiently.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17714096784617.webp"
+        },
+        {
+          "id": 198,
+          "categoryId": 11,
+          "name": "Ministry of Labor",
+          "description": "Ministry of Labor The Ministry of Labor is responsible for regulating labor laws, employment policies, work permits, labor contracts, and employer–employee relations. It oversees workforce regulations, protects workers' rights, and ensures compliance with labor legislation.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17769407341414.webp"
+        },
+        {
+          "id": 197,
+          "categoryId": 11,
+          "name": "Al Imtiaz Passport Handling",
+          "description": "Passport Handling Passport Handling services include managing and completing all passport-related procedures on behalf of clients. This may involve submitting applications, renewals, replacements for lost or damaged passports, document verification, appointment scheduling, and follow-up with the relevant authorities. The service ensures accuracy, efficiency, and compliance with official regulations to facilitate a smooth and timely process.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17769402797906.webp"
+        }
+      ]
+    },
+    {
+      "id": 914,
+      "name": "Arabian Insights",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17766852122190.webp",
+      "services": [
+        {
+          "id": 239,
+          "categoryId": 1,
+          "name": "Arabian Insights Services",
+          "description": "Hello & welcome to Arabian Insights Services, You have reached the right place. We specialize in professional home cleaning services, with experienced and well-trained staff handling all household tasks efficiently. Our services include: General Pest Control 1. Commercial Pest Control 2. Rodent Control 3. Mosquito Fogging General & Deep Cleaning 1. Sofa Cleaning 2. Carpet Cleaning 3. Laundry & Ironing 4. House Sitting Please note: Minimum booking duration is 2 hours (2 workers per booking). We are available around the clock to meet your needs. Pricing: 30 QAR per hour per worker (Including all cleaning detergents and equipment) 120 QAR for 2 hours (2 workers) We also offer discounted packages for bookings made 3 to 6 times per week.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17766786315743.webp"
+        }
+      ]
+    },
+    {
+      "id": 1476,
+      "name": "Dana Ghazwan Alwahaib",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17936054288327.webp",
+      "services": [
+        {
+          "id": 279,
+          "categoryId": 8,
+          "name": "Dani and Duckks",
+          "description": "I make custom pins of three sizes, perler/fuse bead keychains of three sizes and stickers of three sizes. The price you see is the average price of all my products put together, but the actual price of my products can be found on my Instagram page @dani_and_duckks. I also buy and sell acrylic keychains and would appreciate your input on which acrylic keychains to sell next.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17936055343694.webp"
+        }
+      ]
+    },
+    {
+      "id": 1449,
+      "name": "DND FITNESS",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17900762359330.webp",
+      "services": [
+        {
+          "id": 270,
+          "categoryId": 2,
+          "name": "Door Step",
+          "description": "1-to-1 Personal Training at Your Doorstep 💪 Achieve your fitness goals without leaving the comfort of your home. Our personalized 1-to-1 personal training service brings professional fitness coaching directly to your doorstep. Each session is tailored to your fitness level, goals, and lifestyle—whether you want to lose weight, build strength, improve fitness, tone your body, or simply become more active. ✅ Personalized workout plans ✅ 1-to-1 professional coaching ✅ Training at your home or preferred location ✅ Flexible scheduling ✅ Suitable for all fitness levels ✅ Goal-focused and results-driven sessions Your goals. Your schedule. Your location. Your workout. 📩 Book your doorstep personal training session today and take the first step toward a stronger, healthier you.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17900897015470.webp"
+        },
+        {
+          "id": 269,
+          "categoryId": 2,
+          "name": "Rehabilitation",
+          "description": "1-to-1 Personal Training & Rehabilitation Get personalised support with one-to-one training designed around your individual needs, goals, and recovery journey. Each session focuses on improving strength, mobility, balance, movement, and overall physical function in a safe and controlled environment. Whether you are recovering from an injury, managing movement limitations, returning to exercise, or simply looking to improve your physical performance, your programme will be tailored to your current abilities and progress. With individual attention throughout every session, we focus on proper technique, gradual progression, and building confidence in movement — helping you move better, feel stronger, and work towards your goals safely.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17900854053454.webp"
+        },
+        {
+          "id": 268,
+          "categoryId": 2,
+          "name": "Plyometrics",
+          "description": "Plyometrics Training Explosive training designed to improve power, speed, agility, coordination, and athletic performance. Plyometric exercises use fast, dynamic movements such as jumps, bounds, and explosive drills to develop your ability to generate maximum force in a short amount of time. Whether you want to jump higher, move faster, improve athletic performance, or become more explosive, each session is tailored to your fitness level and goals. Build explosive power. Move faster. Perform better.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17900839997603.webp"
+        },
+        {
+          "id": 267,
+          "categoryId": 2,
+          "name": "Calisthenics",
+          "description": "1-to-1 Calisthenics Personal Training Take your training to the next level with personalized 1-to-1 calisthenics coaching designed around your goals, fitness level, and abilities. Whether you’re a complete beginner or looking to master advanced skills, each session focuses on proper technique, strength, mobility, and progressive development. You’ll receive individual coaching, tailored workouts, and hands-on guidance to help you build strength, improve body control, and confidently work toward skills such as pull-ups, handstands, muscle-ups, and more. Train smarter. Build strength. Master your body.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17900786757171.webp"
+        },
+        {
+          "id": 266,
+          "categoryId": 2,
+          "name": "Strength Training",
+          "description": "Here’s a polished description you can use for your service: 1-to-1 Personal Strength Training✓ ### 1-to-1 Personal Strength Training Take your strength, confidence, and performance to the next level with personalised 1-to-1 strength training. Every session is tailored to your individual goals, fitness level, and needs, with expert coaching and focused attention throughout. Whether you’re looking to build muscle, increase strength, improve technique, enhance athletic performance, or simply become fitter and stronger, your programme will be designed to help you progress safely and consistently. **Personalised training. Expert guidance. Measurable progress.**",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17900776857701.webp"
+        }
+      ]
+    },
+    {
+      "id": 1373,
+      "name": "Hamza Animates",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17860152002096.webp",
+      "services": [
+        {
+          "id": 250,
+          "categoryId": 4,
+          "name": "Social Media Management",
+          "description": "Grow your brand with professional social media management tailored to your business goals. I help businesses build a strong online presence through strategic content planning, creative design, engaging captions, and consistent account management. Whether you're a startup, local business, or established brand, I create content that connects with your audience and strengthens your digital identity. From content calendars and post scheduling to audience engagement and performance optimization, every strategy is designed to increase visibility, improve engagement, and help your business grow across social media platforms. **Services include:** * Social Media Management * Content Strategy & Planning * Content Calendar Creation * Graphic Design & Creative Posts * Reels & Short Video Management * Caption Writing & Hashtag Research * Community Management * Performance Reporting * Instagram, Facebook, TikTok & LinkedIn Management Let's build a social media presence that attracts customers, increases engagement, and grows your brand.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17860176886404.webp"
+        },
+        {
+          "id": 249,
+          "categoryId": 4,
+          "name": "3D Product Animations",
+          "description": "I specialize in creating photorealistic, cinematic animations for perfumes, cosmetics, luxury products, electronics, food, beverages, and consumer goods. Every project is crafted with high-quality lighting, realistic materials, smooth camera movements, and visually engaging storytelling to showcase your product at its best. Whether you need content for Instagram, TikTok, Facebook, YouTube, your website, or digital advertising campaigns, I create eye-catching visuals that help increase engagement and leave a lasting impression. Services include: - Photorealistic 3D Product Animation - Cinematic Product Commercials - Product Rendering & Visualization - Luxury Product Showcases - Social Media Advertising Videos - Product Launch & Promotional Animations If you have a product and want stunning 3D animations that make your brand stand out, I'd be happy to help turn your vision into reality.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17860170714877.webp"
+        }
+      ]
+    },
+    {
+      "id": 1294,
+      "name": "HELPY Vendor",
+      "about": "",
+      "image": "https://admin.helpyapp.tech/images/default-image.png",
+      "services": [
+        {
+          "id": 277,
+          "categoryId": 4,
+          "name": "Logo Designer",
+          "description": "Make your brand stand out with a creative, modern, and professional logo! 🎨✨ We specialize in designing unique, eye-catching logos that reflect your brand’s identity, values, and vision. Whether you’re starting a new business or refreshing your existing brand, we create memorable designs that leave a lasting impression. ✅ Creative & Unique Logo Concepts ✅ Modern & Professional Designs ✅ Custom Designs for Every Business ✅ High-Quality & Attractive Results ✅ Designs That Reflect Your Brand",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17931787893443.webp"
+        },
+        {
+          "id": 278,
+          "categoryId": 3,
+          "name": "English Language Tutoring",
+          "description": "🇬🇧 English – English Language Tutoring Improve your English with personalized lessons! 📚✨ ✅ Speaking & Conversation ✅ Reading & Writing ✅ Grammar & Vocabulary ✅ All Levels Welcome Learn English with Confidence!",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17931794635755.webp"
+        }
+      ]
+    },
+    {
+      "id": 1421,
+      "name": "Hi WASH",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17880810333407.webp",
+      "services": [
+        {
+          "id": 257,
+          "categoryId": 13,
+          "name": "Mobile Service Membership",
+          "description": "Convenient monthly exterior car wash membership featuring four scheduled door-step sessions per month. Our professional team arrives at your location on pre-booked dates to deliver consistent, high-quality exterior washing using advanced equipment and premium cleaning solutions",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17880805458916.webp"
+        },
+        {
+          "id": 256,
+          "categoryId": 13,
+          "name": "Car Deep Cleaning",
+          "description": "Professional interior deep detailing that rejuvenates your car's cabin. We meticulously clean and sanitize all interior surfaces, upholstery, carpets, and trim using specialized equipment and eco-friendly solutions, leaving your vehicle spotlessly clean and fresh.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17880803804881.webp"
+        },
+        {
+          "id": 255,
+          "categoryId": 13,
+          "name": "One-time Mobile Car Wash",
+          "description": "Professional full exterior and interior car wash performed at your location using advanced high-pressure equipment and premium cleaning solutions",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17880803065691.webp"
+        }
+      ]
+    },
+    {
+      "id": 1367,
+      "name": "J and A Center for Auto Spare Parts and Technical Services",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17859318922304.webp",
+      "services": [
+        {
+          "id": 272,
+          "categoryId": 13,
+          "name": "Interior Deep Cleaning",
+          "description": "Call on 50001879 to book!",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17901494431598.webp"
+        },
+        {
+          "id": 271,
+          "categoryId": 13,
+          "name": "Exterior Car Polish with Sanding",
+          "description": "Call on 50001879 to book!",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17901480823187.webp"
+        }
+      ]
+    },
+    {
+      "id": 1378,
+      "name": "Lahazat Mubaraka Wedding and Events",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17863447068670.webp",
+      "services": [
+        {
+          "id": 253,
+          "categoryId": 3,
+          "name": "Lahazat",
+          "description": "We are offering an affordable back to school balloon backdrop and welcome arch balloons for school opening.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17865209487498.webp"
+        },
+        {
+          "id": 252,
+          "categoryId": 8,
+          "name": "Lahazat Mubaraka Events",
+          "description": "We are offering an affordable back to school balloon backdrop and welcome arch balloons for school opening.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17865206606939.webp"
+        }
+      ]
+    },
+    {
+      "id": 1364,
+      "name": "Pearl Shine Car Wash and Detailing",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17859278668075.webp",
+      "services": [
+        {
+          "id": 264,
+          "categoryId": 13,
+          "name": "Normal wash",
+          "description": "Normal wash - Perfect for regular maintenance - Simple, quick and effective. Whats included, interior: Quick interior clean, quick vacuum& dashboard wipe. Exterior body&wheel wash + tire shine application",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17899961967263.webp"
+        },
+        {
+          "id": 263,
+          "categoryId": 13,
+          "name": "Full deep clean + wax",
+          "description": "Exterior: Clay wash decontamination - premium wax protection - engine bay detailing - door shuts deep cleaned. All corners deep cleaned, wheels, tyres and arch deep cleaned, exterior trim detailing, chrome polishing, premium Tyre dressing. Interior: Deep dusting, Steam sanitizing, stain removal, shampooo seats, shampoo carpets, door shuts deep cleaned, dashboard polishing, glass cleaning, headliner cleaning",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17899960379545.webp"
+        },
+        {
+          "id": 262,
+          "categoryId": 13,
+          "name": "machine polish exterior",
+          "description": "Light swirl & scratch removal, enhances gloss & clarity. Deep clean & decontamination. Protective sealent applied",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17899907317284.webp"
+        },
+        {
+          "id": 261,
+          "categoryId": 13,
+          "name": "interior Deep clean",
+          "description": "Deep dusting, steam sanitising, stain removal, shampoo seats, shampoo carpets, door shuts deep cleaned, dashboard polishing, glass cleaning, headliner cleaning",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17899904629954.webp"
+        },
+        {
+          "id": 258,
+          "categoryId": 13,
+          "name": "Pearl Shine Detailing",
+          "description": "VIP WASH – Interior Care * Thorough dusting and vacuum * Console & door panels cleaned * Seats wiped & refreshed * Glass & mirrors cleaned * Plastic trim conditioned * Dashboard wipe Exterior Care * Pre-wash with special protective shampoo * Safe hand wash using a special unique wash mitt * Wheels, tyres & wheel arches cleaned * All door shuts cleaned * Premium tyre shine & trim dressing * Premium detailer spray for extra shine * Blow dry all corners & streak-free towel dry ⏱️ 60–90 minutes",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17889428073453.webp"
+        }
+      ]
+    },
+    {
+      "id": 741,
+      "name": "Roe Studios",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17862601976127.webp",
+      "services": [
+        {
+          "id": 254,
+          "categoryId": 4,
+          "name": "Roe Studios - Marketing & production",
+          "description": "High-end video production and marketing, specializing in cinematic car content and premium commercial videos. From creative concepts to filming and final edits, I create content that makes your brand stand out. Pricing depends on the type, concept, and production level of each video. Instagram: [https://www.instagram.com/qtrperformance?igsh=MWkwNGRoOXAwYjdtaA==]",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17869039813875.webp"
+        }
+      ]
+    },
+    {
+      "id": 1365,
+      "name": "Techy",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17938765291677.webp",
+      "services": [
+        {
+          "id": 248,
+          "categoryId": 4,
+          "name": "Website Consultation",
+          "description": "Providing professional website design services.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17859979739586.webp"
+        },
+        {
+          "id": 247,
+          "categoryId": 4,
+          "name": "Logo Design",
+          "description": "Designing high quality logos, modern and aesthetic",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17859301503417.webp"
+        }
+      ]
+    },
+    {
+      "id": 1271,
+      "name": "Turbo Laundry",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17841169362349.webp",
+      "services": [
+        {
+          "id": 245,
+          "categoryId": 1,
+          "name": "Turbo Laundry",
+          "description": "Laundry wash all items in 24hours 12 hours and in 6 hours and 3 hours all package available with pickup and delivery 33508083 30555143",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17896332307183.webp"
+        }
+      ]
+    },
+    {
+      "id": 1379,
+      "name": "Twenty Three Royals Hospitality Trading and Services",
+      "about": "",
+      "image": "https://helpy-users-image.s3.me-central-1.amazonaws.com/user/main/17863454789194.webp",
+      "services": [
+        {
+          "id": 251,
+          "categoryId": 1,
+          "name": "Twenty Three Royals Hospitality",
+          "description": "We are offering an affordable cleaning service for villas, apartments and offices.",
+          "image": "https://helpy-services-image.s3.me-central-1.amazonaws.com/service_setup/main/17865191179597.webp"
+        }
+      ]
+    }
+  ]
+}
