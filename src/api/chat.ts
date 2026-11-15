@@ -1,4 +1,4 @@
-import { clearHelpyFirebaseCustomToken, getHelpyAccessToken, getHelpyFirebaseCustomToken } from './helpy'
+import { clearHelpyFirebaseCustomToken, getHelpyAccessToken, getHelpyFirebaseCustomToken, hasHelpyUserSession, HELPY_AUTH_CHANGED_EVENT } from './helpy'
 
 const env = import.meta.env as Record<string, string | undefined>
 const projectId = env.VITE_HELPY_FIREBASE_PROJECT_ID || 'helpy-61026'
@@ -14,13 +14,15 @@ type FirestoreValue = { stringValue?: string; integerValue?: string; booleanValu
 type FirestoreDocument = { name: string; fields?: Record<string, FirestoreValue> }
 
 let session: FirebaseSession | null = null
+if (typeof window !== 'undefined') window.addEventListener(HELPY_AUTH_CHANGED_EVENT, () => { session = null })
 const field = (document: FirestoreDocument, key: string) => document.fields?.[key]
 const stringField = (document: FirestoreDocument, key: string) => String(field(document, key)?.stringValue ?? field(document, key)?.integerValue ?? '')
 
 function readStoredSession() {
+  if (!hasHelpyUserSession()) { session = null; return null }
   if (session) return session
   try {
-    const value = window.sessionStorage.getItem(FIREBASE_SESSION_KEY)
+    const value = window.localStorage.getItem(FIREBASE_SESSION_KEY) || window.sessionStorage.getItem(FIREBASE_SESSION_KEY)
     const parsed = value ? JSON.parse(value) as FirebaseSession : null
     if (parsed?.idToken && parsed.localId) session = parsed
   } catch { /* Start a fresh Firebase session. */ }
@@ -29,7 +31,10 @@ function readStoredSession() {
 
 function saveSession(value: FirebaseSession) {
   session = value
-  window.sessionStorage.setItem(FIREBASE_SESSION_KEY, JSON.stringify(value))
+  if (hasHelpyUserSession()) {
+    window.localStorage.setItem(FIREBASE_SESSION_KEY, JSON.stringify(value))
+    window.sessionStorage.removeItem(FIREBASE_SESSION_KEY)
+  }
   return value
 }
 

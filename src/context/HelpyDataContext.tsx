@@ -1,5 +1,5 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
-import { helpyApi, hasHelpyUserSession, type HelpyAddressInput, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
+import { getHelpyAccessToken, HelpyApiError, helpyApi, hasHelpyUserSession, type HelpyAddressInput, type HelpyAvailabilitySlot, type HelpyBanner, type HelpyCategory, type HelpyProvider, type HelpyService } from '../api/helpy'
 import { useNav } from './NavContext'
 
 const pick = (value: Record<string, unknown>, ...keys: string[]) => keys.map(key => value[key]).find(item => item !== null && item !== undefined && item !== '')
@@ -200,18 +200,32 @@ export function HelpyDataProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const refreshAccount = useCallback(async () => {
-    if (!hasHelpyUserSession()) { setProfile(null); setAddresses([]); setBookings([]); return }
+    if (!hasHelpyUserSession()) {
+      setProfile(null); setAddresses([]); setBookings([]); setFavorites([]); setWalletHistory([]); setNotifications([])
+      setAccountLoading(false)
+      return
+    }
     setAccountLoading(true)
+    const sessionToken = getHelpyAccessToken()
     try {
+      const profileRequest = helpyApi.getUserProfile().catch(cause => {
+        if (cause instanceof HelpyApiError && cause.status === 401 && getHelpyAccessToken() === sessionToken) helpyApi.clearSession()
+        throw cause
+      })
       const [profileRaw, addressRows, active, progress, completed, favoriteRows, walletRows, notificationRows] = await Promise.all([
-        helpyApi.getUserProfile(), helpyApi.getAddresses(), helpyApi.getBookings(0), helpyApi.getBookings(1), helpyApi.getBookings(2), helpyApi.getFavorites(), helpyApi.getWalletHistory(), helpyApi.getNotifications(),
+        profileRequest, helpyApi.getAddresses(), helpyApi.getBookings(0), helpyApi.getBookings(1), helpyApi.getBookings(2), helpyApi.getFavorites(), helpyApi.getWalletHistory(), helpyApi.getNotifications(),
       ])
+      if (getHelpyAccessToken() !== sessionToken || !hasHelpyUserSession()) return
       const wallet = profileRaw.wallet && typeof profileRaw.wallet === 'object' ? profileRaw.wallet as Record<string, unknown> : {}
       setProfile({ name: text(pick(profileRaw, 'name_english', 'name')), email: text(profileRaw.email), phone: text(profileRaw.phone_number), about: text(pick(profileRaw, 'about_me_english', 'about_me')), image: text(pick(profileRaw, 'user_profile_image_url', 'profile_photo')), memberSince: text(pick(profileRaw, 'member_since', 'created_at_formatted')), wallet: number(pick(wallet, 'balance', 'wallet_balance', 'amount') ?? profileRaw.wallet), raw: profileRaw })
       setAddresses(addressRows.map(mapAddress))
       setBookings([...active.map(row => mapBooking(row, 'Confirmed')), ...progress.map(row => mapBooking(row, 'In progress')), ...completed.map(row => mapBooking(row, 'Completed'))])
       setFavorites(favoriteRows); setWalletHistory(walletRows); setNotifications(notificationRows)
-    } catch (cause) { setError(cause instanceof Error ? cause.message : 'Unable to load account data.') }
+    } catch (cause) {
+      if (!hasHelpyUserSession()) {
+        setProfile(null); setAddresses([]); setBookings([]); setFavorites([]); setWalletHistory([]); setNotifications([])
+      } else setError(cause instanceof Error ? cause.message : 'Unable to load account data.')
+    }
     finally { setAccountLoading(false) }
   }, [])
 

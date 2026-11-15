@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react'
-import { hasHelpyUserSession } from '../api/helpy'
+import { hasHelpyUserSession, HELPY_AUTH_CHANGED_EVENT } from '../api/helpy'
 
 export type Screen =
   | 'splash' | 'login' | 'signup' | 'verify' | 'home' | 'orders' | 'chat' | 'profile'
@@ -92,6 +92,27 @@ export function NavProvider({ children }: { children: ReactNode }) {
     return () => {
       window.removeEventListener('popstate', syncFromBrowser)
       window.removeEventListener('hashchange', syncFromBrowser)
+    }
+  }, [])
+
+  useEffect(() => {
+    const syncAuth = () => setIsLoggedIn(hasHelpyUserSession())
+    const syncFromOtherTab = (event: StorageEvent) => {
+      if (event.key !== 'helpy_session_token' && event.key !== 'helpy_session_kind') return
+      if (event.key === 'helpy_session_token' && !event.newValue && window.sessionStorage.getItem('helpy_session_kind') === 'user') {
+        window.sessionStorage.removeItem('helpy_session_token')
+        window.sessionStorage.removeItem('helpy_session_kind')
+        window.sessionStorage.removeItem('helpy_firebase_custom_token')
+        window.sessionStorage.removeItem('helpy_firebase_session')
+      }
+      syncAuth()
+      window.dispatchEvent(new Event(HELPY_AUTH_CHANGED_EVENT))
+    }
+    window.addEventListener(HELPY_AUTH_CHANGED_EVENT, syncAuth)
+    window.addEventListener('storage', syncFromOtherTab)
+    return () => {
+      window.removeEventListener(HELPY_AUTH_CHANGED_EVENT, syncAuth)
+      window.removeEventListener('storage', syncFromOtherTab)
     }
   }, [])
 

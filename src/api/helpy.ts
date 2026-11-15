@@ -2,6 +2,8 @@ const DEFAULT_API_BASE = 'https://admin.helpyapp.tech/api/v1'
 const TOKEN_KEY = 'helpy_session_token'
 const SESSION_KIND_KEY = 'helpy_session_kind'
 const FIREBASE_CUSTOM_TOKEN_KEY = 'helpy_firebase_custom_token'
+const FIREBASE_SESSION_KEY = 'helpy_firebase_session'
+export const HELPY_AUTH_CHANGED_EVENT = 'helpy-auth-changed'
 
 type RequestMethod = 'GET' | 'POST'
 type QueryValue = string | number | boolean | null | undefined
@@ -186,7 +188,25 @@ const runtimeEnv = import.meta.env as Record<string, string | boolean | undefine
 
 function readToken() {
   if (typeof window === 'undefined') return null
-  return window.sessionStorage.getItem(TOKEN_KEY)
+  const savedToken = window.localStorage.getItem(TOKEN_KEY)
+  if (savedToken && window.localStorage.getItem(SESSION_KIND_KEY) === 'user') return savedToken
+
+  const tabToken = window.sessionStorage.getItem(TOKEN_KEY)
+  if (tabToken && window.sessionStorage.getItem(SESSION_KIND_KEY) === 'user') {
+    // Carry existing signed-in tabs across the storage change on their next visit.
+    try {
+      window.localStorage.setItem(TOKEN_KEY, tabToken)
+      window.localStorage.setItem(SESSION_KIND_KEY, 'user')
+      for (const key of [FIREBASE_CUSTOM_TOKEN_KEY, FIREBASE_SESSION_KEY]) {
+        const value = window.sessionStorage.getItem(key)
+        if (value) window.localStorage.setItem(key, value)
+        window.sessionStorage.removeItem(key)
+      }
+      window.sessionStorage.removeItem(TOKEN_KEY)
+      window.sessionStorage.removeItem(SESSION_KIND_KEY)
+    } catch { /* Keep the existing tab session when persistent storage is unavailable. */ }
+  }
+  return tabToken
 }
 
 export function getHelpyAccessToken() {
@@ -195,11 +215,14 @@ export function getHelpyAccessToken() {
 
 export function getHelpyFirebaseCustomToken() {
   if (typeof window === 'undefined') return null
-  return window.sessionStorage.getItem(FIREBASE_CUSTOM_TOKEN_KEY)
+  return window.localStorage.getItem(FIREBASE_CUSTOM_TOKEN_KEY) || window.sessionStorage.getItem(FIREBASE_CUSTOM_TOKEN_KEY)
 }
 
 export function clearHelpyFirebaseCustomToken() {
-  if (typeof window !== 'undefined') window.sessionStorage.removeItem(FIREBASE_CUSTOM_TOKEN_KEY)
+  if (typeof window !== 'undefined') {
+    window.localStorage.removeItem(FIREBASE_CUSTOM_TOKEN_KEY)
+    window.sessionStorage.removeItem(FIREBASE_CUSTOM_TOKEN_KEY)
+  }
 }
 
 export function hasHelpySession() {
@@ -207,19 +230,40 @@ export function hasHelpySession() {
 }
 
 export function hasHelpyUserSession() {
-  return Boolean(readToken()) && window.sessionStorage.getItem(SESSION_KIND_KEY) === 'user'
+  if (!readToken()) return false
+  return window.localStorage.getItem(SESSION_KIND_KEY) === 'user' || window.sessionStorage.getItem(SESSION_KIND_KEY) === 'user'
 }
 
 function writeToken(token: string, kind: 'guest' | 'user') {
   if (typeof window !== 'undefined') {
-    window.sessionStorage.setItem(TOKEN_KEY, token)
-    window.sessionStorage.setItem(SESSION_KIND_KEY, kind)
+    if (kind === 'guest') {
+      window.sessionStorage.setItem(TOKEN_KEY, token)
+      window.sessionStorage.setItem(SESSION_KIND_KEY, kind)
+      return
+    }
+    for (const key of [FIREBASE_CUSTOM_TOKEN_KEY, FIREBASE_SESSION_KEY]) {
+      window.localStorage.removeItem(key)
+      window.sessionStorage.removeItem(key)
+    }
+    try {
+      window.localStorage.setItem(TOKEN_KEY, token)
+      window.localStorage.setItem(SESSION_KIND_KEY, kind)
+      window.sessionStorage.removeItem(TOKEN_KEY)
+      window.sessionStorage.removeItem(SESSION_KIND_KEY)
+    } catch {
+      window.localStorage.removeItem(TOKEN_KEY)
+      window.localStorage.removeItem(SESSION_KIND_KEY)
+      window.sessionStorage.setItem(TOKEN_KEY, token)
+      window.sessionStorage.setItem(SESSION_KIND_KEY, kind)
+    }
+    window.dispatchEvent(new Event(HELPY_AUTH_CHANGED_EVENT))
   }
 }
 
 function writeFirebaseCustomToken(value: unknown) {
   if (typeof window !== 'undefined' && typeof value === 'string' && value.trim()) {
-    window.sessionStorage.setItem(FIREBASE_CUSTOM_TOKEN_KEY, value)
+    if (window.localStorage.getItem(SESSION_KIND_KEY) === 'user') window.localStorage.setItem(FIREBASE_CUSTOM_TOKEN_KEY, value)
+    else window.sessionStorage.setItem(FIREBASE_CUSTOM_TOKEN_KEY, value)
   }
 }
 
@@ -328,10 +372,11 @@ class HelpyApiClient {
 
   clearSession() {
     if (typeof window !== 'undefined') {
-      window.sessionStorage.removeItem(TOKEN_KEY)
-      window.sessionStorage.removeItem(SESSION_KIND_KEY)
-      window.sessionStorage.removeItem(FIREBASE_CUSTOM_TOKEN_KEY)
-      window.sessionStorage.removeItem('helpy_firebase_session')
+      for (const key of [TOKEN_KEY, SESSION_KIND_KEY, FIREBASE_CUSTOM_TOKEN_KEY, FIREBASE_SESSION_KEY]) {
+        window.localStorage.removeItem(key)
+        window.sessionStorage.removeItem(key)
+      }
+      window.dispatchEvent(new Event(HELPY_AUTH_CHANGED_EVENT))
     }
   }
 
