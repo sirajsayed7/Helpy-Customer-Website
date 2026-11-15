@@ -1,4 +1,4 @@
-import { helpyApi } from './helpy'
+import { HelpyApiError, helpyApi } from './helpy'
 
 const DEVICE_ID_KEY = 'helpy_web_device_id'
 
@@ -17,10 +17,20 @@ export async function requestLoginOtp(email: string) {
 }
 
 export async function requestRegistrationOtp(email: string, phoneNumber: string) {
-  await helpyApi.sendRegistrationOtp({
-    email: email.trim().toLowerCase(),
-    phoneNumber: phoneNumber.replace(/\s/g, ''),
-  })
+  try {
+    await helpyApi.sendRegistrationOtp({
+      email: email.trim().toLowerCase(),
+      phoneNumber: phoneNumber.replace(/\s/g, ''),
+    })
+  } catch (error) {
+    if (error instanceof HelpyApiError && error.status === 429) {
+      throw new Error('Too many verification attempts. Please wait a few minutes before trying again.')
+    }
+    if (error instanceof HelpyApiError && error.status >= 500) {
+      throw new Error('Helpy could not start account verification right now. Please try again shortly.')
+    }
+    throw error
+  }
 }
 
 export async function verifyLoginOtp(email: string, code: string) {
